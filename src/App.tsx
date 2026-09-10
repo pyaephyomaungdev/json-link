@@ -17,6 +17,7 @@ import { LinterModal } from '@/components/LinterModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
+import { AboutPage } from '@/components/AboutPage';
 import { Logo } from '@/components/Logo';
 import { runLocalizationLinter } from '@/lib/linter';
 import {
@@ -51,6 +52,7 @@ import {
   Activity,
   BookOpen,
   FlaskConical,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -156,6 +158,33 @@ export function App() {
 
   const toggleTheme = () => {
     setIsDark(prev => !prev);
+  };
+
+  // Simple path-based routing: /about renders the About page (SPA fallback served by host)
+  const [route, setRoute] = useState<'app' | 'about'>(() =>
+    window.location.pathname.replace(/\/+$/, '') === '/about' ? 'about' : 'app'
+  );
+
+  useEffect(() => {
+    const onPopState = () => {
+      setRoute(window.location.pathname.replace(/\/+$/, '') === '/about' ? 'about' : 'app');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const openAbout = () => {
+    if (window.location.pathname !== '/about') {
+      window.history.pushState({}, '', '/about');
+    }
+    setRoute('about');
+  };
+
+  const closeAbout = () => {
+    if (window.location.pathname === '/about') {
+      window.history.pushState({}, '', '/');
+    }
+    setRoute('app');
   };
 
   // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
@@ -761,6 +790,14 @@ export function App() {
         action: () => setIsExportOpen(true),
       },
       {
+        id: 'about',
+        category: 'Help',
+        title: 'About JSON Link',
+        description: 'Learn about the project, privacy, and tech stack',
+        icon: <Info className="size-3.5 text-emerald-500" />,
+        action: openAbout,
+      },
+      {
         id: 'toggle-theme',
         category: 'View',
         title: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
@@ -770,6 +807,11 @@ export function App() {
     ],
     [isDark, undo, redo]
   );
+
+  // Dedicated About page route (/about)
+  if (route === 'about') {
+    return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} />;
+  }
 
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
@@ -1036,11 +1078,19 @@ export function App() {
           </div>
 
           {/* Footer with credit */}
-          <footer className="py-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5 border-t border-border/40 w-full mt-auto">
+          <footer className="py-3 text-center text-xs text-muted-foreground flex flex-wrap items-center justify-center gap-1.5 border-t border-border/40 w-full mt-auto">
             <span>Developed with</span>
             <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
             <span>by</span>
             <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+            <span className="px-1">·</span>
+            <button
+              onClick={openAbout}
+              className="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
+            >
+              <Info className="size-3" />
+              About JSON Link
+            </button>
           </footer>
         </main>
       ) : (

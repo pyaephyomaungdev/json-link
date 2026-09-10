@@ -7,7 +7,7 @@ import { Search, X } from 'lucide-react';
 
 export interface CommandItem {
   id: string;
-  category: 'AI' | 'Spreadsheet' | 'History' | 'Export' | 'View';
+  category: 'AI' | 'Spreadsheet' | 'History' | 'Export' | 'View' | 'Help';
   title: string;
   description?: string;
   shortcut?: string;
