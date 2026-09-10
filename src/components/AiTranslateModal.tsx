@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { TranslationItem } from '@/types';
 import {
   Dialog,
@@ -11,6 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   Sparkles,
   Key,
   Eye,
@@ -22,9 +30,16 @@ import {
   Cpu,
   Globe,
   Settings2,
+  ChevronDown,
+  Check,
+  Search,
+  X,
 } from 'lucide-react';
 import {
   POPULAR_MODELS,
+  OpenRouterModel,
+  fetchOpenRouterModels,
+  getCachedOpenRouterModels,
   getStoredApiKey,
   setStoredApiKey,
   getStoredModel,
@@ -58,6 +73,12 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [targetLang, setTargetLang] = useState('my');
   const [scope, setScope] = useState<'missing' | 'all'>('missing');
 
+  const [allModels, setAllModels] = useState<OpenRouterModel[]>(getCachedOpenRouterModels);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [modelSearch, setModelSearch] = useState('');
+  const [isCustomModelMode, setIsCustomModelMode] = useState(false);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
   // Key verification state
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [keyStatus, setKeyStatus] = useState<'untested' | 'valid' | 'invalid'>('untested');
@@ -69,7 +90,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [translationError, setTranslationError] = useState('');
   const isAbortedRef = useRef(false);
 
-  // Load stored settings on mount or open
+  // Load stored settings and fetch model catalog on mount or open
   useEffect(() => {
     if (isOpen) {
       const storedKey = getStoredApiKey();
@@ -78,6 +99,16 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
       const storedM = getStoredModel();
       setSelectedModel(storedM);
+
+      // Fetch all models in background
+      setIsLoadingModels(true);
+      fetchOpenRouterModels()
+        .then(models => {
+          if (models.length > 0) {
+            setAllModels(models);
+          }
+        })
+        .finally(() => setIsLoadingModels(false));
 
       // Defaults for languages
       if (languages.includes('en')) {
@@ -96,8 +127,23 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       setTranslationError('');
       setIsTranslating(false);
       isAbortedRef.current = false;
+      setModelSearch('');
     }
   }, [isOpen, languages, preselectedTargetLang]);
+
+  // Dynamically filter models based on modelSearch query
+  const filteredModels = useMemo(() => {
+    const q = modelSearch.trim().toLowerCase();
+    if (!q) {
+      const popularIds = new Set(POPULAR_MODELS.map(m => m.id));
+      const popularList = POPULAR_MODELS;
+      const otherList = allModels.filter(m => !popularIds.has(m.id));
+      return [...popularList, ...otherList];
+    }
+    return allModels.filter(
+      m => m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q)
+    );
+  }, [allModels, modelSearch]);
 
   // Keys that qualify for translation
   const eligibleItems = items.filter(item => {
@@ -155,7 +201,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     isAbortedRef.current = false;
     setProgress({ current: 0, total: eligibleItems.length });
 
-    // Save key
+    // Save key & model
     setStoredApiKey(apiKey);
     setStoredModel(selectedModel);
 
@@ -221,27 +267,15 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !isTranslating && !open && onClose()}>
-      <DialogContent className="max-w-md sm:max-w-lg">
+      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Sparkles className="size-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <span>AI Auto-Translate</span>
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-                  OpenRouter BYOK
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Translate missing keys automatically with variable protection ({'{name}'}, %s).
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle>AI Auto-Translate (OpenRouter)</DialogTitle>
+          <DialogDescription>
+            Translate missing keys automatically with variable preservation ({'{name}'}, %s).
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2 text-xs">
+        <div className="space-y-4 py-1 text-xs">
           {/* OpenRouter API Key Input */}
           <div className="space-y-1.5 bg-muted/40 p-3 rounded-lg border border-border">
             <div className="flex items-center justify-between">
@@ -310,72 +344,248 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             )}
           </div>
 
-          {/* Model Selection */}
+          {/* Model Selection via Custom Dropdown Menu with Search & Custom Model input */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-foreground flex items-center gap-1.5">
-              <Cpu className="size-3.5 text-muted-foreground" />
-              Translation Model
-            </label>
-            <select
-              value={selectedModel}
-              onChange={e => handleModelChange(e.target.value)}
-              disabled={isTranslating}
-              className="w-full h-8 px-2.5 bg-background border border-border rounded text-xs text-foreground focus:ring-1 focus:ring-primary outline-none"
-            >
-              {POPULAR_MODELS.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.id})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between text-xs">
+              <label className="font-semibold text-foreground flex items-center gap-1.5">
+                <Cpu className="size-3.5 text-muted-foreground" />
+                Translation Model
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomModelMode(!isCustomModelMode)}
+                  className="text-[11px] text-primary hover:underline cursor-pointer flex items-center gap-1 font-medium"
+                >
+                  <Sparkles className="size-3" />
+                  {isCustomModelMode ? 'Choose from list' : 'Enter Custom Model ID'}
+                </button>
+                <span className="text-[10px] text-muted-foreground font-mono hidden sm:inline truncate max-w-[140px]" title={selectedModel}>
+                  {selectedModel}
+                </span>
+              </div>
+            </div>
+
+            {isCustomModelMode ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  placeholder="e.g. meta-llama/llama-3.3-70b-instruct:free or anthropic/claude-3-7-sonnet"
+                  value={selectedModel}
+                  onChange={e => handleModelChange(e.target.value)}
+                  disabled={isTranslating}
+                  className="h-8 text-xs font-mono"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <DropdownMenu open={isModelDropdownOpen} onOpenChange={setIsModelDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isTranslating}
+                    className="w-full h-8 px-3 bg-background border border-border rounded-md text-xs text-foreground flex items-center justify-between hover:bg-muted/30 cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
+                  >
+                    <span className="truncate font-medium">
+                      {allModels.find(m => m.id === selectedModel)?.name || selectedModel}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {isLoadingModels && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
+                      <ChevronDown className="size-3.5 text-muted-foreground" />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[340px] max-h-80 overflow-hidden flex flex-col p-0"
+                >
+                  {/* Search Header inside Dropdown Menu */}
+                  <div
+                    className="p-2 border-b border-border bg-popover sticky top-0 z-10 shrink-0"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="relative flex items-center">
+                      <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                      <input
+                        type="text"
+                        value={modelSearch}
+                        onChange={e => setModelSearch(e.target.value)}
+                        onKeyDown={e => e.stopPropagation()}
+                        placeholder={`Search ${allModels.length}+ OpenRouter models...`}
+                        className="w-full h-7 pl-8 pr-7 bg-background border border-border rounded text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                        autoFocus
+                      />
+                      {modelSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setModelSearch('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Scrollable Model Items */}
+                  <div className="overflow-y-auto max-h-64 p-1 divide-y divide-border/20">
+                    {/* If user typed a custom model ID that doesn't match an existing model ID */}
+                    {modelSearch.trim() && !allModels.some(m => m.id.toLowerCase() === modelSearch.trim().toLowerCase()) && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleModelChange(modelSearch.trim());
+                          setIsModelDropdownOpen(false);
+                          setModelSearch('');
+                        }}
+                        className="flex items-center gap-2 p-2 cursor-pointer text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded mb-1 border border-dashed border-primary/40"
+                      >
+                        <Sparkles className="size-3.5 text-primary shrink-0" />
+                        <div className="truncate min-w-0">
+                          <span className="text-[11px] text-muted-foreground">Select custom model:</span>{' '}
+                          <span className="font-mono font-bold text-primary underline">{modelSearch.trim()}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    )}
+
+                    {filteredModels.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-muted-foreground">
+                        No models matching "{modelSearch}".
+                      </div>
+                    ) : (
+                      filteredModels.map(m => {
+                        const isSelected = m.id === selectedModel;
+                        const isPopular = POPULAR_MODELS.some(p => p.id === m.id);
+
+                        return (
+                          <DropdownMenuItem
+                            key={m.id}
+                            onClick={() => {
+                              handleModelChange(m.id);
+                              setIsModelDropdownOpen(false);
+                              setModelSearch('');
+                            }}
+                            className={`flex items-start justify-between gap-2 p-2 cursor-pointer text-xs rounded transition-colors ${
+                              isSelected ? 'bg-accent font-medium' : ''
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-foreground flex items-center gap-1.5">
+                                <span className="truncate">{m.name}</span>
+                                {m.id === 'google/gemini-2.5-flash' && (
+                                  <span className="text-[9px] bg-primary/10 text-primary px-1 py-0.2 rounded font-mono shrink-0">
+                                    Recommended
+                                  </span>
+                                )}
+                                {isPopular && m.id !== 'google/gemini-2.5-flash' && (
+                                  <span className="text-[9px] bg-muted text-muted-foreground px-1 py-0.2 rounded font-mono shrink-0">
+                                    Popular
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+                                {m.id}
+                              </p>
+                              {m.description && (
+                                <p className="text-[10px] text-muted-foreground/80 line-clamp-1 mt-0.5">
+                                  {m.description}
+                                </p>
+                              )}
+                            </div>
+                            {isSelected && <Check className="size-3.5 text-primary shrink-0 mt-0.5" />}
+                          </DropdownMenuItem>
+                        );
+                      })
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
-          {/* Languages Configuration */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Languages Configuration via Custom Dropdown Menus */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+            {/* Source Language */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1">
+              <label className="font-semibold text-foreground flex items-center gap-1 text-xs">
                 <Globe className="size-3 text-muted-foreground" />
                 Source Language
               </label>
-              <select
-                value={sourceLang}
-                onChange={e => setSourceLang(e.target.value)}
-                disabled={isTranslating}
-                className="w-full h-8 px-2 bg-background border border-border rounded text-xs text-foreground outline-none"
-              >
-                {languages.map(l => (
-                  <option key={l} value={l}>
-                    {l.toUpperCase()} — {getLanguageDisplayName(l)}
-                  </option>
-                ))}
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isTranslating}
+                    className="w-full h-8 px-2.5 bg-background border border-border rounded-md text-xs text-foreground flex items-center justify-between hover:bg-muted/30 cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
+                  >
+                    <span className="truncate">
+                      <strong className="uppercase">{sourceLang}</strong> — {getLanguageDisplayName(sourceLang)}
+                    </span>
+                    <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-1.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 max-h-56 overflow-y-auto">
+                  <DropdownMenuLabel className="text-[11px] text-muted-foreground">Source Language</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {languages.map(l => (
+                    <DropdownMenuItem
+                      key={l}
+                      onClick={() => setSourceLang(l)}
+                      className="flex items-center justify-between text-xs cursor-pointer"
+                    >
+                      <span>
+                        <strong className="uppercase">{l}</strong> — {getLanguageDisplayName(l)}
+                      </span>
+                      {sourceLang === l && <Check className="size-3.5 text-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
+            {/* Target Language */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1">
+              <label className="font-semibold text-foreground flex items-center gap-1 text-xs">
                 <Globe className="size-3 text-primary" />
                 Target Language
               </label>
-              <select
-                value={targetLang}
-                onChange={e => setTargetLang(e.target.value)}
-                disabled={isTranslating}
-                className="w-full h-8 px-2 bg-background border border-border rounded text-xs text-foreground outline-none"
-              >
-                {languages
-                  .filter(l => l !== sourceLang)
-                  .map(l => (
-                    <option key={l} value={l}>
-                      {l.toUpperCase()} — {getLanguageDisplayName(l)}
-                    </option>
-                  ))}
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isTranslating}
+                    className="w-full h-8 px-2.5 bg-background border border-border rounded-md text-xs text-foreground flex items-center justify-between hover:bg-muted/30 cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
+                  >
+                    <span className="truncate">
+                      <strong className="uppercase">{targetLang}</strong> — {getLanguageDisplayName(targetLang)}
+                    </span>
+                    <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-1.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 max-h-56 overflow-y-auto">
+                  <DropdownMenuLabel className="text-[11px] text-muted-foreground">Target Language</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {languages
+                    .filter(l => l !== sourceLang)
+                    .map(l => (
+                      <DropdownMenuItem
+                        key={l}
+                        onClick={() => setTargetLang(l)}
+                        className="flex items-center justify-between text-xs cursor-pointer"
+                      >
+                        <span>
+                          <strong className="uppercase">{l}</strong> — {getLanguageDisplayName(l)}
+                        </span>
+                        {targetLang === l && <Check className="size-3.5 text-primary" />}
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
           {/* Translation Scope */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-foreground flex items-center gap-1.5">
+            <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
               <Settings2 className="size-3.5 text-muted-foreground" />
               Translation Scope
             </label>
@@ -384,14 +594,14 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 type="button"
                 onClick={() => setScope('missing')}
                 disabled={isTranslating}
-                className={`p-2 rounded-md border text-left cursor-pointer transition-colors ${
+                className={`p-2.5 rounded-md border text-left cursor-pointer transition-colors ${
                   scope === 'missing'
-                    ? 'border-primary bg-primary/10 text-primary font-semibold'
-                    : 'border-border hover:bg-accent text-muted-foreground'
+                    ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                    : 'border-border hover:bg-muted/40 text-foreground'
                 }`}
               >
-                <div className="text-xs">Only Missing Keys</div>
-                <div className="text-[10px] opacity-80 mt-0.5">
+                <div className="text-xs font-semibold">Only Missing Keys</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
                   Translate {items.filter(i => (i[sourceLang] || '').trim() && !(i[targetLang] || '').trim()).length} empty cells
                 </div>
               </button>
@@ -400,14 +610,14 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 type="button"
                 onClick={() => setScope('all')}
                 disabled={isTranslating}
-                className={`p-2 rounded-md border text-left cursor-pointer transition-colors ${
+                className={`p-2.5 rounded-md border text-left cursor-pointer transition-colors ${
                   scope === 'all'
-                    ? 'border-primary bg-primary/10 text-primary font-semibold'
-                    : 'border-border hover:bg-accent text-muted-foreground'
+                    ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                    : 'border-border hover:bg-muted/40 text-foreground'
                 }`}
               >
-                <div className="text-xs">All Keys (Overwrite)</div>
-                <div className="text-[10px] opacity-80 mt-0.5">
+                <div className="text-xs font-semibold">All Keys (Overwrite)</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
                   Translate all {items.filter(i => (i[sourceLang] || '').trim()).length} keys
                 </div>
               </button>
@@ -445,14 +655,14 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
           {isTranslating ? (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleCancel}
-              className="text-xs"
+              className="flex-1 sm:flex-none text-xs h-8"
             >
               Cancel Translation
             </Button>
@@ -460,10 +670,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             <>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={onClose}
-                className="text-xs"
+                className="flex-1 sm:flex-none text-xs h-8"
               >
                 Close
               </Button>
@@ -472,10 +682,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 size="sm"
                 onClick={handleStartTranslation}
                 disabled={eligibleItems.length === 0 || !apiKey.trim()}
-                className="gap-1.5 font-semibold text-xs shadow-xs"
+                className="flex-1 sm:flex-none gap-1.5 font-semibold text-xs h-8 shadow-xs"
               >
                 <Sparkles className="size-3.5" />
-                Translate {eligibleItems.length} Keys
+                <span>Translate {eligibleItems.length} Keys</span>
               </Button>
             </>
           )}

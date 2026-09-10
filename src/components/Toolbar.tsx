@@ -78,49 +78,47 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenCommandPalette,
 }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-card border-b border-border text-xs select-none">
-      {/* Search & Custom Filter Controls */}
-      <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+    <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 bg-card border-b border-border text-xs select-none overflow-x-auto overflow-y-hidden shrink-0 h-9 min-h-[36px] max-h-[36px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* Left: Search & Filter Controls */}
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        {/* Compact Search Input */}
+        <div className="relative w-32 sm:w-44 lg:w-56 shrink-0">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
           <Input
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
-            placeholder="Search keys, English, or မြန်မာ..."
-            className="pl-8 pr-7 h-8 text-xs bg-background"
+            placeholder="Search keys..."
+            className="pl-7 pr-6 h-7 text-xs bg-background"
             disabled={!hasItems}
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
             >
-              <X className="size-3" />
+              <X className="size-2.5" />
             </button>
           )}
         </div>
 
-        {/* Custom Namespace Dropdown Menu (No Native Select) */}
+        {/* Namespace Dropdown */}
         {hasItems && namespaces.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1.5 text-xs font-normal"
+                className="h-7 px-1.5 sm:px-2 gap-1 text-[11px] font-normal shrink-0"
               >
-                <Filter className="size-3.5 text-muted-foreground" />
-                <span>
-                  {selectedNamespace === 'all'
-                    ? 'All Namespaces'
-                    : `Namespace: ${selectedNamespace}`}
+                <Filter className="size-3 text-muted-foreground" />
+                <span className="max-w-[65px] sm:max-w-[85px] truncate">
+                  {selectedNamespace === 'all' ? 'All Namespaces' : selectedNamespace}
                 </span>
-                <ChevronDown className="size-3 text-muted-foreground ml-1" />
+                <ChevronDown className="size-2.5 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 max-h-72 overflow-y-auto">
-              <DropdownMenuLabel>Filter by Namespace</DropdownMenuLabel>
+            <DropdownMenuContent align="start" className="w-52 max-h-64 overflow-y-auto">
+              <DropdownMenuLabel className="text-[11px]">Filter by Namespace</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={selectedNamespace}
@@ -143,46 +141,46 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </DropdownMenu>
         )}
 
-        {/* Custom Filter Toggle Group */}
+        {/* Compact Filter Segmented Group */}
         {hasItems && (
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-muted/40">
+          <div className="flex items-center rounded border border-border p-0.5 bg-muted/40 h-7 shrink-0">
             <button
               onClick={() => onFilterChange('all')}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  ? 'bg-background text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              All Keys
+              All
             </button>
             <button
               onClick={() => onFilterChange('missing')}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
                 activeFilter === 'missing'
-                  ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold shadow-xs'
+                  ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Missing Only
+              Missing
             </button>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-1.5">
+      {/* Right: Compact Action Buttons */}
+      <div className="flex items-center gap-1 shrink-0">
         {/* Undo & Redo */}
-        <div className="flex items-center gap-0.5 border-r border-border pr-1 mr-0.5">
+        <div className="flex items-center border-r border-border pr-1 mr-0.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={onUndo}
             disabled={!canUndo}
             className="size-7 cursor-pointer text-muted-foreground hover:text-foreground disabled:opacity-30"
-            title="Undo (Ctrl+Z / Cmd+Z)"
+            title="Undo (Ctrl+Z)"
           >
-            <Undo2 className="size-3.5" />
+            <Undo2 className="size-3" />
           </Button>
           <Button
             variant="ghost"
@@ -190,9 +188,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onClick={onRedo}
             disabled={!canRedo}
             className="size-7 cursor-pointer text-muted-foreground hover:text-foreground disabled:opacity-30"
-            title="Redo (Ctrl+Y / Cmd+Shift+Z)"
+            title="Redo (Ctrl+Y)"
           >
-            <Redo2 className="size-3.5" />
+            <Redo2 className="size-3" />
           </Button>
         </div>
 
@@ -203,56 +201,58 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             size="sm"
             onClick={onOpenAiTranslate}
             disabled={!hasItems}
-            className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/10 shadow-2xs font-semibold"
+            className="gap-1 text-[11px] h-7 px-2 text-primary border-primary/30 hover:bg-primary/10 shadow-2xs font-semibold shrink-0"
             title="Auto-translate missing keys with AI (OpenRouter BYOK)"
           >
-            <Sparkles className="size-3.5 text-primary" />
-            <span className="hidden md:inline">AI Translate</span>
+            <Sparkles className="size-3 text-primary" />
+            <span className="hidden sm:inline">AI Translate</span>
+            <span className="sm:hidden">AI</span>
           </Button>
         )}
 
-        {/* Command Palette badge */}
+        {/* Command Palette button - matching exact h-7 height */}
         {onOpenCommandPalette && (
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onOpenCommandPalette}
-            className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded bg-muted/60 hover:bg-muted border border-border text-[11px] text-muted-foreground cursor-pointer transition-colors"
-            title="Open Command Palette (Ctrl+K / Cmd+K)"
+            className="hidden md:flex items-center gap-1.5 h-7 px-2 text-[11px] font-normal text-muted-foreground hover:text-foreground shrink-0 shadow-2xs"
+            title="Command Palette (Ctrl+K / Cmd+K)"
           >
-            <Command className="size-3" />
-            <kbd className="font-mono text-[10px]">⌘K</kbd>
-          </button>
+            <Command className="size-3 text-muted-foreground" />
+            <kbd className="font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
+          </Button>
         )}
 
         <Button
           variant="outline"
           size="sm"
           onClick={onOpenAddKey}
-          className="gap-1.5 text-xs h-8"
+          className="gap-1 text-[11px] h-7 px-2 shrink-0"
         >
-          <Plus className="size-3.5" />
-          <span className="hidden sm:inline">Add</span> Key
+          <Plus className="size-3" />
+          <span>Key</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
           onClick={onOpenAddLanguage}
-          className="gap-1.5 text-xs h-8"
+          className="gap-1 text-[11px] h-7 px-2 shrink-0"
           disabled={!hasItems}
         >
-          <Globe className="size-3.5" />
-          <span className="hidden sm:inline">Add</span> Language
+          <Globe className="size-3" />
+          <span className="hidden sm:inline">Lang</span>
         </Button>
 
         <Button
           variant="outline"
           size="sm"
           onClick={onOpenImport}
-          className="gap-1.5 text-xs h-8 font-medium text-primary border-primary/30 hover:bg-primary/10"
+          className="gap-1 text-[11px] h-7 px-2 font-medium text-primary border-primary/30 hover:bg-primary/10 shrink-0"
         >
-          <Upload className="size-3.5" />
-          Import
+          <Upload className="size-3" />
+          <span className="hidden sm:inline">Import</span>
         </Button>
 
         {onOpenSaveProject && (
@@ -261,11 +261,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             size="sm"
             onClick={onOpenSaveProject}
             disabled={!hasItems}
-            className="gap-1.5 text-xs h-8 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+            className="hidden md:flex gap-1 text-[11px] h-7 px-2 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 shrink-0"
             title="Save complete project as .jsonlink"
           >
-            <Save className="size-3.5" />
-            <span className="hidden sm:inline">Save</span> .jsonlink
+            <Save className="size-3" />
+            <span>.jsonlink</span>
           </Button>
         )}
 
@@ -274,35 +274,61 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           size="sm"
           onClick={onOpenExport}
           disabled={!hasItems}
-          className="gap-1.5 text-xs h-8 font-semibold shadow-xs"
+          className="gap-1 text-[11px] h-7 px-2 sm:px-2.5 font-semibold shadow-xs shrink-0"
         >
-          <Download className="size-3.5" />
-          Export
+          <Download className="size-3" />
+          <span>Export</span>
         </Button>
 
         {/* More Actions Custom Dropdown Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreVertical className="size-4 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="size-7 shrink-0">
+              <MoreVertical className="size-3.5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Data Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer">
+            {/* Mobile shortcuts */}
+            {onOpenCommandPalette && (
+              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs md:hidden">
+                <Command className="size-3.5 text-muted-foreground" />
+                <span>Command Palette</span>
+                <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
+              </DropdownMenuItem>
+            )}
+            {onOpenSaveProject && (
+              <DropdownMenuItem
+                onClick={onOpenSaveProject}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs md:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+              >
+                <Save className="size-3.5" />
+                <span>Save Project (.jsonlink)</span>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <Globe className="size-3.5 text-muted-foreground" />
+              <span>Add Language Column</span>
+            </DropdownMenuItem>
+            {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
+              <DropdownMenuSeparator className="md:hidden" />
+            )}
+
+            <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
               <Sparkles className="size-3.5 text-primary" />
-              Load Sample Data (30 keys)
+              Load Sample Data (32 keys)
             </DropdownMenuItem>
             {hasItems && (
               <>
-                <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
                   <RotateCcw className="size-3.5 text-muted-foreground" />
                   Reset to Sample
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onClearAll}
-                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                  className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
                 >
                   <Trash className="size-3.5" />
                   Clear All Rows

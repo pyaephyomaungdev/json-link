@@ -19,6 +19,7 @@ interface ExitConfirmDialogProps {
   items: TranslationItem[];
   languages: string[];
   onConfirmExit: () => void;
+  defaultProjectName?: string;
 }
 
 export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
@@ -27,8 +28,15 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
   items,
   languages,
   onConfirmExit,
+  defaultProjectName,
 }) => {
-  const [projectName, setProjectName] = useState('my-translations');
+  const [projectName, setProjectName] = useState(defaultProjectName || 'my-translations');
+
+  React.useEffect(() => {
+    if (defaultProjectName) {
+      setProjectName(defaultProjectName);
+    }
+  }, [defaultProjectName, open]);
 
   const handleSaveAndExit = () => {
     const filename = projectName.trim() || 'my-translations';
@@ -44,7 +52,7 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400 mb-1">
             <div className="p-2 rounded-lg bg-amber-500/10">

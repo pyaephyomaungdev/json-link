@@ -246,3 +246,124 @@ export function parseSpreadsheet(data: ArrayBuffer): { items: TranslationItem[];
 
   return { items, languages };
 }
+
+/**
+ * Parses Android strings.xml content into { [langCode]: { key: value } }
+ * Matches <string name="key">value</string>
+ */
+export function parseAndroidXml(
+  content: string,
+  filename: string
+): { [langCode: string]: Record<string, string> } {
+  const result: Record<string, string> = {};
+  const regex = /<string\s+name="([^"]+)">([\s\S]*?)<\/string>/gi;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    const key = match[1].trim();
+    let val = match[2]
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/\\'/g, "'")
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, '\n');
+    result[key] = val;
+  }
+
+  const lang = inferLanguageFromFilename(filename);
+  return { [lang]: result };
+}
+
+/**
+ * Parses iOS Localizable.strings content into { [langCode]: { key: value } }
+ * Matches "key" = "value";
+ */
+export function parseIosStrings(
+  content: string,
+  filename: string
+): { [langCode: string]: Record<string, string> } {
+  const result: Record<string, string> = {};
+  // Strip block comments /* ... */ and line comments // ...
+  const cleanContent = content
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*/g, '');
+
+  const regex = /"([^"\\]*(?:\\.[^"\\]*)*)"\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*;/g;
+  let match;
+  while ((match = regex.exec(cleanContent)) !== null) {
+    const key = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+    const val = match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+    result[key] = val;
+  }
+
+  const lang = inferLanguageFromFilename(filename);
+  return { [lang]: result };
+}
+
+/**
+ * Parses simple or indented YAML key-value pairs into { [langCode]: { key: value } }
+ */
+export function parseYamlFile(
+  content: string,
+  filename: string
+): { [langCode: string]: Record<string, string> } {
+  const lines = content.split('\n');
+  const flat: Record<string, string> = {};
+  const stack: { indent: number; key: string }[] = [];
+
+  for (const rawLine of lines) {
+    // skip comments and empty lines
+    if (/^\s*#/.test(rawLine) || !rawLine.trim()) continue;
+
+    const indent = rawLine.search(/\S/);
+    const trimmed = rawLine.trim();
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx === -1) continue;
+
+    const keyPart = trimmed.slice(0, colonIdx).trim().replace(/^['"]|['"]$/g, '');
+    let valPart = trimmed.slice(colonIdx + 1).trim();
+
+    // pop stack
+    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+
+    if (valPart === '' || valPart === '|' || valPart === '>') {
+      // It's a parent key
+      stack.push({ indent, key: keyPart });
+    } else {
+      // Strip quotes
+      if (
+        (valPart.startsWith('"') && valPart.endsWith('"')) ||
+        (valPart.startsWith("'") && valPart.endsWith("'"))
+      ) {
+        valPart = valPart.slice(1, -1);
+      }
+      const fullKey = [...stack.map(s => s.key), keyPart].join('.');
+      flat[fullKey] = valPart;
+    }
+  }
+
+  const inferred = inferLanguageFromFilename(filename);
+  // Check if all keys start with a single top-level lang code (e.g. en.auth.login)
+  const allKeys = Object.keys(flat);
+  if (allKeys.length > 0) {
+    const firstSegment = allKeys[0].split('.')[0];
+    if (
+      /^[a-z]{2}(-[a-z]{2})?$/i.test(firstSegment) &&
+      allKeys.every(k => k.startsWith(firstSegment + '.'))
+    ) {
+      const stripped: Record<string, string> = {};
+      const prefixLen = firstSegment.length + 1;
+      for (const k of allKeys) {
+        stripped[k.slice(prefixLen)] = flat[k];
+      }
+      return { [firstSegment.toLowerCase()]: stripped };
+    }
+  }
+
+  return { [inferred]: flat };
+}

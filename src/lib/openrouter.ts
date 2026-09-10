@@ -75,6 +75,56 @@ export function setStoredModel(model: string): void {
   }
 }
 
+const STORAGE_KEY_MODELS_CACHE = 'jsonlink_openrouter_models_cache';
+
+/**
+ * Fetches all available models directly from OpenRouter API
+ */
+export async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models');
+    if (!res.ok) throw new Error('Failed to fetch OpenRouter models');
+    const json = await res.json();
+    if (Array.isArray(json?.data)) {
+      const models: OpenRouterModel[] = json.data.map((m: any) => ({
+        id: m.id,
+        name: m.name || m.id,
+        description: m.description || '',
+      }));
+
+      // Sort alphabetically by name
+      models.sort((a, b) => a.name.localeCompare(b.name));
+
+      try {
+        localStorage.setItem(STORAGE_KEY_MODELS_CACHE, JSON.stringify(models));
+      } catch {}
+
+      return models;
+    }
+  } catch (err) {
+    console.warn('OpenRouter models fetch failed, using cached/popular models:', err);
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_MODELS_CACHE);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+  }
+  return POPULAR_MODELS;
+}
+
+export function getCachedOpenRouterModels(): OpenRouterModel[] {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY_MODELS_CACHE);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return POPULAR_MODELS;
+}
+
 export interface TranslationRequestItem {
   key: string;
   sourceText: string;

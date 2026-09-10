@@ -19,6 +19,7 @@ import {
   PinOff,
   AlertTriangle,
   Sparkles,
+  Pencil,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ interface SpreadsheetTableProps {
   onAddRow: () => void;
   onOpenImport: () => void;
   onDeleteLanguage?: (lang: string) => void;
+  onRenameLanguage?: (oldLang: string, newLang: string) => void;
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
   onOpenAiTranslate?: (targetLang?: string) => void;
@@ -77,6 +79,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onAddRow,
   onOpenImport,
   onDeleteLanguage,
+  onRenameLanguage,
   onDuplicateRow,
   onBatchUpdate,
   onOpenAiTranslate,
@@ -454,7 +457,19 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded shrink-0">
                           {getColumnLetter(idx + 1)}
                         </span>
-                        <span className="font-bold text-foreground tracking-wide shrink-0">
+                        <span
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            if (onRenameLanguage) {
+                              const newName = window.prompt(`Rename language column "${lang.toUpperCase()}":`, lang);
+                              if (newName && newName.trim() && newName.trim().toLowerCase() !== lang.toLowerCase()) {
+                                onRenameLanguage(lang, newName.trim().toLowerCase());
+                              }
+                            }
+                          }}
+                          className="font-bold text-foreground tracking-wide shrink-0 cursor-pointer hover:underline"
+                          title="Double-click to rename language"
+                        >
                           {lang.toUpperCase()}
                         </span>
                         <span className="text-[11px] font-normal text-muted-foreground truncate">
@@ -484,6 +499,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-52">
                           <DropdownMenuLabel>Column: {lang.toUpperCase()}</DropdownMenuLabel>
+                          {onRenameLanguage && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const newName = window.prompt(`Rename language column "${lang.toUpperCase()}":`, lang);
+                                if (newName && newName.trim() && newName.trim().toLowerCase() !== lang.toLowerCase()) {
+                                  onRenameLanguage(lang, newName.trim().toLowerCase());
+                                }
+                              }}
+                              className="gap-2 cursor-pointer text-xs"
+                            >
+                              <Pencil className="size-3.5 text-primary" />
+                              <span>Rename column ({lang.toUpperCase()})</span>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => setFrozenCount(isLangFrozen ? idx + 1 : idx + 2)}
                             className="gap-2 cursor-pointer text-xs"
@@ -838,22 +867,22 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       </div>
 
       {/* Excel Bottom Status Bar */}
-      <div className="flex items-center justify-between px-4 py-1.5 bg-[#f4f4f5] dark:bg-[#18181b] text-xs border-t border-border select-none">
-        <div className="flex items-center gap-3">
-          <span className="font-medium text-foreground">
-            Total: <span className="font-bold">{items.length.toLocaleString()}</span> keys
+      <div className="flex items-center justify-between px-2.5 sm:px-4 py-1 sm:py-1.5 bg-[#f4f4f5] dark:bg-[#18181b] text-[11px] sm:text-xs border-t border-border select-none shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <span className="font-medium text-foreground whitespace-nowrap">
+            <span className="font-bold">{items.length.toLocaleString()}</span> keys
           </span>
           <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">
-            Languages ({languages.length}):{' '}
+          <span className="text-muted-foreground whitespace-nowrap">
+            <span className="hidden sm:inline">Languages ({languages.length}): </span>
             <span className="font-semibold text-foreground">
               {languages.map(l => l.toUpperCase()).join(', ')}
             </span>
           </span>
           <span className="text-muted-foreground">•</span>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
+          <div className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
             <Pin className="size-3 text-primary shrink-0" />
-            <span>Freeze:</span>
+            <span className="hidden sm:inline">Freeze:</span>
             <button
               onClick={() => setFrozenCount(safeFrozenCount > 0 ? 0 : 1)}
               className="font-medium text-foreground hover:text-primary hover:underline cursor-pointer"
@@ -862,7 +891,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               {safeFrozenCount === 0
                 ? 'None'
                 : safeFrozenCount === 1
-                ? 'Key (Col A)'
+                ? 'Key'
                 : `Key + ${languages.slice(0, safeFrozenCount - 1).map(l => l.toUpperCase()).join(', ')}`}
             </button>
             {safeFrozenCount > 0 && (
@@ -871,7 +900,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 className="text-[10px] text-muted-foreground hover:text-destructive ml-0.5 cursor-pointer"
                 title="Unfreeze all columns"
               >
-                (Unfreeze)
+                (✕)
               </button>
             )}
           </div>
@@ -882,16 +911,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
           <button
             onClick={onAddRow}
-            className="flex items-center gap-1 text-primary hover:underline font-medium cursor-pointer"
+            className="flex items-center gap-1 text-primary hover:underline font-semibold cursor-pointer whitespace-nowrap text-[11px] sm:text-xs"
           >
             <Plus className="size-3" />
-            Add Row
+            <span>Add Row</span>
           </button>
-          <span className="text-muted-foreground">•</span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-muted-foreground hidden md:inline">•</span>
+          <span className="text-[11px] text-muted-foreground hidden md:inline whitespace-nowrap">
             Double click cell to edit • Press Enter to save
           </span>
         </div>

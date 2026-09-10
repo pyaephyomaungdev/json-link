@@ -3,7 +3,7 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 export interface CommandItem {
   id: string;
@@ -70,10 +70,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-xl p-0 gap-0 overflow-hidden border border-border shadow-2xl bg-card">
+      <DialogContent hideCloseButton className="max-w-xl p-0 gap-0 overflow-hidden border border-border shadow-2xl bg-card">
         {/* Search Input */}
-        <div className="flex items-center px-3.5 py-3 border-b border-border bg-background">
-          <Search className="size-4 text-muted-foreground mr-2 shrink-0" />
+        <div className="flex items-center px-3.5 py-3 border-b border-border bg-background gap-2">
+          <Search className="size-4 text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -83,9 +83,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             placeholder="Type a command or search action..."
             className="w-full bg-transparent border-none text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
-            ESC
-          </kbd>
+          <div className="flex items-center gap-2 shrink-0">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border select-none">
+              ESC
+            </kbd>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+              title="Close (Esc)"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Results List */}

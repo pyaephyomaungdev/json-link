@@ -9,7 +9,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { UploadCloud, FileText, CheckCircle2, AlertTriangle, FileSpreadsheet, X } from 'lucide-react';
-import { parseJsonFile, parseSpreadsheet, mergeTranslations } from '@/lib/parser';
+import {
+  parseJsonFile,
+  parseSpreadsheet,
+  parseAndroidXml,
+  parseIosStrings,
+  parseYamlFile,
+  mergeTranslations,
+} from '@/lib/parser';
 import { TranslationItem } from '@/types';
 
 interface ImportModalProps {
@@ -23,7 +30,7 @@ interface ImportModalProps {
 interface LoadedFile {
   name: string;
   size: number;
-  type: 'json' | 'excel' | 'csv';
+  type: 'json' | 'excel' | 'csv' | 'yaml' | 'xml' | 'strings';
   data: { [lang: string]: Record<string, string> } | { items: TranslationItem[]; languages: string[] };
 }
 
@@ -83,8 +90,35 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             type: ext === 'csv' ? 'csv' : 'excel',
             data: parsed,
           });
+        } else if (ext === 'xml') {
+          const text = await file.text();
+          const parsed = parseAndroidXml(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'xml',
+            data: parsed,
+          });
+        } else if (ext === 'strings') {
+          const text = await file.text();
+          const parsed = parseIosStrings(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'strings',
+            data: parsed,
+          });
+        } else if (ext === 'yaml' || ext === 'yml') {
+          const text = await file.text();
+          const parsed = parseYamlFile(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'yaml',
+            data: parsed,
+          });
         } else {
-          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, or .csv`);
+          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, .csv, .yaml, .xml, or .strings`);
         }
       }
 
@@ -121,7 +155,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     let baseLanguages = importMode === 'replace' ? [] : [...currentLanguages];
 
     for (const file of loadedFiles) {
-      if (file.type === 'json') {
+      if (
+        file.type === 'json' ||
+        file.type === 'yaml' ||
+        file.type === 'xml' ||
+        file.type === 'strings'
+      ) {
         const jsonData = file.data as { [lang: string]: Record<string, string> };
         const res = mergeTranslations(baseItems, baseLanguages, jsonData);
         baseItems = res.items;
@@ -151,7 +190,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Import Translations</DialogTitle>
           <DialogDescription>
@@ -180,7 +219,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
-              accept=".json,.jsonlink,.xlsx,.xls,.csv"
+              accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings"
               className="hidden"
             />
             <div className="p-3 rounded-full bg-primary/10 text-primary">
@@ -191,7 +230,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Click to browse or drop your translation files here
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Supports <span className="font-mono text-primary font-semibold">.jsonlink</span>, JSON files, Excel (.xlsx), or CSV files
+                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, Excel, CSV, YAML, Android XML, or iOS Strings
               </p>
             </div>
           </div>
@@ -279,17 +318,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleOpenChange(false)} className="flex-1 sm:flex-none text-xs h-8">
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleApply}
             disabled={loadedFiles.length === 0 || isProcessing}
-            className="gap-1.5"
+            className="flex-1 sm:flex-none gap-1.5 text-xs h-8 font-semibold shadow-xs"
           >
-            <CheckCircle2 className="size-4" />
-            Apply Import
+            <CheckCircle2 className="size-3.5" />
+            <span>Apply Import</span>
           </Button>
         </DialogFooter>
       </DialogContent>

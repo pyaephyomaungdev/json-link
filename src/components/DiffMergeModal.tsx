@@ -48,10 +48,10 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <GitMerge className="size-4" />
             </div>
             <div>
@@ -66,48 +66,48 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
         </DialogHeader>
 
         {/* Summary Stats Badges */}
-        <div className="grid grid-cols-3 gap-3 my-2 text-xs">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-3 my-2 text-xs">
           <div
             onClick={() => setSelectedTab('new')}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all ${
               selectedTab === 'new'
                 ? 'border-emerald-500 bg-emerald-500/10'
                 : 'border-border bg-muted/40 hover:bg-muted/70'
             }`}
           >
-            <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-              <PlusCircle className="size-4" />
-              <span>+{diff.newKeys.length} New Keys</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs">
+              <PlusCircle className="size-3.5 sm:size-4 shrink-0" />
+              <span className="truncate">+{diff.newKeys.length} New</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Keys not in current project
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+              Keys not in current
             </p>
           </div>
 
           <div
             onClick={() => setSelectedTab('modified')}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all ${
               selectedTab === 'modified'
                 ? 'border-amber-500 bg-amber-500/10'
                 : 'border-border bg-muted/40 hover:bg-muted/70'
             }`}
           >
-            <div className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
-              <RefreshCw className="size-4" />
-              <span>~{diff.modifiedKeys.length} Modified</span>
+            <div className="flex items-center gap-1 sm:gap-1.5 font-semibold text-amber-600 dark:text-amber-400 text-[11px] sm:text-xs">
+              <RefreshCw className="size-3.5 sm:size-4 shrink-0" />
+              <span className="truncate">~{diff.modifiedKeys.length} Modified</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Keys with altered translations
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+              Altered translations
             </p>
           </div>
 
-          <div className="p-3 rounded-lg border border-border bg-muted/40">
-            <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
-              <CheckCircle2 className="size-4 text-primary" />
-              <span>={diff.unchangedCount} Unchanged</span>
+          <div className="p-2 sm:p-3 rounded-lg border border-border bg-muted/40">
+            <div className="flex items-center gap-1 sm:gap-1.5 font-semibold text-muted-foreground text-[11px] sm:text-xs">
+              <CheckCircle2 className="size-3.5 sm:size-4 text-primary shrink-0" />
+              <span className="truncate">={diff.unchangedCount} Same</span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Identical in both sources
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+              Identical in both
             </p>
           </div>
         </div>
@@ -187,8 +187,8 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <DialogFooter className="gap-2 sm:gap-2 flex-col sm:flex-row">
-          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">
+        <DialogFooter className="gap-2 flex flex-wrap items-center justify-end">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs h-8">
             Cancel
           </Button>
 
@@ -197,27 +197,27 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
             size="sm"
             onClick={() => onConfirmMerge('add-only')}
             disabled={diff.newKeys.length === 0}
-            className="text-xs"
+            className="text-xs h-8"
           >
-            Add Only New (+{diff.newKeys.length})
+            Add New (+{diff.newKeys.length})
           </Button>
 
           <Button
             variant="destructive"
             size="sm"
             onClick={() => onConfirmMerge('replace')}
-            className="text-xs"
+            className="text-xs h-8"
           >
-            Overwrite All
+            Overwrite
           </Button>
 
           <Button
             size="sm"
             onClick={() => onConfirmMerge('merge')}
-            className="gap-1.5 font-semibold text-xs shadow-xs"
+            className="gap-1.5 font-semibold text-xs shadow-xs h-8"
           >
             <GitMerge className="size-3.5" />
-            Merge & Update (Recommended)
+            <span>Merge & Update</span>
           </Button>
         </DialogFooter>
       </DialogContent>

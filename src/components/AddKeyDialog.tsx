@@ -61,7 +61,7 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Add New Translation Key</DialogTitle>
           <DialogDescription>
@@ -110,15 +110,19 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
             ))}
           </div>
 
-          <DialogFooter className="mt-2">
+          <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => onOpenChange(false)}
+              className="flex-1 sm:flex-none text-xs h-8"
             >
               Cancel
             </Button>
-            <Button type="submit">Add Key</Button>
+            <Button type="submit" size="sm" className="flex-1 sm:flex-none text-xs h-8">
+              Add Key
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

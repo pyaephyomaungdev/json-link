@@ -13,7 +13,14 @@ import { AiTranslateModal } from '@/components/AiTranslateModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { Logo } from '@/components/Logo';
-import { parseJsonFile, parseSpreadsheet, mergeTranslations } from '@/lib/parser';
+import {
+  parseJsonFile,
+  parseSpreadsheet,
+  parseAndroidXml,
+  parseIosStrings,
+  parseYamlFile,
+  mergeTranslations,
+} from '@/lib/parser';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -31,6 +38,7 @@ import {
   Undo2,
   Redo2,
   Save,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -47,6 +55,9 @@ export function App() {
   } = useHistory([]);
 
   const [languages, setLanguages] = useState<string[]>(['en', 'my']);
+  const [projectName, setProjectName] = useState<string>('translations');
+  const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
+  const projectNameInputRef = useRef<HTMLInputElement>(null);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,6 +148,7 @@ export function App() {
   // Reset to empty home screen when exit confirmed
   const handleConfirmExit = () => {
     setItemsWithoutHistory([]);
+    setProjectName('translations');
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
@@ -241,6 +253,14 @@ export function App() {
     let incomingLanguages: string[] = [];
 
     try {
+      if (fileList.length > 0) {
+        const firstFile = fileList[0];
+        const baseName = firstFile.name.replace(/\.[^/.]+$/, '');
+        if (baseName) {
+          setProjectName(baseName);
+        }
+      }
+
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
         const ext = file.name.split('.').pop()?.toLowerCase();
@@ -265,6 +285,24 @@ export function App() {
               return acc;
             }, {} as Record<string, Record<string, string>>)
           );
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
+        } else if (ext === 'xml') {
+          const text = await file.text();
+          const parsed = parseAndroidXml(text, file.name);
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
+        } else if (ext === 'strings') {
+          const text = await file.text();
+          const parsed = parseIosStrings(text, file.name);
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
+        } else if (ext === 'yaml' || ext === 'yml') {
+          const text = await file.text();
+          const parsed = parseYamlFile(text, file.name);
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
           incomingLanguages = res.languages;
         }
@@ -373,6 +411,26 @@ export function App() {
     }
   };
 
+  const handleRenameLanguage = (oldLang: string, newLang: string) => {
+    const trimmedNew = newLang.trim().toLowerCase();
+    if (!trimmedNew || trimmedNew === oldLang.toLowerCase()) return;
+    if (languages.includes(trimmedNew)) {
+      alert(`Language column "${trimmedNew.toUpperCase()}" already exists.`);
+      return;
+    }
+    setLanguages(prev => prev.map(l => (l === oldLang ? trimmedNew : l)));
+    setItems(
+      items.map(item => {
+        const updated = { ...item };
+        if (oldLang in updated) {
+          updated[trimmedNew] = updated[oldLang];
+          delete updated[oldLang];
+        }
+        return updated;
+      })
+    );
+  };
+
   const handleAddKey = (newKey: string, values: Record<string, string>) => {
     const newItem: TranslationItem = { key: newKey };
     for (const lang of languages) {
@@ -408,6 +466,7 @@ export function App() {
     const sample = getInitialTranslations();
     setItemsWithoutHistory(sample.items);
     setLanguages(sample.languages);
+    setProjectName('sample-app');
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
@@ -522,40 +581,89 @@ export function App() {
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
       {/* Top MS Excel Ribbon Header: Edge-to-edge */}
-      <header className="border-b border-border bg-card px-4 h-12 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-border bg-card px-3 sm:px-4 h-12 flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none"
+            className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
             title={items.length > 0 ? "Return to Home (with Save prompt)" : "JSON Link"}
           >
             <Logo size="md" />
+          </button>
+
+          {/* Editable Project Name or Subtitle */}
+          {items.length > 0 ? (
+            <div className="flex items-center gap-1.5 ml-1 pl-2.5 border-l border-border">
+              {isEditingProjectName ? (
+                <input
+                  ref={projectNameInputRef}
+                  type="text"
+                  value={projectName}
+                  onChange={e => setProjectName(e.target.value)}
+                  onBlur={() => setIsEditingProjectName(false)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === 'Escape') {
+                      setIsEditingProjectName(false);
+                    }
+                  }}
+                  className="h-6 px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-32 sm:w-44 text-foreground shadow-sm"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  onClick={() => setIsEditingProjectName(true)}
+                  className="group flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                  title="Click to rename project"
+                >
+                  <span className="truncate max-w-[120px] sm:max-w-[200px]">{projectName}</span>
+                  <Pencil className="size-3 text-muted-foreground opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
+                </button>
+              )}
+            </div>
+          ) : (
             <span className="text-[10px] text-muted-foreground hidden lg:inline">
               — i18n Localization Spreadsheet
             </span>
-          </button>
+          )}
 
+          {/* Header Stats Badges */}
           {totalKeys > 0 && (
-            <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l border-border text-xs text-muted-foreground">
+            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground">
               <span className="flex items-center gap-1 font-medium text-foreground">
-                <Key className="size-3 text-primary" /> {totalKeys.toLocaleString()} keys
+                <Key className="size-3 text-primary shrink-0" /> {totalKeys.toLocaleString()} keys
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1">
-                <Globe className="size-3 text-emerald-600" /> {languages.map(l => l.toUpperCase()).join(', ')}
-              </span>
+              <button
+                onClick={() => setIsAddLanguageOpen(true)}
+                className="flex items-center gap-1 hover:text-foreground hover:bg-muted/70 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                title="Click to add or manage languages"
+              >
+                <Globe className="size-3 text-emerald-600 shrink-0" />
+                <span>{languages.map(l => l.toUpperCase()).join(', ')}</span>
+                <Plus className="size-2.5 ml-0.5 text-muted-foreground shrink-0" />
+              </button>
               {totalMissing > 0 ? (
                 <>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                    <AlertCircle className="size-3" /> {totalMissing} missing
-                  </span>
+                  <button
+                    onClick={() => setActiveFilter(activeFilter === 'missing' ? 'all' : 'missing')}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors ${
+                      activeFilter === 'missing'
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30'
+                        : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+                    }`}
+                    title={activeFilter === 'missing' ? 'Showing missing keys only. Click to show all.' : 'Click to filter missing translations'}
+                  >
+                    <AlertCircle className="size-3 shrink-0" />
+                    <span>{totalMissing} missing</span>
+                    {activeFilter === 'missing' && <span className="text-[10px] bg-amber-500/20 px-1 rounded">Filtered</span>}
+                  </button>
                 </>
               ) : (
                 <>
                   <span>•</span>
-                  <span className="flex items-center gap-1 text-emerald-600">
-                    <CheckCircle2 className="size-3" /> 100% translated
+                  <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                    <CheckCircle2 className="size-3 shrink-0" /> 100% translated
                   </span>
                 </>
               )}
@@ -580,7 +688,7 @@ export function App() {
       {items.length === 0 ? (
         // Empty Upload View
         <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="max-w-xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
+          <div className="max-w-2xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
             <div
               onDragOver={e => {
                 e.preventDefault();
@@ -595,7 +703,7 @@ export function App() {
                 }
               }}
               onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${
+              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${
                 isHeroDragOver
                   ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
                   : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
@@ -610,7 +718,7 @@ export function App() {
                   }
                 }}
                 multiple
-                accept=".json,.jsonlink,.xlsx,.xls,.csv"
+                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings"
                 className="hidden"
               />
 
@@ -622,8 +730,8 @@ export function App() {
                 <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
                   Drop translation files here to open spreadsheet
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed mx-auto">
-                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or an Excel file.
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm sm:max-w-md leading-relaxed mx-auto">
+                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
                 </p>
               </div>
 
@@ -646,7 +754,7 @@ export function App() {
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-4 border-t border-border/60">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 text-xs text-muted-foreground pt-3.5 sm:pt-4 border-t border-border/60">
                 <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                   <FileCode className="size-3.5" /> Project (.jsonlink)
                 </span>
@@ -658,6 +766,15 @@ export function App() {
                 </span>
                 <span className="flex items-center gap-1 whitespace-nowrap">
                   <FileSpreadsheet className="size-3.5 text-blue-500" /> CSV (.csv)
+                </span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileCode className="size-3.5 text-amber-500" /> YAML (.yaml)
+                </span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileCode className="size-3.5 text-purple-500" /> Android (.xml)
+                </span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileCode className="size-3.5 text-pink-500" /> iOS (.strings)
                 </span>
               </div>
             </div>
@@ -718,6 +835,7 @@ export function App() {
             onDeleteRow={handleDeleteRow}
             onDuplicateRow={handleDuplicateRow}
             onDeleteLanguage={handleDeleteLanguage}
+            onRenameLanguage={handleRenameLanguage}
             onAddRow={() => setIsAddKeyOpen(true)}
             onOpenImport={() => setIsImportOpen(true)}
             onBatchUpdate={setItems}
@@ -755,6 +873,7 @@ export function App() {
         onOpenChange={setIsExportOpen}
         items={items}
         languages={languages}
+        defaultFilename={projectName}
       />
 
       <ExitConfirmDialog
@@ -763,6 +882,7 @@ export function App() {
         items={items}
         languages={languages}
         onConfirmExit={handleConfirmExit}
+        defaultProjectName={projectName}
       />
 
       <SaveProjectModal
@@ -770,6 +890,7 @@ export function App() {
         onOpenChange={setIsSaveProjectOpen}
         items={items}
         languages={languages}
+        defaultProjectName={projectName}
       />
 
       {/* AI Auto-Translation Modal */}

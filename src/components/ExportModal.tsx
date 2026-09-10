@@ -45,6 +45,7 @@ interface ExportModalProps {
   onOpenChange: (open: boolean) => void;
   items: TranslationItem[];
   languages: string[];
+  defaultFilename?: string;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
@@ -52,13 +53,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   onOpenChange,
   items,
   languages,
+  defaultFilename,
 }) => {
   const [activeTab, setActiveTab] = useState<ExportFormat>('excel');
   const [nested, setNested] = useState(false);
   const [indent, setIndent] = useState(2);
-  const [filename, setFilename] = useState('translations');
+  const [filename, setFilename] = useState(defaultFilename || 'translations');
   const [previewLang, setPreviewLang] = useState(languages[0] || 'en');
   const [copied, setCopied] = useState(false);
+
+  // Sync defaultFilename when changed or modal opened
+  React.useEffect(() => {
+    if (defaultFilename) {
+      setFilename(defaultFilename);
+    }
+  }, [defaultFilename, open]);
 
   // Live preview text for code-based formats
   const previewText = useMemo(() => {
@@ -139,19 +148,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const formatButtons = [
-    { id: 'excel' as ExportFormat, label: 'Excel (.xlsx)', icon: <FileSpreadsheet className="size-3.5 text-emerald-600" /> },
-    { id: 'csv' as ExportFormat, label: 'CSV (.csv)', icon: <FileText className="size-3.5 text-blue-500" /> },
-    { id: 'json-zip' as ExportFormat, label: 'JSON (ZIP)', icon: <Archive className="size-3.5 text-amber-500" /> },
-    { id: 'json-combined' as ExportFormat, label: 'Single JSON', icon: <FileText className="size-3.5 text-purple-500" /> },
-    { id: 'yaml-zip' as ExportFormat, label: 'YAML (.yaml)', icon: <Layers className="size-3.5 text-rose-500" /> },
-    { id: 'android-xml' as ExportFormat, label: 'Android (strings.xml)', icon: <Smartphone className="size-3.5 text-emerald-500" /> },
-    { id: 'ios-strings' as ExportFormat, label: 'iOS (.strings)', icon: <Smartphone className="size-3.5 text-sky-500" /> },
-    { id: 'typescript-dts' as ExportFormat, label: 'TypeScript (.d.ts)', icon: <Code2 className="size-3.5 text-blue-600" /> },
+    { id: 'excel' as ExportFormat, label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
+    { id: 'csv' as ExportFormat, label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
+    { id: 'json-zip' as ExportFormat, label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
+    { id: 'json-combined' as ExportFormat, label: 'Single JSON', shortLabel: 'Single JSON', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
+    { id: 'yaml-zip' as ExportFormat, label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
+    { id: 'android-xml' as ExportFormat, label: 'Android (strings.xml)', shortLabel: 'Android XML', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
+    { id: 'ios-strings' as ExportFormat, label: 'iOS (.strings)', shortLabel: 'iOS Strings', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
+    { id: 'typescript-dts' as ExportFormat, label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base font-bold">Export Translations</DialogTitle>
           <DialogDescription className="text-xs">
@@ -160,26 +169,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </DialogHeader>
 
         {/* Format Selector Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 my-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
           {formatButtons.map(fmt => (
             <button
               key={fmt.id}
               type="button"
               onClick={() => setActiveTab(fmt.id)}
-              className={`flex items-center gap-2 p-2 rounded-md border text-xs cursor-pointer transition-colors text-left ${
+              className={`flex items-center gap-1.5 sm:gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
                 activeTab === fmt.id
-                  ? 'border-primary bg-primary/10 text-primary font-semibold'
+                  ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
                   : 'border-border hover:bg-muted/50 text-foreground'
               }`}
             >
               {fmt.icon}
-              <span className="truncate">{fmt.label}</span>
+              <span className="truncate hidden sm:inline">{fmt.label}</span>
+              <span className="truncate sm:hidden text-[11px]">{fmt.shortLabel}</span>
             </button>
           ))}
         </div>
 
         {/* Description Banner per Format */}
-        <div className="p-3 rounded-lg bg-muted/40 border border-border text-xs">
+        <div className="p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border text-xs">
           {activeTab === 'excel' && (
             <p className="text-muted-foreground">
               Multi-column spreadsheet with columns for Key and languages ({languages.join(', ')}). Formatted with styled header and auto column width.
@@ -223,7 +233,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Options & Filename */}
-        <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 border-t border-border pt-3 text-xs">
           <div className="flex flex-col gap-1">
             <label className="font-semibold text-foreground">File Name:</label>
             <Input
@@ -327,19 +337,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </button>
             </div>
 
-            <pre className="p-2.5 bg-muted/60 border border-border rounded-lg text-[11px] font-mono max-h-32 overflow-y-auto leading-tight text-foreground select-all">
+            <pre className="p-2 sm:p-2.5 bg-muted/60 border border-border rounded-lg text-[10.5px] sm:text-[11px] font-mono max-h-24 sm:max-h-32 overflow-y-auto leading-tight text-foreground select-all">
               {previewText}
             </pre>
           </div>
         )}
 
-        <DialogFooter className="mt-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="text-xs">
+        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none text-xs h-8">
             Cancel
           </Button>
-          <Button size="sm" onClick={handleExport} className="gap-1.5 text-xs shadow-xs">
+          <Button size="sm" onClick={handleExport} className="flex-1 sm:flex-none gap-1.5 text-xs h-8 shadow-xs font-semibold">
             <Download className="size-3.5" />
-            Download {activeTab.replace('-', ' ').toUpperCase()}
+            <span>Download {activeTab === 'typescript-dts' ? 'TYPESCRIPT' : activeTab.replace('-', ' ').toUpperCase()}</span>
           </Button>
         </DialogFooter>
       </DialogContent>
