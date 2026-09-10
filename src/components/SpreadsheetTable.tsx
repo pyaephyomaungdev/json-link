@@ -248,7 +248,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </colgroup>
 
           {/* Top Column Headers */}
-          <thead className="sticky top-0 z-30 shadow-xs">
+          <thead className="sticky top-0 z-40 shadow-xs">
             <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {/* Row Number Header */}
               <th
@@ -266,7 +266,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
                 }}
                 className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
-                  isKeyFrozen ? 'left-12 z-45' : 'z-35'
+                  isKeyFrozen ? 'left-12 z-45' : 'z-40'
                 } border-b border-border ${getFreezeLineClass(isKeyLastFrozen)}`}
               >
                 <div className="flex items-center justify-between gap-1.5">
@@ -347,7 +347,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       left: langLeft,
                     }}
                     className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
-                      isLangFrozen ? 'z-40' : 'z-30'
+                      isLangFrozen ? 'z-45' : 'z-40'
                     } border-b border-border ${getFreezeLineClass(isLangLastFrozen)}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -448,7 +448,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               {/* Action Column Header (Frozen on Right) */}
               <th
                 style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
-                className="py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 right-0 z-40 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
+                className="py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 right-0 z-50 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
                 Menu
               </th>
@@ -478,7 +478,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className={`py-1.5 px-2 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-30 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
+                    className={`py-1.5 px-2 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
                     {rowNumber}
                   </td>
@@ -499,11 +499,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       })
                     }
                     className={`py-1.5 px-3 font-mono text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
-                      isKeyFrozen ? 'sticky z-20' : 'relative z-0'
+                      isKeyFrozen ? 'sticky z-15' : 'relative z-0'
                     } border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${
                       isKeySelected
                         ? `!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] ${
-                            isKeyFrozen ? 'z-25' : 'z-10'
+                            isKeyFrozen ? 'z-18' : 'z-10'
                           }`
                         : ''
                     }`}
@@ -564,7 +564,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           })
                         }
                         className={`py-1.5 px-3 border-b border-border transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
-                          isLangFrozen ? 'sticky z-20' : 'relative z-0'
+                          isLangFrozen ? 'sticky z-15' : 'relative z-0'
                         } ${getFreezeLineClass(isLangLastFrozen)} ${
                           !val
                             ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
@@ -572,7 +572,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         } ${
                           isCellSelected
                             ? `!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] ${
-                                isLangFrozen ? 'z-25' : 'z-10'
+                                isLangFrozen ? 'z-18' : 'z-10'
                               }`
                             : ''
                         }`}
@@ -622,7 +622,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
                   <td
                     style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
-                    className="py-1 px-1 text-center border-b border-l border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] sticky right-0 z-30 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors"
+                    className="py-1 px-1 text-center border-b border-l border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors"
                   >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
