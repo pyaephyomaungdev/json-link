@@ -15,6 +15,8 @@ import {
   Eraser,
   Layers,
   Heart,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -80,6 +82,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return null;
   });
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  // Frozen columns state: 0 = unfreeze all, 1 = freeze Key (default), 2+ = freeze up to language idx + 2
+  const [frozenCount, setFrozenCount] = useState<number>(1);
+  const safeFrozenCount = Math.min(frozenCount, languages.length + 1);
+
+  const isKeyFrozen = safeFrozenCount >= 1;
+  const isKeyLastFrozen = safeFrozenCount === 1;
+
+  const ROW_NUM_WIDTH = 48;
+  const KEY_COL_WIDTH = 280;
+  const LANG_COL_WIDTH = 280;
+  const MENU_COL_WIDTH = 56;
+
+  const getFreezeLineClass = (isLast: boolean) =>
+    isLast
+      ? 'border-r-2 border-primary/50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.12)] dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.6)]'
+      : 'border-r border-border';
+
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const formulaInputRef = useRef<HTMLInputElement>(null);
 
@@ -215,105 +234,208 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         )}
       </div>
 
-      {/* True Excel Spreadsheet Table: Edge-to-edge, Solid Opaque Sticky Headers, Freeze Panes */}
+      {/* True Excel Spreadsheet Table: Edge-to-edge, Horizontal Scroll on Overflow, Dynamic Freeze Panes */}
       <div className="flex-1 overflow-auto relative w-full h-full bg-background">
-        <table className="w-full border-collapse text-left table-fixed">
-          {/* Top Column Headers (Sticky Top with 100% solid opaque background) */}
+        <table className="min-w-full w-max border-collapse text-left">
+          {/* Column widths group to ensure columns never squish on multiple languages */}
+          <colgroup>
+            <col style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH }} />
+            <col style={{ width: KEY_COL_WIDTH, minWidth: KEY_COL_WIDTH }} />
+            {languages.map(lang => (
+              <col key={lang} style={{ width: LANG_COL_WIDTH, minWidth: LANG_COL_WIDTH }} />
+            ))}
+            <col style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH }} />
+          </colgroup>
+
+          {/* Top Column Headers */}
           <thead className="sticky top-0 z-20 shadow-xs">
             <tr className="border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {/* Row Number Header (Sticky Top-Left Corner: z-30 with 100% solid opaque background) */}
-              <th className="py-2.5 px-2 w-12 text-center border-r border-border bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-30 select-none">
+              {/* Row Number Header */}
+              <th
+                style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
+                className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-30 select-none ${getFreezeLineClass(safeFrozenCount === 0)}`}
+              >
                 #
               </th>
 
-              {/* Translation Key Header (Sticky Top-Left Freeze: z-30 with 100% solid opaque background) */}
-              <th className="py-2.5 px-3 w-[300px] border-r border-border bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-12 z-30 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              {/* Translation Key Header */}
+              <th
+                style={{
+                  width: KEY_COL_WIDTH,
+                  minWidth: KEY_COL_WIDTH,
+                  left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
+                }}
+                className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
+                  isKeyFrozen ? 'z-30' : 'z-20'
+                } ${getFreezeLineClass(isKeyLastFrozen)}`}
+              >
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded">
                       A
                     </span>
                     <span className="font-bold text-foreground">Translation Key</span>
+                    {isKeyFrozen && (
+                      <span title="Key column is frozen">
+                        <Pin className="size-3 text-primary fill-primary/30 shrink-0" />
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[10px] font-mono font-normal text-muted-foreground">
-                    [Key]
-                  </span>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer border border-border/70 bg-background shrink-0">
+                        <span>KEY</span>
+                        <ChevronDown className="size-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <DropdownMenuLabel>Column: Key (A)</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => setFrozenCount(isKeyFrozen ? 0 : 1)}
+                        className="gap-2 cursor-pointer text-xs"
+                      >
+                        {isKeyFrozen ? (
+                          <>
+                            <PinOff className="size-3.5 text-muted-foreground" />
+                            <span>Unfreeze Key Column</span>
+                          </>
+                        ) : (
+                          <>
+                            <Pin className="size-3.5 text-primary" />
+                            <span>Freeze Key Column</span>
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const allKeys = items.map(i => i.key).join('\n');
+                          handleCopyText(allKeys, 'all key names');
+                        }}
+                        className="gap-2 cursor-pointer text-xs"
+                      >
+                        <Copy className="size-3.5" />
+                        <span>Copy All Key Names</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </th>
 
-              {/* Language Column Headers with Custom Dropdown Menus (Sticky Top: z-20 with 100% solid opaque background) */}
-              {languages.map((lang, idx) => (
-                <th
-                  key={lang}
-                  className="py-2.5 px-3 min-w-[340px] border-r border-border bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-20"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded">
-                        {getColumnLetter(idx + 1)}
-                      </span>
-                      <span className="font-bold text-foreground tracking-wide">
-                        {lang.toUpperCase()}
-                      </span>
-                      <span className="text-[11px] font-normal text-muted-foreground">
-                        {lang === 'my' ? '(မြန်မာ)' : lang === 'en' ? '(English)' : ''}
-                      </span>
-                    </div>
+              {/* Language Column Headers */}
+              {languages.map((lang, idx) => {
+                const isLangFrozen = safeFrozenCount >= idx + 2;
+                const isLangLastFrozen = safeFrozenCount === idx + 2;
+                const langLeft = isLangFrozen
+                  ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + idx * LANG_COL_WIDTH
+                  : undefined;
 
-                    {/* Custom Column Header Actions Dropdown */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer border border-border/70 bg-background">
-                          <span className="uppercase font-bold">{lang}</span>
-                          <ChevronDown className="size-3" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Column: {lang.toUpperCase()}</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            exportSingleLanguageJson(items, lang, {
-                              format: 'json-combined',
-                              nested: false,
-                              indent: 2,
-                              includeMissing: true,
-                            });
-                          }}
-                          className="gap-2 cursor-pointer"
-                        >
-                          <Download className="size-3.5" />
-                          Download {lang}.json
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const allVals = items.map(i => i[lang] || '').join('\n');
-                            handleCopyText(allVals, `all ${lang.toUpperCase()} values`);
-                          }}
-                          className="gap-2 cursor-pointer"
-                        >
-                          <CopyCheck className="size-3.5" />
-                          Copy all {lang.toUpperCase()} text
-                        </DropdownMenuItem>
-                        {languages.length > 1 && onDeleteLanguage && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => onDeleteLanguage(lang)}
-                              className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-                            >
-                              <Trash2 className="size-3.5" />
-                              Remove {lang.toUpperCase()} column
-                            </DropdownMenuItem>
-                          </>
+                return (
+                  <th
+                    key={lang}
+                    style={{
+                      width: LANG_COL_WIDTH,
+                      minWidth: LANG_COL_WIDTH,
+                      left: langLeft,
+                    }}
+                    className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
+                      isLangFrozen ? 'z-30' : 'z-20'
+                    } ${getFreezeLineClass(isLangLastFrozen)}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded shrink-0">
+                          {getColumnLetter(idx + 1)}
+                        </span>
+                        <span className="font-bold text-foreground tracking-wide shrink-0">
+                          {lang.toUpperCase()}
+                        </span>
+                        <span className="text-[11px] font-normal text-muted-foreground truncate">
+                          {lang === 'my' ? '(မြန်မာ)' : lang === 'en' ? '(English)' : ''}
+                        </span>
+                        {isLangFrozen && (
+                          <span title="Column is frozen">
+                            <Pin className="size-3 text-primary fill-primary/30 shrink-0" />
+                          </span>
                         )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </th>
-              ))}
+                      </div>
 
-              {/* Action Column Header (Sticky Top: z-20 with 100% solid opaque background) */}
-              <th className="py-2.5 px-2 w-14 text-center border-r border-border bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-20">
+                      {/* Custom Column Header Actions Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer border border-border/70 bg-background shrink-0">
+                            <span className="uppercase font-bold">{lang}</span>
+                            <ChevronDown className="size-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuLabel>Column: {lang.toUpperCase()}</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => setFrozenCount(isLangFrozen ? idx + 1 : idx + 2)}
+                            className="gap-2 cursor-pointer text-xs"
+                          >
+                            {isLangFrozen ? (
+                              <>
+                                <PinOff className="size-3.5 text-muted-foreground" />
+                                <span>Unfreeze {lang.toUpperCase()} Column</span>
+                              </>
+                            ) : (
+                              <>
+                                <Pin className="size-3.5 text-primary" />
+                                <span>Freeze up to {lang.toUpperCase()} Column</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              exportSingleLanguageJson(items, lang, {
+                                format: 'json-combined',
+                                nested: false,
+                                indent: 2,
+                                includeMissing: true,
+                              });
+                            }}
+                            className="gap-2 cursor-pointer"
+                          >
+                            <Download className="size-3.5" />
+                            Download {lang}.json
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const allVals = items.map(i => i[lang] || '').join('\n');
+                              handleCopyText(allVals, `all ${lang.toUpperCase()} values`);
+                            }}
+                            className="gap-2 cursor-pointer"
+                          >
+                            <CopyCheck className="size-3.5" />
+                            Copy all {lang.toUpperCase()} text
+                          </DropdownMenuItem>
+                          {languages.length > 1 && onDeleteLanguage && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onDeleteLanguage(lang)}
+                                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                              >
+                                <Trash2 className="size-3.5" />
+                                Remove {lang.toUpperCase()} column
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </th>
+                );
+              })}
+
+              {/* Action Column Header */}
+              <th
+                style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH }}
+                className="py-2.5 px-2 text-center border-r border-border bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-20"
+              >
                 Menu
               </th>
             </tr>
@@ -331,8 +453,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   key={item.key}
                   className="group transition-colors"
                 >
-                  {/* Row Number (Sticky Left #1: 100% solid background) */}
+                  {/* Row Number */}
                   <td
+                    style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                     onClick={() =>
                       setSelectedCell({
                         key: item.key,
@@ -341,13 +464,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className="py-1.5 px-2 text-center text-xs font-mono text-muted-foreground border-r border-border bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-10 select-none cursor-pointer transition-colors"
+                    className={`py-1.5 px-2 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-10 select-none cursor-pointer transition-colors ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
                     {rowNumber}
                   </td>
 
-                  {/* Translation Key Column (Sticky Left #2 Freeze Pane: 100% solid background) */}
+                  {/* Translation Key Column */}
                   <td
+                    style={{
+                      width: KEY_COL_WIDTH,
+                      minWidth: KEY_COL_WIDTH,
+                      left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
+                    }}
                     onClick={() =>
                       setSelectedCell({
                         key: item.key,
@@ -356,7 +484,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className={`py-1.5 px-3 font-mono text-xs border-r border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] sticky left-12 z-10 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] relative transition-colors cursor-pointer ${
+                    className={`py-1.5 px-3 font-mono text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
+                      isKeyFrozen ? 'sticky z-10' : ''
+                    } relative transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${
                       isKeySelected
                         ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-15'
                         : ''
@@ -395,10 +525,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const isCellSelected =
                       selectedCell?.key === item.key && selectedCell.field === lang;
                     const isMyanmar = lang === 'my';
+                    const isLangFrozen = safeFrozenCount >= colIdx + 2;
+                    const isLangLastFrozen = safeFrozenCount === colIdx + 2;
+                    const langLeft = isLangFrozen
+                      ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + colIdx * LANG_COL_WIDTH
+                      : undefined;
 
                     return (
                       <td
                         key={lang}
+                        style={{
+                          width: LANG_COL_WIDTH,
+                          minWidth: LANG_COL_WIDTH,
+                          left: langLeft,
+                        }}
                         onClick={() =>
                           setSelectedCell({
                             key: item.key,
@@ -407,13 +547,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             rowIndex: rowIdx,
                           })
                         }
-                        className={`py-1.5 px-3 border-r border-border relative transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
+                        className={`py-1.5 px-3 relative transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
+                          isLangFrozen ? 'sticky z-10' : ''
+                        } ${getFreezeLineClass(isLangLastFrozen)} ${
                           !val
                             ? 'bg-amber-500/5 dark:bg-amber-500/10 group-hover:bg-amber-500/10 dark:group-hover:bg-amber-500/20'
                             : ''
                         } ${
                           isCellSelected
-                            ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                            ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-15'
                             : ''
                         }`}
                       >
@@ -460,7 +602,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   })}
 
                   {/* Custom Row Actions Dropdown Menu */}
-                  <td className="py-1 px-1 text-center border-r border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] transition-colors">
+                  <td
+                    style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH }}
+                    className="py-1 px-1 text-center border-r border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] transition-colors"
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer">
@@ -542,6 +687,31 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               {languages.map(l => l.toUpperCase()).join(', ')}
             </span>
           </span>
+          <span className="text-muted-foreground">•</span>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Pin className="size-3 text-primary shrink-0" />
+            <span>Freeze:</span>
+            <button
+              onClick={() => setFrozenCount(safeFrozenCount > 0 ? 0 : 1)}
+              className="font-medium text-foreground hover:text-primary hover:underline cursor-pointer"
+              title="Click to toggle freeze panes"
+            >
+              {safeFrozenCount === 0
+                ? 'None'
+                : safeFrozenCount === 1
+                ? 'Key (Col A)'
+                : `Key + ${languages.slice(0, safeFrozenCount - 1).map(l => l.toUpperCase()).join(', ')}`}
+            </button>
+            {safeFrozenCount > 0 && (
+              <button
+                onClick={() => setFrozenCount(0)}
+                className="text-[10px] text-muted-foreground hover:text-destructive ml-0.5 cursor-pointer"
+                title="Unfreeze all columns"
+              >
+                (Unfreeze)
+              </button>
+            )}
+          </div>
           <span className="text-muted-foreground hidden lg:inline">•</span>
           <span className="text-muted-foreground hidden lg:flex items-center gap-1.5 text-[11px]">
             Developed with <Heart className="size-3 text-rose-500 fill-rose-500 inline shrink-0" /> by{' '}
