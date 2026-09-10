@@ -39,7 +39,6 @@ import {
   ShieldCheck,
   Trash2,
   BookOpen,
-  ArrowRight,
   AlertTriangle,
   RefreshCw,
   SlidersHorizontal,
@@ -372,73 +371,64 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
         </DialogHeader>
 
         <DialogBody className="space-y-4 text-xs">
-          {/* Target Row Preview Card (Single Row Mode) */}
+          {/* Target Row Information (Single Row Mode) */}
           {activeTargetKey && (
-            <div className="rounded-xl border border-primary/25 bg-primary/[0.04] p-3 sm:p-3.5 space-y-2.5">
-              {/* Header: Badge, Key name, and Switch to all rows button */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full shadow-2xs shrink-0">
-                    <Sparkles className="size-2.5" />
-                    Target Row
-                  </span>
-                  <code className="font-mono text-xs font-semibold text-foreground bg-background/90 px-2 py-0.5 rounded border border-border/80 truncate max-w-[200px] sm:max-w-[270px]">
-                    {activeTargetKey}
-                  </code>
-                </div>
+            <div className="space-y-2.5 bg-muted/40 p-3 rounded-lg border border-border">
+              {/* Header with Title and Switch Action */}
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Target Row: <code className="font-mono text-primary font-bold">{activeTargetKey}</code></span>
+                </label>
                 <button
                   type="button"
                   onClick={() => setActiveTargetKey(undefined)}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer shrink-0 flex items-center gap-1 hover:underline"
-                  title="Switch to translating entire table"
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer flex items-center gap-1"
                 >
-                  <span>Translate all rows</span>
-                  <ArrowRight className="size-3" />
+                  <span>Translate all rows instead</span>
                 </button>
               </div>
 
-              {/* Source & Target Preview Columns */}
+              {/* Source & Target Values Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                {/* Source text */}
-                <div className="p-2.5 rounded-lg bg-background/80 border border-border/70 space-y-1">
-                  <div className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between">
-                    <span>Source ({sourceLang.toUpperCase()})</span>
-                    <span className="font-normal opacity-70 truncate max-w-[100px]">{getLanguageDisplayName(sourceLang)}</span>
+                {/* Source text field */}
+                <div className="space-y-1">
+                  <div className="text-[11px] text-muted-foreground font-medium flex items-center justify-between">
+                    <span>Source ({sourceLang.toUpperCase()}):</span>
+                    <span className="text-[10px] text-muted-foreground/80 font-normal">{getLanguageDisplayName(sourceLang)}</span>
                   </div>
-                  {singleSourceVal ? (
-                    <div className="font-medium text-foreground text-xs leading-relaxed line-clamp-3 select-text">
-                      "{singleSourceVal}"
-                    </div>
-                  ) : (
-                    <div className="text-amber-600 dark:text-amber-400 text-[11px] italic flex items-center gap-1.5 py-1">
-                      <AlertTriangle className="size-3.5 shrink-0" />
-                      <span>Empty cell &mdash; no text in source</span>
-                    </div>
-                  )}
+                  <div className="p-2 bg-background border border-border rounded-md text-xs text-foreground min-h-[34px] flex items-center">
+                    {singleSourceVal ? (
+                      <span className="leading-snug select-text font-normal">{singleSourceVal}</span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400 italic text-[11px] flex items-center gap-1">
+                        <AlertTriangle className="size-3 shrink-0" />
+                        Empty source cell
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Target text status */}
-                <div className="p-2.5 rounded-lg bg-background/80 border border-border/70 space-y-1">
-                  <div className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between">
-                    <span>Target ({targetLang.toUpperCase()})</span>
-                    <span className="font-normal opacity-70 truncate max-w-[100px]">{getLanguageDisplayName(targetLang)}</span>
+                {/* Target text field */}
+                <div className="space-y-1">
+                  <div className="text-[11px] text-muted-foreground font-medium flex items-center justify-between">
+                    <span>Target ({targetLang.toUpperCase()}):</span>
+                    <span className="text-[10px] text-muted-foreground/80 font-normal">{getLanguageDisplayName(targetLang)}</span>
                   </div>
-                  {singleTargetVal ? (
-                    <div className="space-y-1">
-                      <div className="text-muted-foreground text-xs line-clamp-2 select-text">
-                        "{singleTargetVal}"
-                      </div>
-                      <div className="text-[10px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <RefreshCw className="size-2.5" />
-                        <span>Will be overwritten by AI</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground text-[11px] italic flex items-center gap-1.5 py-1">
-                      <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                      <span>Empty cell &mdash; ready to translate</span>
-                    </div>
-                  )}
+                  <div className="p-2 bg-background border border-border rounded-md text-xs min-h-[34px] flex items-center justify-between gap-2">
+                    {singleTargetVal ? (
+                      <>
+                        <span className="leading-snug text-muted-foreground truncate select-text">{singleTargetVal}</span>
+                        <span className="text-[10px] font-mono uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded shrink-0">
+                          Overwrite
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground/70 italic text-[11px]">
+                        Empty cell (ready to translate)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

@@ -26,6 +26,7 @@ import {
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft } from '@/lib/project';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -52,6 +53,9 @@ import {
 import { Button } from '@/components/ui/button';
 
 export function App() {
+  // Check for auto-saved draft in browser localStorage on initial mount
+  const initialDraft = useMemo(() => loadLocalDraft(), []);
+
   // Use history hook for complete Undo / Redo support (Ctrl+Z / Ctrl+Y)
   const {
     items,
@@ -61,12 +65,27 @@ export function App() {
     redo,
     canUndo,
     canRedo,
-  } = useHistory([]);
+  } = useHistory(initialDraft && Array.isArray(initialDraft.items) ? initialDraft.items : []);
 
-  const [languages, setLanguages] = useState<string[]>(['en', 'my']);
-  const [projectName, setProjectName] = useState<string>('translations');
+  const [languages, setLanguages] = useState<string[]>(
+    initialDraft && Array.isArray(initialDraft.languages) && initialDraft.languages.length > 0
+      ? initialDraft.languages
+      : ['en', 'my']
+  );
+  const [projectName, setProjectName] = useState<string>(
+    initialDraft && initialDraft.name ? initialDraft.name : 'translations'
+  );
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-save draft to localStorage whenever spreadsheet data changes
+  useEffect(() => {
+    if (items.length > 0) {
+      saveLocalDraft(projectName, items, languages);
+    } else {
+      clearLocalDraft();
+    }
+  }, [items, languages, projectName]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,17 +116,30 @@ export function App() {
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
   const mainFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Theme toggle state
-  const [isDark, setIsDark] = useState(() => {
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Theme toggle state with persistent localStorage storage
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      const savedTheme = localStorage.getItem('json_link_theme');
+      if (savedTheme === 'dark') return true;
+      if (savedTheme === 'light') return false;
+      return window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+    } catch {
+      return false;
+    }
   });
 
-  // Keep document element class in sync for class-based dark mode
+  // Keep document element class and localStorage in sync
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    try {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('json_link_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('json_link_theme', 'light');
+      }
+    } catch (e) {
+      console.warn('Failed to save theme to localStorage', e);
     }
   }, [isDark]);
 
@@ -168,7 +200,9 @@ export function App() {
 
   // Reset to empty home screen when exit confirmed
   const handleConfirmExit = () => {
+    clearLocalDraft();
     setItemsWithoutHistory([]);
+    setLanguages(['en', 'my']);
     setProjectName('translations');
     setSearchQuery('');
     setSelectedNamespace('all');
