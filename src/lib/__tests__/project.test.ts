@@ -34,6 +34,26 @@ describe('project.ts', () => {
         parseProjectFile(JSON.stringify({ format: 'jsonlink', items: 'not-an-array' }))
       ).toThrow();
     });
+
+    it('throws when given completely non-JSON input', () => {
+      expect(() => parseProjectFile('not json at all!!!')).toThrow();
+    });
+
+    it('throws when items field is missing entirely', () => {
+      const payload = { format: 'jsonlink', languages: ['en'] }; // no items
+      expect(() => parseProjectFile(JSON.stringify(payload))).toThrow();
+    });
+
+    it('parses project with optional fields absent (description, status)', () => {
+      const payload = {
+        format: 'jsonlink',
+        languages: ['en'],
+        items: [{ key: 'btn', en: 'OK' }], // no description, no status
+      };
+      const result = parseProjectFile(JSON.stringify(payload));
+      expect(result.items[0].key).toBe('btn');
+      expect(result.items[0].description).toBeUndefined();
+    });
   });
 
   describe('localStorage draft persistence', () => {
@@ -74,6 +94,18 @@ describe('project.ts', () => {
       clearLocalDraft();
       expect(localStorage.removeItem).toHaveBeenCalled();
       expect(loadLocalDraft()).toBeNull();
+    });
+
+    it('returns null when localStorage has no draft', () => {
+      const result = loadLocalDraft();
+      expect(result).toBeNull();
+    });
+
+    it('saves and loads draft with empty items array', () => {
+      saveLocalDraft('empty-project', [], ['en']);
+      const loaded = loadLocalDraft();
+      expect(loaded?.items).toEqual([]);
+      expect(loaded?.languages).toEqual(['en']);
     });
   });
 });
