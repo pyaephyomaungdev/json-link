@@ -16,6 +16,10 @@ A modern, high-performance web application designed for multilingual localizatio
   - Freeze Left: Index (#) and Translation Key columns stay pinned at the left while scrolling horizontally through languages.
   - Custom Freeze and Unfreeze: Pin any language column with one click from the header dropdown menu.
 - Formula Bar (fx): Displays active cell address (e.g. B14 [en]) with a full-width text inspector and editor.
+- Excel-like Drag Column Resizing: Drag divider handles on Key, Context, and Language headers with widths smoothly constrained between 120px and 900px. Preserved locally in `localStorage` with a 1-click "Reset Widths" button in the status bar.
+- Excel Keyboard Navigation: Seamless arrow key navigation across the grid (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`), `Tab` / `Shift+Tab` cell advancement, and `Enter` to edit or commit and jump to the row below.
+- Translation Diff and 1-Click Revert: Modified or newly translated cells display an interactive `[↺ Revert]` chip to instantly roll back changes to prior values.
+- Header Missing Keys Badges: Column headers display an amber badge showing the count of missing keys for that language; clicking isolates missing rows with 1 click.
 - Inline Cell Editing: Click or double-click to edit text directly. Full native font rendering for English, Myanmar Unicode (Pyidaungsu / Noto Sans), Thai, Japanese, Chinese, and Right-to-Left languages.
 - Multi-Cell Copy and Paste: Paste tab-separated or newline-separated values from Google Sheets or Microsoft Excel directly into cells.
 - Undo and Redo History: Full state time-machine (Cmd+Z / Ctrl+Z, Cmd+Y / Ctrl+Y) supporting up to 50 historical snapshots.
@@ -88,6 +92,29 @@ A modern, high-performance web application designed for multilingual localizatio
 
 ---
 
+### Localization QA and Consistency Linter
+- Automated Quality Scans: Real-time scan across all languages for common localization pitfalls:
+  - Whitespace: Leading or trailing whitespace in keys or translation values.
+  - Variable Mismatches: Target translations missing source placeholders ({name}, %s, {{count}}).
+  - Length Expansion: Text expansion (>2.5x source length) that may clip in mobile buttons and labels.
+  - Duplicates: Identical translations reused across multiple distinct keys.
+  - Untranslated: Target translations identical to English source text.
+  - Missing: Unfilled translation keys.
+- One-Click Auto-Fixer: "Fix All Whitespace" cleans all keys and translations in 1 click.
+- Jump Navigation: Direct "Jump" button on any issue selects and focuses the exact cell in the spreadsheet.
+- Tab Category Filtering: Scorecard-style underline tabs with live per-category counts.
+
+---
+
+### Row Review Workflow Statuses
+- Editorial Status Tracking: Tag each translation key with a workflow status:
+  - Draft (gray): New or in-progress translation.
+  - Needs Review (amber): Automatically applied to AI-translated rows or flagged content.
+  - Approved (emerald): Human-reviewed and verified for release.
+- Status Filter: Instant toolbar filtering by status (All, Needs Review, Approved, Draft).
+
+---
+
 ### Native Right-to-Left (RTL) Language Layout
 - Automatic Script Direction: Automatically applies dir="rtl" and right text alignment for RTL languages (Arabic, Hebrew, Persian, Urdu).
 - Bidirectional Formula Bar: When an RTL cell is selected, the formula inspector bar adapts its direction to RTL automatically.
@@ -107,7 +134,9 @@ A modern, high-performance web application designed for multilingual localizatio
 ---
 
 ### AI Auto-Translate (OpenRouter BYOK)
-- Batch Translation: Translate missing or all keys automatically while preserving variables and adhering to glossary terms.
+- Multi-Language Batch AI Translation: Translate across all configured target languages sequentially with live percentage progress (`Translating Thai (TH) (3/10 keys)... [Overall: 35%]`).
+- Translation Scope Control: Clean segmented toggle switching between **Missing Keys Only** (fills empty cells) and **All Rows (Overwrite)**.
+- Automatic Review Tagging: AI-translated rows are automatically tagged as `Needs Review` for human QA signoff.
 - Any OpenRouter Model: Select recommended models (Gemini 2.5 Flash, DeepSeek V3, GPT-4o Mini, Claude 3.5 Haiku) or provide any custom model ID.
 - Searchable ISO 639-1 Language Picker: Filter languages by standard code, English name, or native script.
 
@@ -119,6 +148,12 @@ A modern, high-performance web application designed for multilingual localizatio
 ---
 
 ### Universal Exporters
+- 1-Click Multi-Framework Project Bundle (ZIP): Export a complete, production-ready localization archive containing:
+  - `web-locales/{lang}.json` (Web, Next.js, React)
+  - `flutter-l10n/app_{lang}.arb` (Flutter ARB)
+  - `ios-strings/{lang}.lproj/Localizable.strings` (iOS Xcode Swift/Obj-C)
+  - `android-res/values-{lang}/strings.xml` (Android strings.xml)
+  - `typescript/translations.d.ts` (TypeScript type declarations)
 - Flutter and Ruby on Rails: Indented YAML (.yaml ZIP archive) with language-prefix stripping options.
 - Android: res/values/strings.xml and res/values-<lang>/strings.xml with XML comments.
 - iOS: Apple Xcode <lang>.lproj/Localizable.strings with comments.
@@ -126,6 +161,22 @@ A modern, high-performance web application designed for multilingual localizatio
 - Microsoft Excel (.xlsx): Multi-column workbook with header formatting, dynamic column auto-sizing, and Unicode support.
 - CSV (.csv): Prefixed with UTF-8 BOM (\uFEFF) for seamless opening in Excel on Windows and macOS.
 - JSON (ZIP and Single Combined): Export individual JSON files or single combined files with flat or unflattened nested structures.
+
+---
+
+### Model Context Protocol (MCP) Server for AI Assistants
+- Native AI Integration: Connect JSON Link directly to Claude Desktop, Cursor, or Google Antigravity.
+- Stdio JSON-RPC 2.0: Located in `mcp/` with 5 exposed tools:
+  - `convert_zawgyi`: Lossless Rabbit converter between Zawgyi and Unicode.
+  - `validate_variables`: Checks variable interpolation placeholder integrity.
+  - `lint_translations`: Automated localization scanner.
+  - `read_translations`: File parser for JSON, ARB, XML, Strings.
+  - `export_bundle`: Multi-platform code generation.
+- Build & Run:
+  ```bash
+  npm run mcp:build
+  npm run mcp:start
+  ```
 
 ---
 
@@ -154,12 +205,13 @@ A modern, high-performance web application designed for multilingual localizatio
 Quality and stability are verified with a suite of automated tests:
 
 - Testing Framework: Vitest (Vite-native test runner).
-- Test Coverage: 101 Unit Tests across 11 test suites:
+- Test Coverage: 107 Unit Tests across 12 test suites:
+  - linter.test.ts: Whitespace detection, variable mismatch, length expansion, auto-fixer.
   - findReplace.test.ts: Search, scope filtering, whole-word matching, regex replacement.
-  - myanmarFont.test.ts: Zawgyi detection heuristics, Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
+  - myanmarFont.test.ts: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
   - glossary.test.ts: Termbase storage, serialization, and prompt formatting.
   - pseudoloc.test.ts: Homoglyph mapping, expansion padding, variable preservation.
-  - exporter.test.ts: JSON, YAML, Android strings.xml with comments, iOS Localizable.strings with comments, CSV BOM, TypeScript d.ts.
+  - exporter.test.ts: Multi-platform bundle ZIP, JSON, YAML, Android strings.xml, iOS Localizable.strings, CSV BOM, TypeScript d.ts.
   - parser.test.ts: Object flattening and unflattening, JSON, Android XML, iOS strings, YAML, Excel, CSV with descriptions.
   - openrouter.test.ts: BYOK translation, glossary prompt injection, response recovery, JSON repair.
   - crypto.test.ts: AES-GCM 256-bit encryption, decryption, and key derivation.
@@ -196,6 +248,15 @@ npm test
 ### Production Build
 ```bash
 npm run build
+```
+
+### Model Context Protocol (MCP) Server
+```bash
+# Build the MCP server
+npm run mcp:build
+
+# Start MCP server via stdio (connect to Claude Desktop or Cursor)
+npm run mcp:start
 ```
 
 ---

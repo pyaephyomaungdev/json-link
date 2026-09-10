@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -194,11 +195,14 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 border-b border-border pt-1">
+        <HorizontalScrollContainer
+          wrapperClassName="border-b border-border pt-1"
+          className="gap-2 px-0.5"
+        >
           <button
             type="button"
             onClick={() => setActiveTab('completion')}
-            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${
               activeTab === 'completion'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -210,7 +214,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('variables')}
-            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 ${
               activeTab === 'variables'
                 ? 'border-rose-500 text-rose-600 dark:text-rose-400'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -219,7 +223,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
             <AlertTriangle className="size-3.5" />
             Variable Warnings ({allIssues.length})
           </button>
-        </div>
+        </HorizontalScrollContainer>
 
         {/* Tab content */}
         <div className="space-y-2.5">

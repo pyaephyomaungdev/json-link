@@ -1,0 +1,27 @@
+{
+  "name": "json-link-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server for JSON Link i18n & Myanmar translation tools",
+  "main": "dist/index.js",
+  "bin": {
+    "json-link-mcp": "./dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "i18n",
+    "localization",
+    "myanmar",
+    "zawgyi",
+    "unicode",
+    "json-link"
+  ],
+  "author": "Pyae Phyo Maung",
+  "license": "MIT"
+}

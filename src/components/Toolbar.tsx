@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
 import {
   Search,
   X,
@@ -38,6 +39,8 @@ interface ToolbarProps {
   namespaces: string[];
   activeFilter: 'all' | 'missing';
   onFilterChange: (f: 'all' | 'missing') => void;
+  statusFilter?: 'all' | 'needs-review' | 'draft' | 'approved';
+  onStatusFilterChange?: (status: 'all' | 'needs-review' | 'draft' | 'approved') => void;
   onOpenAddKey: () => void;
   onOpenAddLanguage: () => void;
   onOpenImport: () => void;
@@ -62,6 +65,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   namespaces,
   activeFilter,
   onFilterChange,
+  statusFilter,
+  onStatusFilterChange,
   onOpenAddKey,
   onOpenAddLanguage,
   onOpenImport,
@@ -78,7 +83,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenCommandPalette,
 }) => {
   return (
-    <div className="flex items-center justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 bg-card border-b border-border text-xs select-none overflow-x-auto overflow-y-hidden shrink-0 h-9 min-h-[36px] max-h-[36px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <HorizontalScrollContainer
+      gradientFrom="from-card"
+      wrapperClassName="bg-card border-b border-border text-xs select-none shrink-0 h-9 min-h-[36px] max-h-[36px]"
+      className="justify-between gap-1.5 sm:gap-2 px-2 sm:px-3 h-full min-w-full"
+    >
       {/* Left: Search & Filter Controls */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {/* Compact Search Input */}
@@ -165,6 +174,52 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               Missing
             </button>
           </div>
+        )}
+
+        {/* Review Status Filter */}
+        {hasItems && onStatusFilterChange && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-1.5 sm:px-2 gap-1 text-[11px] font-normal shrink-0 hidden sm:flex"
+              >
+                <span className="text-muted-foreground">Status:</span>
+                <span className="font-semibold text-foreground capitalize">
+                  {statusFilter === 'needs-review' ? 'Review' : statusFilter || 'All'}
+                </span>
+                <ChevronDown className="size-2.5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuLabel className="text-[11px]">Filter by Status</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={statusFilter || 'all'}
+                onValueChange={v => onStatusFilterChange(v as any)}
+              >
+                <DropdownMenuRadioItem value="all" className="text-xs cursor-pointer">
+                  All Statuses
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="needs-review"
+                  className="text-xs cursor-pointer text-amber-600 dark:text-amber-400 font-medium"
+                >
+                  Needs Review
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="approved"
+                  className="text-xs cursor-pointer text-emerald-600 dark:text-emerald-400 font-medium"
+                >
+                  Approved
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="draft" className="text-xs cursor-pointer">
+                  Draft
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
@@ -338,6 +393,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+    </HorizontalScrollContainer>
   );
 };

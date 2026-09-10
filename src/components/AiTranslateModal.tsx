@@ -106,7 +106,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
   // Batch Translation running state
   const [isTranslating, setIsTranslating] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, setProgress] = useState<{ current: number; total: number; stage?: string }>({ current: 0, total: 0 });
   const [translationError, setTranslationError] = useState('');
   const isAbortedRef = useRef(false);
 
@@ -177,14 +177,45 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const singleSourceVal = singleTargetItem ? (singleTargetItem[sourceLang] || '').trim() : '';
   const singleTargetVal = singleTargetItem ? (singleTargetItem[targetLang] || '').trim() : '';
 
+  // Target languages list (supports single language or 'all' other languages)
+  const targetLangsList = useMemo(() => {
+    if (targetLang === 'all') {
+      return languages.filter(l => l !== sourceLang);
+    }
+    return [targetLang];
+  }, [languages, sourceLang, targetLang]);
+
   // Batch translation counts
   const missingCount = useMemo(() => {
-    return items.filter(i => (i[sourceLang] || '').trim() && !(i[targetLang] || '').trim()).length;
-  }, [items, sourceLang, targetLang]);
+    let total = 0;
+    for (const tL of targetLangsList) {
+      total += items.filter(i => (i[sourceLang] || '').trim() && !(i[tL] || '').trim()).length;
+    }
+    return total;
+  }, [items, sourceLang, targetLangsList]);
 
   const allWithSourceCount = useMemo(() => {
     return items.filter(i => (i[sourceLang] || '').trim()).length;
   }, [items, sourceLang]);
+
+  // Total cells to translate across selected target languages
+  const totalCellsToTranslate = useMemo(() => {
+    if (activeTargetKey) {
+      if (!singleTargetItem) return 0;
+      const hasSource = !!(singleTargetItem[sourceLang] || '').trim();
+      return hasSource ? targetLangsList.length : 0;
+    }
+
+    let total = 0;
+    for (const tL of targetLangsList) {
+      for (const item of items) {
+        if (!(item[sourceLang] || '').trim()) continue;
+        if (scope === 'missing' && (item[tL] || '').trim()) continue;
+        total++;
+      }
+    }
+    return total;
+  }, [items, targetLangsList, sourceLang, scope, activeTargetKey, singleTargetItem]);
 
   // Keys that qualify for translation
   const eligibleItems = useMemo(() => {
@@ -199,13 +230,12 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       if (!hasSource) return false;
 
       if (scope === 'missing') {
-        const targetVal = (item[targetLang] || '').trim();
-        return !targetVal;
+        return targetLangsList.some(tL => !(item[tL] || '').trim());
       }
 
       return true;
     });
-  }, [items, activeTargetKey, singleTargetItem, sourceLang, targetLang, scope]);
+  }, [items, activeTargetKey, singleTargetItem, sourceLang, targetLangsList, scope]);
 
   const handleSaveKey = (newKey: string) => {
     setApiKey(newKey);
@@ -254,7 +284,8 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       return;
     }
 
-    if (eligibleItems.length === 0) {
+    const totalToProcess = totalCellsToTranslate || eligibleItems.length;
+    if (totalToProcess === 0) {
       setTranslationError('No eligible keys found to translate for the selected scope.');
       return;
     }
@@ -262,7 +293,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     setIsTranslating(true);
     setTranslationError('');
     isAbortedRef.current = false;
-    setProgress({ current: 0, total: eligibleItems.length });
+    setProgress({ current: 0, total: totalToProcess });
 
     // Save key & model
     setStoredApiKey(apiKey, rememberKey);
@@ -273,66 +304,83 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     const keyToItemIndex = new Map<string, number>();
     workingItems.forEach((item, idx) => keyToItemIndex.set(item.key, idx));
 
-    let completedCount = 0;
+    let completedTotal = 0;
     let anySuccess = false;
 
     try {
-      for (let i = 0; i < eligibleItems.length; i += BATCH_SIZE) {
+      for (const currentTargetLang of targetLangsList) {
         if (isAbortedRef.current) break;
 
-        const chunk = eligibleItems.slice(i, i + BATCH_SIZE);
-        const reqItems = chunk.map(it => ({
-          key: it.key,
-          sourceText: it[sourceLang] || '',
-        }));
+        const langItems = items.filter(item => {
+          if (activeTargetKey && item.key !== activeTargetKey) return false;
+          const hasSource = !!(item[sourceLang] || '').trim();
+          if (!hasSource) return false;
+          if (scope === 'missing') {
+            return !(item[currentTargetLang] || '').trim();
+          }
+          return true;
+        });
 
-        let translationsMap: Record<string, string> = {};
+        if (langItems.length === 0) continue;
 
-        try {
-          translationsMap = await translateBatchWithOpenRouter({
-            apiKey,
-            model: selectedModel,
-            sourceLang,
-            targetLang,
-            items: reqItems,
-          });
-        } catch (batchErr: any) {
-          console.warn('Batch chunk failed, falling back to item-by-item recovery...', batchErr);
-          // Fallback to single item translation for this chunk
-          for (const singleItem of reqItems) {
-            if (isAbortedRef.current) break;
-            try {
-              const singleResult = await translateBatchWithOpenRouter({
-                apiKey,
-                model: selectedModel,
-                sourceLang,
-                targetLang,
-                items: [singleItem],
-              });
-              Object.assign(translationsMap, singleResult);
-            } catch (singleErr) {
-              console.warn(`Failed translation for key "${singleItem.key}":`, singleErr);
+        for (let i = 0; i < langItems.length; i += BATCH_SIZE) {
+          if (isAbortedRef.current) break;
+
+          const chunk = langItems.slice(i, i + BATCH_SIZE);
+          const reqItems = chunk.map(it => ({
+            key: it.key,
+            sourceText: it[sourceLang] || '',
+          }));
+
+          let translationsMap: Record<string, string> = {};
+
+          try {
+            translationsMap = await translateBatchWithOpenRouter({
+              apiKey,
+              model: selectedModel,
+              sourceLang,
+              targetLang: currentTargetLang,
+              items: reqItems,
+            });
+          } catch (batchErr: any) {
+            console.warn('Batch chunk failed, falling back to item-by-item recovery...', batchErr);
+            for (const singleItem of reqItems) {
+              if (isAbortedRef.current) break;
+              try {
+                const singleResult = await translateBatchWithOpenRouter({
+                  apiKey,
+                  model: selectedModel,
+                  sourceLang,
+                  targetLang: currentTargetLang,
+                  items: [singleItem],
+                });
+                Object.assign(translationsMap, singleResult);
+              } catch (singleErr) {
+                console.warn(`Failed translation for key "${singleItem.key}":`, singleErr);
+              }
             }
           }
-        }
 
-        // Apply all successfully obtained translations
-        for (const [k, translatedText] of Object.entries(translationsMap)) {
-          const idx = keyToItemIndex.get(k);
-          if (idx !== undefined && translatedText) {
-            workingItems[idx] = {
-              ...workingItems[idx],
-              [targetLang]: translatedText,
-            };
-            anySuccess = true;
+          // Apply all successfully obtained translations and set row status to 'needs-review'
+          for (const [k, translatedText] of Object.entries(translationsMap)) {
+            const idx = keyToItemIndex.get(k);
+            if (idx !== undefined && translatedText) {
+              workingItems[idx] = {
+                ...workingItems[idx],
+                [currentTargetLang]: translatedText,
+                status: 'needs-review',
+              };
+              anySuccess = true;
+            }
           }
-        }
 
-        completedCount += chunk.length;
-        setProgress({
-          current: Math.min(completedCount, eligibleItems.length),
-          total: eligibleItems.length,
-        });
+          completedTotal += chunk.length;
+          setProgress({
+            current: Math.min(completedTotal, totalToProcess),
+            total: totalToProcess,
+            stage: `Translating ${getLanguageDisplayName(currentTargetLang)} (${Math.min(i + chunk.length, langItems.length)}/${langItems.length})`,
+          });
+        }
       }
 
       if (anySuccess) {
@@ -769,14 +817,38 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                     className="w-full h-8 px-2.5 bg-background border border-border rounded-md text-xs text-foreground flex items-center justify-between hover:bg-muted/30 cursor-pointer disabled:opacity-50 transition-colors shadow-2xs"
                   >
                     <span className="truncate">
-                      <strong className="uppercase">{targetLang}</strong> — {getLanguageDisplayName(targetLang)}
+                      {targetLang === 'all' ? (
+                        <span className="font-bold text-primary flex items-center gap-1">
+                          <Sparkles className="size-3 text-primary inline" />
+                          All Languages ({languages.filter(l => l !== sourceLang).length})
+                        </span>
+                      ) : (
+                        <>
+                          <strong className="uppercase">{targetLang}</strong> — {getLanguageDisplayName(targetLang)}
+                        </>
+                      )}
                     </span>
                     <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-1.5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 max-h-56 overflow-y-auto">
+                <DropdownMenuContent align="start" className="w-60 max-h-60 overflow-y-auto">
                   <DropdownMenuLabel className="text-[11px] text-muted-foreground">Target Language</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {languages.filter(l => l !== sourceLang).length > 1 && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => setTargetLang('all')}
+                        className="flex items-center justify-between text-xs cursor-pointer font-semibold text-primary"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="size-3 text-primary" />
+                          <span>All Other Languages ({languages.filter(l => l !== sourceLang).map(l => l.toUpperCase()).join(', ')})</span>
+                        </span>
+                        {targetLang === 'all' && <Check className="size-3.5 text-primary" />}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {languages
                     .filter(l => l !== sourceLang)
                     .map(l => (
@@ -796,58 +868,62 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             </div>
           </div>
 
-          {/* Which Rows to Translate (Only visible in Batch / All Rows Mode) */}
+          {/* Translation Scope (Only visible in Batch / All Rows Mode) */}
           {!activeTargetKey ? (
             <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
-                <SlidersHorizontal className="size-3.5 text-primary" />
-                Which rows should be translated?
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                  <SlidersHorizontal className="size-3.5 text-primary" />
+                  Translation Scope
+                </label>
+                <span className="text-[11px] text-muted-foreground">
+                  {scope === 'missing'
+                    ? `${missingCount} empty cell${missingCount !== 1 ? 's' : ''} to fill`
+                    : `${allWithSourceCount} total row${allWithSourceCount !== 1 ? 's' : ''} to translate`}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 p-1 bg-muted/40 border border-border rounded-lg gap-1">
                 <button
                   type="button"
                   onClick={() => setScope('missing')}
                   disabled={isTranslating}
-                  className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
                     scope === 'missing'
-                      ? 'border-primary bg-primary/10 shadow-2xs'
-                      : 'border-border hover:bg-muted/40 text-foreground'
+                      ? 'bg-background text-foreground shadow-2xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-semibold text-foreground">
-                      Missing Translations Only
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded shrink-0">
-                      Recommended
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                    Fills <strong className="text-foreground font-mono">{missingCount}</strong> empty cells in {targetLang.toUpperCase()}. Existing translations remain untouched.
-                  </div>
+                  <span>Missing Keys Only</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      scope === 'missing'
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {missingCount}
+                  </span>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setScope('all')}
                   disabled={isTranslating}
-                  className={`p-3 rounded-lg border text-left cursor-pointer transition-all ${
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
                     scope === 'all'
-                      ? 'border-primary bg-primary/10 shadow-2xs'
-                      : 'border-border hover:bg-muted/40 text-foreground'
+                      ? 'bg-background text-foreground shadow-2xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-semibold text-foreground">
-                      Re-translate All Rows
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded shrink-0">
-                      Overwrite
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-                    Generates fresh translations for all <strong className="text-foreground font-mono">{allWithSourceCount}</strong> rows, replacing existing text.
-                  </div>
+                  <span>All Rows (Overwrite)</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      scope === 'all'
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {allWithSourceCount}
+                  </span>
                 </button>
               </div>
             </div>
@@ -890,10 +966,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
               <div className="flex justify-between text-[11px] font-medium">
                 <span className="flex items-center gap-1.5 text-primary">
                   <Loader2 className="size-3 animate-spin" />
-                  Translating with {selectedModel.split('/')[1] || selectedModel}...
+                  {progress.stage || `Translating with ${selectedModel.split('/')[1] || selectedModel}...`}
                 </span>
                 <span>
-                  {progress.current} / {progress.total} keys
+                  {progress.current} / {progress.total} {progress.total === 1 ? 'key' : 'keys'}
                 </span>
               </div>
               <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -941,7 +1017,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 type="button"
                 size="sm"
                 onClick={handleStartTranslation}
-                disabled={eligibleItems.length === 0 || !apiKey.trim()}
+                disabled={totalCellsToTranslate === 0 || !apiKey.trim()}
                 className="flex-1 sm:flex-none gap-1.5 font-semibold text-xs h-8 shadow-xs"
               >
                 {activeTargetKey ? (
@@ -962,7 +1038,8 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                   <>
                     <Sparkles className="size-3.5" />
                     <span>
-                      Translate {eligibleItems.length} {eligibleItems.length === 1 ? 'Key' : 'Keys'}
+                      Translate {totalCellsToTranslate} {totalCellsToTranslate === 1 ? 'Key' : 'Keys'}
+                      {targetLang === 'all' ? ' (All Languages)' : ''}
                     </span>
                   </>
                 )}

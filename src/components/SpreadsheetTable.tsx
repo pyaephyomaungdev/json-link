@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { TranslationItem } from '@/types';
+import { TranslationItem, RowStatus } from '@/types';
 import { Button } from '@/components/ui/button';
+import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
 import {
   Copy,
   Check,
@@ -18,11 +19,14 @@ import {
   Pin,
   PinOff,
   AlertTriangle,
+  AlertCircle,
   Sparkles,
   Pencil,
   FileText,
   Type,
   X,
+  Undo2,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -50,6 +54,9 @@ interface SpreadsheetTableProps {
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
   onOpenAiTranslate?: (targetLang?: string, targetKey?: string) => void;
+  onUpdateRowStatus?: (key: string, status: RowStatus) => void;
+  filterMissingLang?: string | null;
+  onToggleFilterMissingLang?: (lang: string) => void;
 }
 
 interface EditingCell {
@@ -75,6 +82,11 @@ function getColumnLetter(colIndex: number): string {
   return letter;
 }
 
+const DEFAULT_COLUMN_WIDTHS: Record<string, number> = {
+  key: 280,
+  description: 220,
+};
+
 export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   items,
   languages,
@@ -88,6 +100,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onDuplicateRow,
   onBatchUpdate,
   onOpenAiTranslate,
+  onUpdateRowStatus,
+  filterMissingLang,
+  onToggleFilterMissingLang,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -97,6 +112,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return null;
   });
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+
+  // Column widths state persisted to localStorage
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('jsonlink_column_widths');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_COLUMN_WIDTHS;
+  });
+
+  const getColWidth = (id: string, fallback = 280): number => {
+    return columnWidths[id] ?? fallback;
+  };
+
+  const ROW_NUM_WIDTH = 54;
+  const KEY_COL_WIDTH = getColWidth('key', 280);
+  const DESC_COL_WIDTH = getColWidth('description', 220);
+  const getLangColWidth = (lang: string) => getColWidth(lang, 280);
+  const MENU_COL_WIDTH = 56;
+
+  // Translation history diff/revert state: previousValues[key][lang] = oldVal
+  const [previousValues, setPreviousValues] = useState<Record<string, Record<string, string>>>({});
+
   // Frozen columns state: 0 = unfreeze all, 1 = freeze Key (default), 2+ = freeze up to language idx + 2
   const [frozenCount, setFrozenCount] = useState<number>(1);
   const safeFrozenCount = Math.min(frozenCount, languages.length + 1);
@@ -104,15 +142,58 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const isKeyFrozen = safeFrozenCount >= 1;
   const isKeyLastFrozen = safeFrozenCount === 1;
 
-  const ROW_NUM_WIDTH = 48;
-  const KEY_COL_WIDTH = 280;
-  const DESC_COL_WIDTH = 220;
-  const LANG_COL_WIDTH = 280;
-  const MENU_COL_WIDTH = 56;
-
   const [showDescription, setShowDescription] = useState<boolean>(() => {
     return items.some(i => i.description && i.description.trim() !== '');
   });
+
+  // Track resizing divider drag
+  const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
+
+  const handleStartResize = (colId: string, currentWidth: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingColRef.current = {
+      colId,
+      startX: e.clientX,
+      startWidth: currentWidth,
+    };
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!resizingColRef.current) return;
+      const delta = ev.clientX - resizingColRef.current.startX;
+      const newW = Math.max(120, Math.min(900, resizingColRef.current.startWidth + delta));
+      setColumnWidths(prev => ({
+        ...prev,
+        [resizingColRef.current!.colId]: newW,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      if (resizingColRef.current) {
+        setColumnWidths(latest => {
+          try {
+            localStorage.setItem('jsonlink_column_widths', JSON.stringify(latest));
+          } catch {}
+          return latest;
+        });
+        resizingColRef.current = null;
+      }
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleResetColumnWidths = () => {
+    setColumnWidths(DEFAULT_COLUMN_WIDTHS);
+    try {
+      localStorage.removeItem('jsonlink_column_widths');
+    } catch {}
+    setCopiedNotification('Reset column widths to default');
+    setTimeout(() => setCopiedNotification(null), 1500);
+  };
 
   const zawgyiStats = useMemo(() => {
     const stats: Record<string, ReturnType<typeof detectZawgyiInItems>> = {};
@@ -122,18 +203,62 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return stats;
   }, [items, languages]);
 
+  // Wrapped update cell that preserves diff for 1-click Revert
+  const handleInternalUpdateCell = (key: string, lang: string, value: string) => {
+    const currentItem = items.find(i => i.key === key);
+    const oldVal = currentItem ? currentItem[lang] || '' : '';
+    if (oldVal !== value) {
+      setPreviousValues(prev => ({
+        ...prev,
+        [key]: {
+          ...(prev[key] || {}),
+          [lang]: oldVal,
+        },
+      }));
+    }
+    onUpdateCell(key, lang, value);
+  };
+
+  const handleRevertCell = (key: string, lang: string) => {
+    const prevVal = previousValues[key]?.[lang];
+    if (prevVal !== undefined) {
+      onUpdateCell(key, lang, prevVal);
+      setPreviousValues(prev => {
+        const updated = { ...prev };
+        if (updated[key]) {
+          delete updated[key][lang];
+          if (Object.keys(updated[key]).length === 0) {
+            delete updated[key];
+          }
+        }
+        return updated;
+      });
+      setCopiedNotification(`Reverted to previous translation`);
+      setTimeout(() => setCopiedNotification(null), 1500);
+    }
+  };
+
   const handleConvertZawgyiToUnicode = (lang: string) => {
     if (!onBatchUpdate) return;
     let count = 0;
+    const prevMap: Record<string, string> = {};
     const updated = items.map(item => {
       const val = item[lang];
       if (typeof val === 'string' && isZawgyi(val)) {
         count++;
+        prevMap[item.key] = val;
         return { ...item, [lang]: zawgyiToUnicode(val) };
       }
       return item;
     });
     if (count > 0) {
+      setPreviousValues(prev => {
+        const next = { ...prev };
+        for (const [k, oldText] of Object.entries(prevMap)) {
+          next[k] = { ...(next[k] || {}), [lang]: oldText };
+        }
+        return next;
+      });
       onBatchUpdate(updated);
       setCopiedNotification(`Converted ${count} Zawgyi cell${count > 1 ? 's' : ''} to Unicode`);
     } else {
@@ -148,7 +273,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     const val = item[lang];
     if (typeof val === 'string' && val) {
       const converted = zawgyiToUnicode(val);
-      onUpdateCell(key, lang, converted);
+      handleInternalUpdateCell(key, lang, converted);
       setCopiedNotification(`Converted cell to Unicode`);
       setTimeout(() => setCopiedNotification(null), 1500);
     }
@@ -156,12 +281,21 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const handleConvertUnicodeToZawgyi = (lang: string) => {
     if (!onBatchUpdate) return;
+    const prevMap: Record<string, string> = {};
     const updated = items.map(item => {
       const val = item[lang];
       if (typeof val === 'string' && val) {
+        prevMap[item.key] = val;
         return { ...item, [lang]: unicodeToZawgyi(val) };
       }
       return item;
+    });
+    setPreviousValues(prev => {
+      const next = { ...prev };
+      for (const [k, oldText] of Object.entries(prevMap)) {
+        next[k] = { ...(next[k] || {}), [lang]: oldText };
+      }
+      return next;
     });
     onBatchUpdate(updated);
     setCopiedNotification(`Converted ${lang.toUpperCase()} to Zawgyi`);
@@ -197,18 +331,121 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         onUpdateKey(editingCell.key, trimmed);
       }
     } else {
-      onUpdateCell(editingCell.key, editingCell.field, editingCell.value);
+      handleInternalUpdateCell(editingCell.key, editingCell.field, editingCell.value);
     }
 
     setEditingCell(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSaveEdit();
+      // Excel-like: move down to next row on Enter
+      if (selectedCell && selectedCell.rowIndex < items.length - 1) {
+        const nextRow = selectedCell.rowIndex + 1;
+        setSelectedCell({
+          key: items[nextRow].key,
+          field: selectedCell.field,
+          colIndex: selectedCell.colIndex,
+          rowIndex: nextRow,
+        });
+      }
     } else if (e.key === 'Escape') {
       setEditingCell(null);
+    }
+  };
+
+  // Keyboard navigation across cells when NOT editing
+  const handleTableKeyDown = (e: React.KeyboardEvent) => {
+    if (editingCell || !selectedCell) return;
+
+    const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
+    const totalRows = items.length;
+
+    const getColInfoFromIndex = (colIdx: number) => {
+      if (colIdx === 0) return 'key';
+      if (showDescription && colIdx === 1) return 'description';
+      const langIdx = showDescription ? colIdx - 2 : colIdx - 1;
+      return languages[langIdx] || 'key';
+    };
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const newRow = Math.max(0, selectedCell.rowIndex - 1);
+      setSelectedCell({
+        key: items[newRow].key,
+        field: selectedCell.field,
+        colIndex: selectedCell.colIndex,
+        rowIndex: newRow,
+      });
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const newRow = Math.min(totalRows - 1, selectedCell.rowIndex + 1);
+      setSelectedCell({
+        key: items[newRow].key,
+        field: selectedCell.field,
+        colIndex: selectedCell.colIndex,
+        rowIndex: newRow,
+      });
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const newCol = Math.max(0, selectedCell.colIndex - 1);
+      const field = getColInfoFromIndex(newCol);
+      setSelectedCell({
+        key: selectedCell.key,
+        field,
+        colIndex: newCol,
+        rowIndex: selectedCell.rowIndex,
+      });
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const newCol = Math.min(totalCols - 1, selectedCell.colIndex + 1);
+      const field = getColInfoFromIndex(newCol);
+      setSelectedCell({
+        key: selectedCell.key,
+        field,
+        colIndex: newCol,
+        rowIndex: selectedCell.rowIndex,
+      });
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        let newCol = selectedCell.colIndex - 1;
+        let newRow = selectedCell.rowIndex;
+        if (newCol < 0) {
+          newCol = totalCols - 1;
+          newRow = Math.max(0, newRow - 1);
+        }
+        const field = getColInfoFromIndex(newCol);
+        setSelectedCell({
+          key: items[newRow].key,
+          field,
+          colIndex: newCol,
+          rowIndex: newRow,
+        });
+      } else {
+        let newCol = selectedCell.colIndex + 1;
+        let newRow = selectedCell.rowIndex;
+        if (newCol >= totalCols) {
+          newCol = 0;
+          newRow = Math.min(totalRows - 1, newRow + 1);
+        }
+        const field = getColInfoFromIndex(newCol);
+        setSelectedCell({
+          key: items[newRow].key,
+          field,
+          colIndex: newCol,
+          rowIndex: newRow,
+        });
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const currItem = items[selectedCell.rowIndex];
+      if (currItem) {
+        const val = selectedCell.field === 'key' ? currItem.key : currItem[selectedCell.field] || '';
+        handleStartEdit(currItem.key, selectedCell.field, val);
+      }
     }
   };
 
@@ -241,7 +478,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           setSelectedCell({ ...selectedCell, key: trimmed });
         }
       } else {
-        onUpdateCell(selectedCell.key, selectedCell.field, val);
+        handleInternalUpdateCell(selectedCell.key, selectedCell.field, val);
       }
       setCopiedNotification('Pasted into cell');
       setTimeout(() => setCopiedNotification(null), 1200);
@@ -338,6 +575,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     <div
       className="flex-1 flex flex-col w-full h-full min-h-0 select-none bg-background outline-none"
       onPaste={handlePaste}
+      onKeyDown={handleTableKeyDown}
       tabIndex={0}
     >
       {/* MS Excel Style Formula Bar (Cell Address & Content Inspector) with 100% Solid Background */}
@@ -416,6 +654,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <span>
               {copiedNotification.startsWith('Pasted') ||
               copiedNotification.startsWith('Converted') ||
+              copiedNotification.startsWith('Reverted') ||
+              copiedNotification.startsWith('Reset') ||
               copiedNotification.startsWith('No ') ||
               copiedNotification.startsWith('Copied')
                 ? copiedNotification
@@ -436,7 +676,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <col style={{ width: DESC_COL_WIDTH, minWidth: DESC_COL_WIDTH }} />
             )}
             {languages.map(lang => (
-              <col key={lang} style={{ width: LANG_COL_WIDTH, minWidth: LANG_COL_WIDTH }} />
+              <col key={lang} style={{ width: getLangColWidth(lang), minWidth: getLangColWidth(lang) }} />
             ))}
             <col style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH }} />
           </colgroup>
@@ -452,7 +692,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 #
               </th>
 
-              {/* Translation Key Header */}
+              {/* Translation Key Header with Resize Handle */}
               <th
                 style={{
                   width: KEY_COL_WIDTH,
@@ -460,8 +700,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
                 }}
                 className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
-                  isKeyFrozen ? 'left-12 z-45' : 'z-40'
-                } border-b border-border ${getFreezeLineClass(isKeyLastFrozen)}`}
+                  isKeyFrozen ? 'left-[54px] z-45' : 'z-40'
+                } border-b border-border relative group/header ${getFreezeLineClass(isKeyLastFrozen)}`}
               >
                 <div className="flex items-center justify-between gap-1.5">
                   <div className="flex items-center gap-1.5">
@@ -529,16 +769,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
+                {/* Resizable Divider Handle */}
+                <div
+                  onMouseDown={(e) => handleStartResize('key', KEY_COL_WIDTH, e)}
+                  className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                  title="Drag to resize column"
+                />
               </th>
 
-              {/* Context / Description Header */}
+              {/* Context / Description Header with Resize Handle */}
               {showDescription && (
                 <th
                   style={{
                     width: DESC_COL_WIDTH,
                     minWidth: DESC_COL_WIDTH,
                   }}
-                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-r border-border"
+                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-r border-border relative group/header"
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -557,30 +804,44 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       <X className="size-3" />
                     </button>
                   </div>
+
+                  {/* Resizable Divider Handle */}
+                  <div
+                    onMouseDown={(e) => handleStartResize('description', DESC_COL_WIDTH, e)}
+                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                    title="Drag to resize column"
+                  />
                 </th>
               )}
 
-              {/* Language Column Headers */}
+              {/* Language Column Headers with Resize Handle & Missing Keys Indicator */}
               {languages.map((lang, idx) => {
                 const isLangFrozen = safeFrozenCount >= idx + 2;
                 const isLangLastFrozen = safeFrozenCount === idx + 2;
                 const descOffset = showDescription ? DESC_COL_WIDTH : 0;
+                let prevLangsWidth = 0;
+                for (let p = 0; p < idx; p++) {
+                  prevLangsWidth += getLangColWidth(languages[p]);
+                }
                 const langLeft = isLangFrozen
-                  ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + idx * LANG_COL_WIDTH
+                  ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + prevLangsWidth
                   : undefined;
                 const colLetter = getColumnLetter(showDescription ? idx + 2 : idx + 1);
+                const currentWidth = getLangColWidth(lang);
+
+                const missingCount = items.filter(i => !(i[lang] || '').trim()).length;
 
                 return (
                   <th
                     key={lang}
                     style={{
-                      width: LANG_COL_WIDTH,
-                      minWidth: LANG_COL_WIDTH,
+                      width: currentWidth,
+                      minWidth: currentWidth,
                       left: langLeft,
                     }}
                     className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
                       isLangFrozen ? 'z-45' : 'z-40'
-                    } border-b border-border ${getFreezeLineClass(isLangLastFrozen)}`}
+                    } border-b border-border relative group/header ${getFreezeLineClass(isLangLastFrozen)}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -605,6 +866,33 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <span className="text-[11px] font-normal text-muted-foreground truncate">
                           {lang === 'my' ? '(မြန်မာ)' : lang === 'en' ? '(English)' : ''}
                         </span>
+
+                        {/* Missing keys quick-filter badge */}
+                        {missingCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleFilterMissingLang) {
+                                onToggleFilterMissingLang(lang);
+                              }
+                            }}
+                            title={
+                              filterMissingLang === lang
+                                ? `Filtering ${missingCount} missing keys. Click to clear filter.`
+                                : `Click to filter ${missingCount} missing keys in ${lang.toUpperCase()}`
+                            }
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer shrink-0 ${
+                              filterMissingLang === lang
+                                ? 'bg-amber-500 text-white font-bold shadow-2xs'
+                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
+                            }`}
+                          >
+                            <AlertCircle className="size-2.5 shrink-0" />
+                            <span>{missingCount} missing</span>
+                          </button>
+                        )}
+
                         {/* Zawgyi font detected badge */}
                         {zawgyiStats[lang]?.hasZawgyi && (
                           <button
@@ -619,6 +907,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             <span>Zawgyi ({zawgyiStats[lang].count})</span>
                           </button>
                         )}
+
                         {isLangFrozen && (
                           <button
                             onClick={(e) => {
@@ -738,6 +1027,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
+
+                    {/* Resizable Divider Handle */}
+                    <div
+                      onMouseDown={(e) => handleStartResize(lang, currentWidth, e)}
+                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                      title="Drag to resize column"
+                    />
                   </th>
                 );
               })}
@@ -758,13 +1054,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               const rowNumber = rowIdx + 1;
               const isKeySelected =
                 selectedCell?.key === item.key && selectedCell.field === 'key';
+              const rowStatus: RowStatus = item.status || 'draft';
 
               return (
                 <tr
                   key={item.key}
                   className="group transition-colors"
                 >
-                  {/* Row Number */}
+                  {/* Row Number & Review Status Indicator */}
                   <td
                     style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                     onClick={() =>
@@ -775,9 +1072,55 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className={`py-1.5 px-2 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
+                    className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
-                    {rowNumber}
+                    <div className="flex flex-col items-center justify-center">
+                      <span>{rowNumber}</span>
+
+                      {/* Row Review Status Dropdown Badge */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className={`mt-0.5 px-1 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                              rowStatus === 'approved'
+                                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40'
+                                : rowStatus === 'needs-review'
+                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40'
+                                : 'bg-muted text-muted-foreground border border-border/80'
+                            }`}
+                            title={`Status: ${rowStatus}. Click to change review status.`}
+                          >
+                            {rowStatus === 'approved' ? '✓ Appr' : rowStatus === 'needs-review' ? 'Review' : 'Draft'}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-36">
+                          <DropdownMenuLabel className="text-[10px]">Row Review Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onUpdateRowStatus?.(item.key, 'draft')}
+                            className="text-xs cursor-pointer gap-1.5"
+                          >
+                            <span className="size-2 rounded-full bg-slate-400" />
+                            <span>Draft</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onUpdateRowStatus?.(item.key, 'needs-review')}
+                            className="text-xs cursor-pointer gap-1.5 text-amber-600 dark:text-amber-400"
+                          >
+                            <span className="size-2 rounded-full bg-amber-500" />
+                            <span>Needs Review</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onUpdateRowStatus?.(item.key, 'approved')}
+                            className="text-xs cursor-pointer gap-1.5 text-emerald-600 dark:text-emerald-400"
+                          >
+                            <span className="size-2 rounded-full bg-emerald-500" />
+                            <span>Approved</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
 
                   {/* Translation Key Column */}
@@ -894,8 +1237,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const isLangFrozen = safeFrozenCount >= colIdx + 2;
                     const isLangLastFrozen = safeFrozenCount === colIdx + 2;
                     const descOffset = showDescription ? DESC_COL_WIDTH : 0;
+                    let prevLangsWidth = 0;
+                    for (let p = 0; p < colIdx; p++) {
+                      prevLangsWidth += getLangColWidth(languages[p]);
+                    }
                     const langLeft = isLangFrozen
-                      ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + colIdx * LANG_COL_WIDTH
+                      ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + prevLangsWidth
                       : undefined;
 
                     const sourceLang = languages.includes('en') ? 'en' : languages[0];
@@ -903,13 +1250,17 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const varValidation =
                       lang !== sourceLang && val ? validateVariables(sourceVal, val) : { isValid: true, missingVariables: [] };
 
+                    const hasPrevious =
+                      previousValues[item.key]?.[lang] !== undefined &&
+                      previousValues[item.key][lang] !== val;
+
                     return (
                       <td
                         key={lang}
                         dir={isRtl ? 'rtl' : 'ltr'}
                         style={{
-                          width: LANG_COL_WIDTH,
-                          minWidth: LANG_COL_WIDTH,
+                          width: getLangColWidth(lang),
+                          minWidth: getLangColWidth(lang),
                           left: langLeft,
                         }}
                         onClick={() =>
@@ -1012,9 +1363,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                     )}
                                   </div>
 
-                                  {/* Dedicated Warning & Action Badges row with proper clearance */}
-                                  {(isZawgyiCell || !varValidation.isValid) && (
+                                  {/* Warning Badges & 1-Click Revert Button */}
+                                  {(isZawgyiCell || !varValidation.isValid || hasPrevious) && (
                                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                      {hasPrevious && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRevertCell(item.key, lang);
+                                          }}
+                                          className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-2xs select-none"
+                                          title={`Revert back to: "${previousValues[item.key][lang]}"`}
+                                        >
+                                          <Undo2 className="size-2.5 shrink-0" />
+                                          <span>Revert</span>
+                                        </button>
+                                      )}
                                       {isZawgyiCell && (
                                         <button
                                           type="button"
@@ -1070,6 +1435,25 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           {item.key}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        {onUpdateRowStatus && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onUpdateRowStatus(item.key, 'approved')}
+                              className="gap-2 cursor-pointer text-xs text-emerald-600 dark:text-emerald-400"
+                            >
+                              <CheckCircle2 className="size-3.5" />
+                              Mark as Approved
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
+                              className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400"
+                            >
+                              <AlertCircle className="size-3.5" />
+                              Mark for Review
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
                         {onOpenAiTranslate && (
                           <DropdownMenuItem
                             onClick={() => onOpenAiTranslate(undefined, item.key)}
@@ -1110,7 +1494,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <DropdownMenuItem
                           onClick={() => {
                             for (const l of languages) {
-                              onUpdateCell(item.key, l, '');
+                              handleInternalUpdateCell(item.key, l, '');
                             }
                           }}
                           className="gap-2 cursor-pointer text-xs"
@@ -1136,8 +1520,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </table>
       </div>
 
-      {/* Excel Bottom Status Bar */}
-      <div className="flex items-center justify-between px-2.5 sm:px-4 py-1 sm:py-1.5 bg-[#f4f4f5] dark:bg-[#18181b] text-[11px] sm:text-xs border-t border-border select-none shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Excel Bottom Status Bar with Reset Widths option */}
+      <HorizontalScrollContainer
+        gradientFrom="from-[#f4f4f5] dark:from-[#18181b]"
+        wrapperClassName="bg-[#f4f4f5] dark:bg-[#18181b] text-[11px] sm:text-xs border-t border-border select-none shrink-0"
+        className="justify-between gap-2 sm:gap-3 px-2.5 sm:px-4 py-1 sm:py-1.5 h-full min-w-full"
+      >
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <span className="font-medium text-foreground whitespace-nowrap">
             <span className="font-bold">{items.length.toLocaleString()}</span> keys
@@ -1174,6 +1562,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               </button>
             )}
           </div>
+          <span className="text-muted-foreground">•</span>
+          <button
+            onClick={handleResetColumnWidths}
+            className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+            title="Reset custom column widths to defaults"
+          >
+            Reset Widths
+          </button>
           <span className="text-muted-foreground hidden lg:inline">•</span>
           <span className="text-muted-foreground hidden lg:flex items-center gap-1.5 text-[11px]">
             Developed with <Heart className="size-3 text-rose-500 fill-rose-500 inline shrink-0" /> by{' '}
@@ -1191,10 +1587,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </button>
           <span className="text-muted-foreground hidden md:inline">•</span>
           <span className="text-[11px] text-muted-foreground hidden md:inline whitespace-nowrap">
-            Double click cell to edit • Press Enter to save
+            Arrows to navigate • Double click or Enter to edit
           </span>
         </div>
-      </div>
+      </HorizontalScrollContainer>
     </div>
   );
 };

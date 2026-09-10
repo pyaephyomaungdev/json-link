@@ -11,6 +11,7 @@ import {
   exportToIosStringsZip,
   generateAndroidXml,
   generateIosStrings,
+  exportAllAsProjectBundle,
 } from '../exporter';
 import { TranslationItem } from '@/types';
 
@@ -165,6 +166,11 @@ describe('exporter.ts', () => {
 
     it('bundles iOS Strings zip files', async () => {
       await exportToIosStringsZip(sampleItems, languages);
+      expect(URL.createObjectURL).toHaveBeenCalled();
+    });
+
+    it('bundles complete multi-platform Project Bundle ZIP', async () => {
+      await exportAllAsProjectBundle(sampleItems, languages, {}, 'all-in-one', 'my-app.zip');
       expect(URL.createObjectURL).toHaveBeenCalled();
     });
   });

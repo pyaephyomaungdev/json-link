@@ -1,6 +1,9 @@
+export type RowStatus = 'draft' | 'needs-review' | 'approved';
+
 export interface TranslationItem {
   key: string;
   description?: string; // Developer context, usage notes, or translator comment
+  status?: RowStatus; // Workflow review status
   [lang: string]: string | undefined; // e.g. en: "Retry", my: "ထပ်ကြိုးစားမည်"
 }
 
@@ -20,7 +23,8 @@ export type ExportFormat =
   | 'yaml-zip'
   | 'android-xml'
   | 'ios-strings'
-  | 'typescript-dts';
+  | 'typescript-dts'
+  | 'project-bundle';
 
 export interface ExportOptions {
   format: ExportFormat;

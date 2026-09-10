@@ -26,6 +26,7 @@ import {
   Code2,
   Smartphone,
   Layers,
+  Package,
 } from 'lucide-react';
 import { TranslationItem, ExportOptions, ExportFormat } from '@/types';
 import {
@@ -37,6 +38,7 @@ import {
   exportToAndroidXmlZip,
   exportToIosStringsZip,
   exportToTypeScriptDts,
+  exportAllAsProjectBundle,
   generateLanguageJsonData,
   objectToYaml,
 } from '@/lib/exporter';
@@ -109,6 +111,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       return `export type TranslationKey =\n${keysUnion}\n  | ...;\n\nexport type SupportedLanguage = ${languages.map(l => JSON.stringify(l)).join(' | ')};`;
     }
 
+    if (activeTab === 'project-bundle') {
+      return `📦 Complete Multi-Framework Bundle:\n\n` +
+        `├── web-locales/ (${languages.map(l => `${l}.json`).join(', ')})\n` +
+        `├── flutter-l10n/ (${languages.map(l => `app_${l}.arb`).join(', ')})\n` +
+        `├── ios-strings/ (${languages.map(l => `${l}.lproj/Localizable.strings`).join(', ')})\n` +
+        `├── android-res/ (${languages.map(l => l === 'en' ? 'values/strings.xml' : `values-${l}/strings.xml`).join(', ')})\n` +
+        `└── translations.d.ts (TypeScript definitions)`;
+    }
+
     return '';
   }, [items, previewLang, nested, indent, activeTab, languages]);
 
@@ -121,7 +132,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       filename,
     };
 
-    if (activeTab === 'excel') {
+    if (activeTab === 'project-bundle') {
+      await exportAllAsProjectBundle(items, languages, options, 'all-in-one', `${filename}_all_locales_bundle.zip`);
+    } else if (activeTab === 'excel') {
       exportToExcel(items, languages, `${filename}.xlsx`);
     } else if (activeTab === 'csv') {
       exportToCsv(items, languages, `${filename}.csv`);
@@ -149,6 +162,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const formatButtons = [
+    { id: 'project-bundle' as ExportFormat, label: 'Full Bundle (ZIP)', shortLabel: 'Full Bundle', icon: <Package className="size-3.5 text-indigo-500 shrink-0" /> },
     { id: 'excel' as ExportFormat, label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
     { id: 'csv' as ExportFormat, label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
     { id: 'json-zip' as ExportFormat, label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
@@ -192,6 +206,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         {/* Description Banner per Format */}
         <div className="p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border text-xs">
+          {activeTab === 'project-bundle' && (
+            <p className="text-muted-foreground">
+              ⚡ <strong>One-Click Project Bundle</strong>: Generates an organized <code className="font-mono">.zip</code> containing pre-structured directories for Web (<code className="font-mono">web-locales/</code>), Flutter (<code className="font-mono">flutter-l10n/</code>), iOS (<code className="font-mono">ios-strings/</code>), Android (<code className="font-mono">android-res/</code>), and TypeScript declarations.
+            </p>
+          )}
           {activeTab === 'excel' && (
             <p className="text-muted-foreground">
               Multi-column spreadsheet with columns for Key and languages ({languages.join(', ')}). Formatted with styled header and auto column width.

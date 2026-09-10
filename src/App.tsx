@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { TranslationItem } from '@/types';
+import { TranslationItem, RowStatus } from '@/types';
 import { getInitialTranslations } from '@/data/sampleData';
 import { Toolbar } from '@/components/Toolbar';
 import { SpreadsheetTable } from '@/components/SpreadsheetTable';
@@ -13,10 +13,12 @@ import { AiTranslateModal } from '@/components/AiTranslateModal';
 import { FindReplaceModal } from '@/components/FindReplaceModal';
 import { ScorecardModal } from '@/components/ScorecardModal';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { LinterModal } from '@/components/LinterModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { Logo } from '@/components/Logo';
+import { runLocalizationLinter } from '@/lib/linter';
 import {
   parseJsonFile,
   parseSpreadsheet,
@@ -91,6 +93,8 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNamespace, setSelectedNamespace] = useState('all');
   const [activeFilter, setActiveFilter] = useState<'all' | 'missing'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'needs-review' | 'draft' | 'approved'>('all');
+  const [filterMissingLang, setFilterMissingLang] = useState<string | null>(null);
 
   // Modal dialog states
   const [isAddKeyOpen, setIsAddKeyOpen] = useState(false);
@@ -111,6 +115,13 @@ export function App() {
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
+  const [isLinterOpen, setIsLinterOpen] = useState(false);
+
+  // Linter report calculations
+  const lintReport = useMemo(() => {
+    return runLocalizationLinter(items, languages);
+  }, [items, languages]);
+  const lintIssueCount = lintReport.totalIssues;
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
@@ -207,6 +218,8 @@ export function App() {
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
   };
 
   // Helper to compute Diff between current items and incoming items
@@ -402,15 +415,27 @@ export function App() {
     return Array.from(nsSet).sort();
   }, [items]);
 
-  // Filtered items based on search, namespace, and missing filter
+  // Filtered items based on search, namespace, missing filter, status filter, and column missing filter
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     return items.filter(item => {
-      // Missing filter
+      // Global Missing filter
       if (activeFilter === 'missing') {
         const hasMissing = languages.some(lang => !(item[lang] || '').trim());
         if (!hasMissing) return false;
+      }
+
+      // Specific Column Missing filter (from column header badge)
+      if (filterMissingLang) {
+        const isMissingInLang = !(item[filterMissingLang] || '').trim();
+        if (!isMissingInLang) return false;
+      }
+
+      // Review status filter
+      if (statusFilter !== 'all') {
+        const itemStatus = item.status || 'draft';
+        if (itemStatus !== statusFilter) return false;
       }
 
       // Namespace filter
@@ -432,12 +457,18 @@ export function App() {
 
       return true;
     });
-  }, [items, languages, searchQuery, selectedNamespace, activeFilter]);
+  }, [items, languages, searchQuery, selectedNamespace, activeFilter, statusFilter, filterMissingLang]);
 
-  // Handlers for cell editing
+  // Handlers for cell editing and status
   const handleUpdateCell = (key: string, lang: string, value: string) => {
     setItems(
       items.map(item => (item.key === key ? { ...item, [lang]: value } : item))
+    );
+  };
+
+  const handleUpdateRowStatus = (key: string, status: RowStatus) => {
+    setItems(
+      items.map(item => (item.key === key ? { ...item, status } : item))
     );
   };
 
@@ -620,6 +651,15 @@ export function App() {
         shortcut: 'Cmd+H',
         icon: <Replace className="size-3.5 text-blue-500" />,
         action: () => setIsFindReplaceOpen(true),
+      },
+      {
+        id: 'linter',
+        category: 'Spreadsheet',
+        title: 'Localization QA & Consistency Linter',
+        description: 'Scan and auto-fix whitespace, variable mismatches, duplicates, and expansion',
+        shortcut: 'Lint',
+        icon: <Sparkles className="size-3.5 text-amber-500" />,
+        action: () => setIsLinterOpen(true),
       },
       {
         id: 'scorecard',
@@ -852,8 +892,23 @@ export function App() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setIsLinterOpen(true)}
+                className={`h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer ${
+                  lintIssueCount > 0
+                    ? 'text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
+                    : 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10'
+                }`}
+                title="Localization QA & Consistency Linter"
+              >
+                <Sparkles className="size-3.5" />
+                <span>{lintIssueCount > 0 ? `Linter (${lintIssueCount})` : 'Linter'}</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setIsGlossaryOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
+                className="h-7 px-2 text-xs gap-1.5 hidden lg:flex cursor-pointer"
                 title="AI Translation Glossary & Termbase"
               >
                 <BookOpen className="size-3.5 text-purple-500" />
@@ -1000,6 +1055,8 @@ export function App() {
             namespaces={namespaces}
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
             onOpenAddKey={() => setIsAddKeyOpen(true)}
             onOpenAddLanguage={() => setIsAddLanguageOpen(true)}
             onOpenImport={() => setIsImportOpen(true)}
@@ -1030,6 +1087,11 @@ export function App() {
             onOpenImport={() => setIsImportOpen(true)}
             onBatchUpdate={handleBatchUpdate}
             onOpenAiTranslate={handleOpenAiTranslate}
+            onUpdateRowStatus={handleUpdateRowStatus}
+            filterMissingLang={filterMissingLang}
+            onToggleFilterMissingLang={(lang) => {
+              setFilterMissingLang(prev => (prev === lang ? null : lang));
+            }}
           />
         </div>
       )}
@@ -1149,6 +1211,18 @@ export function App() {
       <GlossaryModal
         isOpen={isGlossaryOpen}
         onClose={() => setIsGlossaryOpen(false)}
+      />
+
+      {/* Localization QA & Consistency Linter */}
+      <LinterModal
+        isOpen={isLinterOpen}
+        onClose={() => setIsLinterOpen(false)}
+        items={items}
+        languages={languages}
+        onApplyItems={setItems}
+        onJumpToCell={(key) => {
+          setSearchQuery(key);
+        }}
       />
     </div>
   );
