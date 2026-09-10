@@ -318,8 +318,8 @@ export function App() {
       {/* Main Content Area */}
       {items.length === 0 ? (
         // Empty Upload View
-        <main className="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
-          <div className="max-w-xl w-full flex flex-col gap-5 my-auto">
+        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="max-w-xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
             <div
               onDragOver={e => {
                 e.preventDefault();
@@ -334,7 +334,7 @@ export function App() {
                 }
               }}
               onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-4 bg-card/60 ${
+              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${
                 isHeroDragOver
                   ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
                   : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
@@ -353,21 +353,21 @@ export function App() {
                 className="hidden"
               />
 
-              <div className="mb-2">
+              <div className="mb-1 sm:mb-2">
                 <Logo size="lg" showText={false} />
               </div>
 
               <div>
-                <h2 className="text-lg font-bold tracking-tight text-foreground">
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
                   Drop translation files here to open spreadsheet
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed">
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm leading-relaxed mx-auto">
                   Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or an Excel file.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 mt-1">
-                <Button size="sm" className="gap-2 font-semibold shadow-xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 mt-1 w-full sm:w-auto">
+                <Button size="sm" className="gap-2 font-semibold shadow-xs h-9 sm:h-8 w-full sm:w-auto">
                   <UploadCloud className="size-4" />
                   Browse Files
                 </Button>
@@ -378,25 +378,29 @@ export function App() {
                     e.stopPropagation();
                     setIsAddKeyOpen(true);
                   }}
-                  className="gap-1.5"
+                  className="gap-1.5 h-9 sm:h-8 w-full sm:w-auto"
                 >
                   <Plus className="size-4" />
                   Start Empty Sheet
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 border-t border-border/60">
-                <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                  <FileCode className="size-3.5" /> Project (.jsonlink)
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs pt-4 border-t border-border/60 w-full">
+                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 font-semibold text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs">
+                  <FileCode className="size-3.5 shrink-0" />
+                  <span>Project (.jsonlink)</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <FileCode className="size-3.5 text-primary" /> JSON (.json)
+                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 border border-primary/20 font-medium text-primary text-[11px] sm:text-xs">
+                  <FileCode className="size-3.5 shrink-0" />
+                  <span>JSON (.json)</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <FileSpreadsheet className="size-3.5 text-emerald-600" /> Excel (.xlsx)
+                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 font-medium text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs">
+                  <FileSpreadsheet className="size-3.5 shrink-0" />
+                  <span>Excel (.xlsx)</span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <FileSpreadsheet className="size-3.5 text-blue-500" /> CSV (.csv)
+                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/20 font-medium text-blue-600 dark:text-blue-400 text-[11px] sm:text-xs">
+                  <FileSpreadsheet className="size-3.5 shrink-0" />
+                  <span>CSV (.csv)</span>
                 </span>
               </div>
             </div>
