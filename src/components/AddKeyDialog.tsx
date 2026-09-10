@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -61,7 +62,7 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-md max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Translation Key</DialogTitle>
           <DialogDescription>
@@ -69,58 +70,60 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-foreground">
-              Key Name <span className="text-destructive">*</span>
-            </label>
-            <Input
-              value={keyName}
-              onChange={e => {
-                setKeyName(e.target.value);
-                setError(null);
-              }}
-              placeholder="e.g. actionConfirm, auth.welcome"
-              className="font-mono text-xs"
-              autoFocus
-            />
-            {error && <span className="text-xs text-destructive font-medium">{error}</span>}
-          </div>
-
-          <div className="border-t border-border pt-3 flex flex-col gap-3">
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Initial Translations (Optional)
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <DialogBody className="flex flex-col gap-4 text-xs">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Key Name <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={keyName}
+                onChange={e => {
+                  setKeyName(e.target.value);
+                  setError(null);
+                }}
+                placeholder="e.g. actionConfirm, auth.welcome"
+                className="font-mono text-xs"
+                autoFocus
+              />
+              {error && <span className="text-xs text-destructive font-medium">{error}</span>}
             </div>
 
-            {languages.map(lang => (
-              <div key={lang} className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-foreground flex items-center justify-between">
-                  <span>{lang.toUpperCase()} Value:</span>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {lang === 'my' ? 'မြန်မာ' : lang === 'en' ? 'English' : lang}
-                  </span>
-                </label>
-                <Input
-                  value={values[lang] || ''}
-                  onChange={e => handleValueChange(lang, e.target.value)}
-                  placeholder={`Enter ${lang.toUpperCase()} text...`}
-                  className={lang === 'my' ? 'font-sans' : ''}
-                />
+            <div className="border-t border-border pt-3 flex flex-col gap-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Initial Translations (Optional)
               </div>
-            ))}
-          </div>
 
-          <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
+              {languages.map(lang => (
+                <div key={lang} className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-foreground flex items-center justify-between">
+                    <span>{lang.toUpperCase()} Value:</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {lang === 'my' ? 'မြန်မာ' : lang === 'en' ? 'English' : lang}
+                    </span>
+                  </label>
+                  <Input
+                    value={values[lang] || ''}
+                    onChange={e => handleValueChange(lang, e.target.value)}
+                    placeholder={`Enter ${lang.toUpperCase()} text...`}
+                    className={lang === 'my' ? 'font-sans' : ''}
+                  />
+                </div>
+              ))}
+            </div>
+          </DialogBody>
+
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none text-xs h-8"
+              className="flex-1 sm:flex-none text-xs h-8 cursor-pointer"
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" className="flex-1 sm:flex-none text-xs h-8">
+            <Button type="submit" size="sm" className="flex-1 sm:flex-none text-xs h-8 cursor-pointer">
               Add Key
             </Button>
           </DialogFooter>

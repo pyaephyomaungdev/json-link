@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -123,7 +124,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-foreground">
             Localization Health & Scorecard
@@ -133,7 +134,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Overview metric cards */}
+        <DialogBody className="space-y-4 text-xs">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-muted/30 border border-border rounded-xl">
           <div className="p-3 bg-card border border-border/80 rounded-lg shadow-xs">
             <div className="text-[11px] text-muted-foreground font-medium">Overall Completion</div>
@@ -221,7 +222,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
         </div>
 
         {/* Tab content */}
-        <div className="overflow-y-auto flex-1 space-y-2.5 max-h-72 pr-1">
+        <div className="space-y-2.5">
           {activeTab === 'completion' && (
             <div className="space-y-2.5">
               {langStats.map((stat) => (
@@ -338,9 +339,10 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
             </div>
           )}
         </div>
+        </DialogBody>
 
         {/* Footer */}
-        <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"

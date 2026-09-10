@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -190,7 +191,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Import Translations</DialogTitle>
           <DialogDescription>
@@ -198,7 +199,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
+        <DialogBody className="space-y-4 text-xs">
           {/* Dropzone */}
           <div
             onDragOver={e => {
@@ -316,9 +317,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               </div>
             </div>
           )}
-        </div>
+        </DialogBody>
 
-        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
+        <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => handleOpenChange(false)} className="flex-1 sm:flex-none text-xs h-8">
             Cancel
           </Button>

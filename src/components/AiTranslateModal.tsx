@@ -4,9 +4,10 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ interface AiTranslateModalProps {
   languages: string[];
   onApplyTranslations: (updatedItems: TranslationItem[]) => void;
   preselectedTargetLang?: string;
+  targetKey?: string;
 }
 
 export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
@@ -74,6 +76,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   languages,
   onApplyTranslations,
   preselectedTargetLang,
+  targetKey,
 }) => {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
@@ -81,6 +84,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('my');
   const [scope, setScope] = useState<'missing' | 'all'>('missing');
+  const [activeTargetKey, setActiveTargetKey] = useState<string | undefined>(targetKey);
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>(getCachedOpenRouterModels);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -107,6 +111,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   // Load stored settings and fetch model catalog on mount or open
   useEffect(() => {
     if (isOpen) {
+      setActiveTargetKey(targetKey);
       setRememberKey(isKeyRemembered());
       getStoredApiKey().then(storedKey => {
         setApiKey(storedKey);
@@ -145,7 +150,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       isAbortedRef.current = false;
       setModelSearch('');
     }
-  }, [isOpen, languages, preselectedTargetLang]);
+  }, [isOpen, languages, preselectedTargetLang, targetKey]);
 
   // Dynamically filter models based on modelSearch query
   const filteredModels = useMemo(() => {
@@ -163,10 +168,11 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
   // Keys that qualify for translation
   const eligibleItems = items.filter(item => {
+    if (activeTargetKey && item.key !== activeTargetKey) return false;
     const hasSource = !!(item[sourceLang] || '').trim();
     if (!hasSource) return false;
 
-    if (scope === 'missing') {
+    if (scope === 'missing' && !activeTargetKey) {
       const targetVal = (item[targetLang] || '').trim();
       return !targetVal;
     }
@@ -327,15 +333,37 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !isTranslating && !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>AI Auto-Translate (OpenRouter)</DialogTitle>
           <DialogDescription>
-            Translate missing keys automatically with variable preservation ({'{name}'}, %s).
+            {activeTargetKey
+              ? `Translating row "${activeTargetKey}" into ${getLanguageDisplayName(targetLang)}.`
+              : 'Translate missing keys automatically with variable preservation ({name}, %s).'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-1 text-xs">
+        <DialogBody className="space-y-4 text-xs">
+          {/* Row Target Indicator Banner */}
+          {activeTargetKey && (
+            <div className="flex items-center justify-between px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-mono font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                  Single Row
+                </span>
+                <span className="font-medium text-foreground">
+                  Translating row: <code className="font-mono text-primary font-bold">{activeTargetKey}</code>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTargetKey(undefined)}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+              >
+                Translate all rows instead
+              </button>
+            </div>
+          )}
           {/* OpenRouter API Key Input & Security Vault */}
           <div className="space-y-2 bg-muted/40 p-3 rounded-lg border border-border">
             <div className="flex items-center justify-between">
@@ -800,9 +828,9 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
               <div>{translationError}</div>
             </div>
           )}
-        </div>
+        </DialogBody>
 
-        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
+        <DialogFooter>
           {isTranslating ? (
             <Button
               type="button"
@@ -832,7 +860,9 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 className="flex-1 sm:flex-none gap-1.5 font-semibold text-xs h-8 shadow-xs"
               >
                 <Sparkles className="size-3.5" />
-                <span>Translate {eligibleItems.length} Keys</span>
+                <span>
+                  Translate {eligibleItems.length} {eligibleItems.length === 1 ? 'Key' : 'Keys'}
+                </span>
               </Button>
             </>
           )}

@@ -84,6 +84,7 @@ export function App() {
   // New Feature Modals
   const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
   const [aiTargetLang, setAiTargetLang] = useState<string | undefined>(undefined);
+  const [aiTargetKey, setAiTargetKey] = useState<string | undefined>(undefined);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isDiffMergeOpen, setIsDiffMergeOpen] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
@@ -543,8 +544,9 @@ export function App() {
     });
   };
 
-  const handleOpenAiTranslate = (targetLang?: string) => {
+  const handleOpenAiTranslate = (targetLang?: string, targetKey?: string) => {
     setAiTargetLang(targetLang);
+    setAiTargetKey(targetKey);
     setIsAiTranslateOpen(true);
   };
 
@@ -1048,11 +1050,13 @@ export function App() {
         onClose={() => {
           setIsAiTranslateOpen(false);
           setAiTargetLang(undefined);
+          setAiTargetKey(undefined);
         }}
         items={items}
         languages={languages}
         onApplyTranslations={setItems}
         preselectedTargetLang={aiTargetLang}
+        targetKey={aiTargetKey}
       />
 
       {/* Command Palette (Ctrl+K / Cmd+K) */}

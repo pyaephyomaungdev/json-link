@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -114,7 +115,7 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base text-foreground">
             Add New Language Column
@@ -124,7 +125,7 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-1 text-xs">
+        <DialogBody className="flex flex-col gap-4 text-xs">
           {/* Main Language Picker: Searchable Dropdown or Custom Input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -357,9 +358,9 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
               })}
             </div>
           </div>
-        </div>
+        </DialogBody>
 
-        <DialogFooter className="pt-2">
+        <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Close
           </Button>

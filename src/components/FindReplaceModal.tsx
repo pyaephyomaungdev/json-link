@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -94,7 +95,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-foreground">
             Find & Replace Across Languages
@@ -104,7 +105,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-1 text-xs">
+        <DialogBody className="flex flex-col gap-4 text-xs">
           {/* Find input */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
@@ -233,10 +234,10 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
               <span className="text-muted-foreground italic">Enter search term</span>
             )}
           </div>
-        </div>
+        </DialogBody>
 
         {/* Footer */}
-        <DialogFooter className="flex flex-row items-center justify-between sm:justify-between gap-2 pt-3">
+        <DialogFooter className="justify-between sm:justify-between">
           <Button
             type="button"
             variant="outline"

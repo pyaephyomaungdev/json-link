@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -160,7 +161,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-base font-bold">Export Translations</DialogTitle>
           <DialogDescription className="text-xs">
@@ -168,7 +169,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Format Selector Grid */}
+        <DialogBody className="space-y-4 text-xs">
+          {/* Format Selector Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
           {formatButtons.map(fmt => (
             <button
@@ -342,12 +344,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </pre>
           </div>
         )}
+        </DialogBody>
 
-        <DialogFooter className="mt-2 flex flex-row items-center justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none text-xs h-8">
+        <DialogFooter>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            className="flex-1 sm:flex-none text-xs h-8 cursor-pointer"
+          >
             Cancel
           </Button>
-          <Button size="sm" onClick={handleExport} className="flex-1 sm:flex-none gap-1.5 text-xs h-8 shadow-xs font-semibold">
+          <Button
+            size="sm"
+            onClick={handleExport}
+            className="flex-1 sm:flex-none gap-1.5 text-xs h-8 shadow-xs font-semibold cursor-pointer"
+          >
             <Download className="size-3.5" />
             <span>Download {activeTab === 'typescript-dts' ? 'TYPESCRIPT' : activeTab.replace('-', ' ').toUpperCase()}</span>
           </Button>

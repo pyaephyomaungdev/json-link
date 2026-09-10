@@ -49,7 +49,7 @@ interface SpreadsheetTableProps {
   onRenameLanguage?: (oldLang: string, newLang: string) => void;
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
-  onOpenAiTranslate?: (targetLang?: string) => void;
+  onOpenAiTranslate?: (targetLang?: string, targetKey?: string) => void;
 }
 
 interface EditingCell {
@@ -995,7 +995,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <DropdownMenuSeparator />
                         {onOpenAiTranslate && (
                           <DropdownMenuItem
-                            onClick={() => onOpenAiTranslate()}
+                            onClick={() => onOpenAiTranslate(undefined, item.key)}
                             className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
                           >
                             <Sparkles className="size-3.5" />

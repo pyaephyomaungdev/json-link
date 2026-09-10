@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -60,7 +61,7 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-base font-semibold text-foreground">
             AI Translation Glossary & Terminology
@@ -70,7 +71,8 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Add New Term Form */}
+        <DialogBody className="space-y-4 text-xs">
+          {/* Add New Term Form */}
         <div className="bg-muted/40 p-3 rounded-lg border border-border space-y-2 text-xs">
           <div className="font-semibold text-foreground flex items-center gap-1.5">
             <Plus className="size-3.5 text-primary" /> Add Terminology Rule
@@ -179,14 +181,15 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
             </div>
           )}
         </div>
+      </DialogBody>
 
-        <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
+        <DialogFooter>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="flex-1 sm:flex-none h-8 text-xs"
+            className="flex-1 sm:flex-none h-8 text-xs cursor-pointer"
           >
             Done
           </Button>

@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -48,22 +49,17 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <GitMerge className="size-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold">
-                Import Comparison & Merge Preview
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Review differences between your current spreadsheet and the uploaded file.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-base font-bold">
+            Import Comparison & Merge Preview
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Review differences between your current spreadsheet and the uploaded file.
+          </DialogDescription>
         </DialogHeader>
+
+        <DialogBody className="space-y-4 text-xs">
 
         {/* Summary Stats Badges */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-3 my-2 text-xs">
@@ -185,6 +181,7 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
             )}
           </div>
         </div>
+        </DialogBody>
 
         {/* Action Buttons */}
         <DialogFooter className="gap-2 flex flex-wrap items-center justify-end">
