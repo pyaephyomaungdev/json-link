@@ -227,12 +227,13 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     setStoredApiKey(apiKey, rememberKey);
     setStoredModel(selectedModel);
 
-    const BATCH_SIZE = 8;
+    const BATCH_SIZE = 6;
     const workingItems = [...items];
     const keyToItemIndex = new Map<string, number>();
     workingItems.forEach((item, idx) => keyToItemIndex.set(item.key, idx));
 
     let completedCount = 0;
+    let anySuccess = false;
 
     try {
       for (let i = 0; i < eligibleItems.length; i += BATCH_SIZE) {
@@ -244,22 +245,45 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           sourceText: it[sourceLang] || '',
         }));
 
-        const translationsMap = await translateBatchWithOpenRouter({
-          apiKey,
-          model: selectedModel,
-          sourceLang,
-          targetLang,
-          items: reqItems,
-        });
+        let translationsMap: Record<string, string> = {};
 
-        // Apply translations
+        try {
+          translationsMap = await translateBatchWithOpenRouter({
+            apiKey,
+            model: selectedModel,
+            sourceLang,
+            targetLang,
+            items: reqItems,
+          });
+        } catch (batchErr: any) {
+          console.warn('Batch chunk failed, falling back to item-by-item recovery...', batchErr);
+          // Fallback to single item translation for this chunk
+          for (const singleItem of reqItems) {
+            if (isAbortedRef.current) break;
+            try {
+              const singleResult = await translateBatchWithOpenRouter({
+                apiKey,
+                model: selectedModel,
+                sourceLang,
+                targetLang,
+                items: [singleItem],
+              });
+              Object.assign(translationsMap, singleResult);
+            } catch (singleErr) {
+              console.warn(`Failed translation for key "${singleItem.key}":`, singleErr);
+            }
+          }
+        }
+
+        // Apply all successfully obtained translations
         for (const [k, translatedText] of Object.entries(translationsMap)) {
           const idx = keyToItemIndex.get(k);
-          if (idx !== undefined) {
+          if (idx !== undefined && translatedText) {
             workingItems[idx] = {
               ...workingItems[idx],
               [targetLang]: translatedText,
             };
+            anySuccess = true;
           }
         }
 
@@ -270,12 +294,18 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
         });
       }
 
-      if (!isAbortedRef.current) {
+      if (anySuccess) {
         onApplyTranslations(workingItems);
+      }
+
+      if (!isAbortedRef.current) {
         onClose();
       }
     } catch (err: any) {
       console.error('Translation error:', err);
+      if (anySuccess) {
+        onApplyTranslations(workingItems);
+      }
       setTranslationError(err?.message || 'Failed to complete translation');
     } finally {
       setIsTranslating(false);

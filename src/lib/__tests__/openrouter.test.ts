@@ -11,6 +11,7 @@ import {
   getCachedOpenRouterModels,
   testOpenRouterKey,
   translateBatchWithOpenRouter,
+  parseAiJsonResponse,
 } from '../openrouter';
 
 describe('openrouter.ts', () => {
@@ -138,6 +139,39 @@ describe('openrouter.ts', () => {
         items: [],
       });
       expect(res).toEqual({});
+    });
+  });
+
+  describe('parseAiJsonResponse resilience & recovery', () => {
+    it('parses valid JSON directly', () => {
+      const input = '{"welcome": "ยินดีต้อนรับ", "save": "บันทึก"}';
+      const res = parseAiJsonResponse(input);
+      expect(res).toEqual({ welcome: 'ยินดีต้อนรับ', save: 'บันทึก' });
+    });
+
+    it('strips markdown code blocks', () => {
+      const input = '```json\n{"app": "แอปพลิเคชัน"}\n```';
+      const res = parseAiJsonResponse(input);
+      expect(res).toEqual({ app: 'แอปพลิเคชัน' });
+    });
+
+    it('recovers from truncated JSON cut off mid-string (the exact user reported error case)', () => {
+      const truncated = '{"enterCodeTip":"เคล็ดลับ: รหัสอาจใช้เวลาสักครู่ในการ';
+      const res = parseAiJsonResponse(truncated, ['enterCodeTip']);
+      expect(res.enterCodeTip).toBe('เคล็ดลับ: รหัสอาจใช้เวลาสักครู่ในการ');
+    });
+
+    it('recovers completed keys when a subsequent key is truncated', () => {
+      const truncated = '{"btn_save": "บันทึก", "enterCodeTip":"เคล็ดลับ: รหัสอาจ';
+      const res = parseAiJsonResponse(truncated, ['btn_save', 'enterCodeTip']);
+      expect(res.btn_save).toBe('บันทึก');
+      expect(res.enterCodeTip).toBe('เคล็ดลับ: รหัสอาจ');
+    });
+
+    it('unpacks objects nested under "strings" key', () => {
+      const nested = '{"strings": {"ok": "ตกลง", "cancel": "ยกเลิก"}}';
+      const res = parseAiJsonResponse(nested);
+      expect(res).toEqual({ ok: 'ตกลง', cancel: 'ยกเลิก' });
     });
   });
 });

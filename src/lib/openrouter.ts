@@ -358,6 +358,7 @@ CRITICAL RULES:
         { role: 'user', content: JSON.stringify(userPayload) },
       ],
       temperature: 0.2,
+      max_tokens: 4096,
       response_format: { type: 'json_object' },
     }),
   });
@@ -377,28 +378,113 @@ CRITICAL RULES:
     throw new Error('Received empty response from OpenRouter.');
   }
 
-  // Parse JSON response safely (handling accidental markdown wrappers if any)
-  let cleanJson = rawContent.trim();
-  if (cleanJson.startsWith('```')) {
-    cleanJson = cleanJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  const expectedKeys = items.map(it => it.key);
+  return parseAiJsonResponse(rawContent, expectedKeys);
+}
+
+/**
+ * Safely parses AI-generated JSON with multiple fallback and auto-repair strategies:
+ * 1. Direct JSON.parse
+ * 2. Strip Markdown code fences (```json ... ```)
+ * 3. Extract JSON object substring between first '{' and last '}'
+ * 4. Auto-repair truncated JSON (closing dangling quotes and brackets)
+ * 5. Regex-based key-value extraction for partial recovery of completed translated pairs
+ */
+export function parseAiJsonResponse(
+  rawContent: string,
+  expectedKeys?: string[]
+): Record<string, string> {
+  if (!rawContent || typeof rawContent !== 'string') {
+    return {};
   }
 
+  let cleaned = rawContent.trim();
+
+  // Strip markdown code fences if present
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned
+      .replace(/^```(?:json)?\s*\n?/i, '')
+      .replace(/\n?\s*```$/i, '')
+      .trim();
+  }
+
+  // 1. Try direct parsing
   try {
-    const parsed = JSON.parse(cleanJson);
-    const result: Record<string, string> = {};
-
-    // In case the model nested the result in a property like "strings" or returned flat object
+    const parsed = JSON.parse(cleaned);
     const map = parsed.strings && typeof parsed.strings === 'object' ? parsed.strings : parsed;
+    const res = sanitizeResultMap(map, expectedKeys);
+    if (Object.keys(res).length > 0) return res;
+  } catch {}
 
-    for (const item of items) {
-      if (typeof map[item.key] === 'string') {
-        result[item.key] = map[item.key].trim();
-      }
-    }
-
-    return result;
-  } catch (err: any) {
-    console.error('Failed to parse AI translation JSON:', cleanJson);
-    throw new Error('Failed to parse translation response from AI. Please retry.');
+  // 2. Extract substring between first '{' and last '}'
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = cleaned.slice(firstBrace, lastBrace + 1);
+    try {
+      const parsed = JSON.parse(candidate);
+      const map = parsed.strings && typeof parsed.strings === 'object' ? parsed.strings : parsed;
+      const res = sanitizeResultMap(map, expectedKeys);
+      if (Object.keys(res).length > 0) return res;
+    } catch {}
   }
+
+  // 3. Auto-repair truncated JSON (e.g. cut off mid-string or mid-object)
+  if (firstBrace !== -1) {
+    const truncatedSub = cleaned.slice(firstBrace);
+    const repairAttempts = ['"}', '"}}', '}', '"} }', '"} } }'];
+    for (const repair of repairAttempts) {
+      try {
+        const repaired = truncatedSub + repair;
+        const parsed = JSON.parse(repaired);
+        const map = parsed.strings && typeof parsed.strings === 'object' ? parsed.strings : parsed;
+        const res = sanitizeResultMap(map, expectedKeys);
+        if (Object.keys(res).length > 0) return res;
+      } catch {}
+    }
+  }
+
+  // 4. Regex key-value pair recovery fallback:
+  // Extracts any complete "key"\s*:\s*"value" pairs even if the overall JSON was truncated
+  const recovered: Record<string, string> = {};
+  const pairRegex = /"([^"\\]*(?:\\.[^"\\]*)*)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pairRegex.exec(cleaned)) !== null) {
+    const k = match[1];
+    let v = match[2];
+    try {
+      v = JSON.parse(`"${v}"`);
+    } catch {
+      v = v.replace(/\\"/g, '"').replace(/\\n/g, '\n');
+    }
+    if (!expectedKeys || expectedKeys.includes(k)) {
+      recovered[k] = v;
+    }
+  }
+
+  if (Object.keys(recovered).length > 0) {
+    return recovered;
+  }
+
+  console.error('Failed to parse AI translation JSON after all recovery attempts:', cleaned);
+  throw new Error('Failed to parse translation response from AI. Please retry.');
+}
+
+function sanitizeResultMap(
+  map: any,
+  expectedKeys?: string[]
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (!map || typeof map !== 'object') return result;
+
+  const validKeys = expectedKeys || Object.keys(map);
+  for (const k of validKeys) {
+    if (typeof map[k] === 'string') {
+      result[k] = map[k].trim();
+    } else if (map[k] !== undefined && map[k] !== null && typeof map[k] !== 'object') {
+      result[k] = String(map[k]).trim();
+    }
+  }
+  return result;
 }
