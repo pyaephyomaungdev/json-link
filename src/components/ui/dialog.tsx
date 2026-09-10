@@ -74,7 +74,7 @@ const DialogBody = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 [scrollbar-width:thin]',
+      'flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.28)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50 [&::-webkit-scrollbar-thumb]:rounded-full',
       className
     )}
     {...props}
