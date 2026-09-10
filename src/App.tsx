@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { TranslationItem } from '@/types';
 import { getInitialTranslations } from '@/data/sampleData';
 import { Toolbar } from '@/components/Toolbar';
@@ -9,8 +9,12 @@ import { ImportModal } from '@/components/ImportModal';
 import { ExportModal } from '@/components/ExportModal';
 import { ExitConfirmDialog } from '@/components/ExitConfirmDialog';
 import { SaveProjectModal } from '@/components/SaveProjectModal';
+import { AiTranslateModal } from '@/components/AiTranslateModal';
+import { CommandPalette, CommandItem } from '@/components/CommandPalette';
+import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { Logo } from '@/components/Logo';
 import { parseJsonFile, parseSpreadsheet, mergeTranslations } from '@/lib/parser';
+import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
   Sun,
@@ -24,12 +28,24 @@ import {
   Globe,
   CheckCircle2,
   Heart,
+  Undo2,
+  Redo2,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function App() {
-  // Start with empty items by default as requested by user
-  const [items, setItems] = useState<TranslationItem[]>([]);
+  // Use history hook for complete Undo / Redo support (Ctrl+Z / Ctrl+Y)
+  const {
+    items,
+    setWithHistory: setItems,
+    setWithoutHistory: setItemsWithoutHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useHistory([]);
+
   const [languages, setLanguages] = useState<string[]>(['en', 'my']);
 
   // Search & Filter state
@@ -44,6 +60,13 @@ export function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isSaveProjectOpen, setIsSaveProjectOpen] = useState(false);
+
+  // New Feature Modals
+  const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
+  const [aiTargetLang, setAiTargetLang] = useState<string | undefined>(undefined);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isDiffMergeOpen, setIsDiffMergeOpen] = useState(false);
+  const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
@@ -67,6 +90,43 @@ export function App() {
     setIsDark(prev => !prev);
   };
 
+  // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Command Palette: Ctrl+K or Cmd+K
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+        return;
+      }
+
+      // Check if user is typing in an input or textarea
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea';
+      if (isTyping) return;
+
+      // Undo: Cmd+Z or Ctrl+Z (without shift)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Cmd+Shift+Z or Ctrl+Y or Ctrl+Shift+Z
+      if (
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && e.shiftKey) ||
+        (e.ctrlKey && e.key.toLowerCase() === 'y')
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [undo, redo]);
+
   // When clicking logo, if user has data in table, prompt to save as .jsonlink
   const handleLogoClick = () => {
     if (items.length > 0) {
@@ -76,16 +136,109 @@ export function App() {
 
   // Reset to empty home screen when exit confirmed
   const handleConfirmExit = () => {
-    setItems([]);
+    setItemsWithoutHistory([]);
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
   };
 
+  // Helper to compute Diff between current items and incoming items
+  const computeDiffResult = useCallback(
+    (incomingItems: TranslationItem[], incomingLangs: string[]): DiffResult => {
+      const currentMap = new Map<string, TranslationItem>();
+      items.forEach(i => currentMap.set(i.key, i));
+
+      const newKeys: TranslationItem[] = [];
+      const modifiedKeys: {
+        key: string;
+        oldItem: TranslationItem;
+        newItem: TranslationItem;
+        changedLangs: string[];
+      }[] = [];
+      let unchangedCount = 0;
+
+      const mergedLangs = Array.from(new Set([...languages, ...incomingLangs]));
+
+      incomingItems.forEach(incItem => {
+        if (!currentMap.has(incItem.key)) {
+          newKeys.push(incItem);
+        } else {
+          const oldItem = currentMap.get(incItem.key)!;
+          const changedLangs: string[] = [];
+
+          for (const l of incomingLangs) {
+            const incVal = (incItem[l] || '').trim();
+            const oldVal = (oldItem[l] || '').trim();
+            if (incVal && incVal !== oldVal) {
+              changedLangs.push(l);
+            }
+          }
+
+          if (changedLangs.length > 0) {
+            modifiedKeys.push({
+              key: incItem.key,
+              oldItem,
+              newItem: incItem,
+              changedLangs,
+            });
+          } else {
+            unchangedCount++;
+          }
+        }
+      });
+
+      return {
+        newKeys,
+        modifiedKeys,
+        unchangedCount,
+        allIncomingLanguages: mergedLangs,
+        incomingItems,
+      };
+    },
+    [items, languages]
+  );
+
+  // Apply diff merge decision
+  const handleConfirmMerge = (mode: 'merge' | 'add-only' | 'replace') => {
+    if (!pendingDiff) return;
+
+    if (mode === 'replace') {
+      setItems(pendingDiff.incomingItems);
+      setLanguages(pendingDiff.allIncomingLanguages);
+    } else if (mode === 'add-only') {
+      const combined = [...items, ...pendingDiff.newKeys];
+      setItems(combined);
+      setLanguages(pendingDiff.allIncomingLanguages);
+    } else {
+      // Merge & Update
+      const map = new Map<string, TranslationItem>();
+      items.forEach(it => map.set(it.key, { ...it }));
+
+      pendingDiff.incomingItems.forEach(incoming => {
+        if (!map.has(incoming.key)) {
+          map.set(incoming.key, { ...incoming });
+        } else {
+          const current = map.get(incoming.key)!;
+          for (const l of pendingDiff.allIncomingLanguages) {
+            if (incoming[l] !== undefined && incoming[l] !== '') {
+              current[l] = incoming[l];
+            }
+          }
+        }
+      });
+
+      setItems(Array.from(map.values()));
+      setLanguages(pendingDiff.allIncomingLanguages);
+    }
+
+    setIsDiffMergeOpen(false);
+    setPendingDiff(null);
+  };
+
   // Direct file drop handler on hero area
   const handleDirectFiles = async (fileList: FileList | File[]) => {
-    let currentBaseItems = [...items];
-    let currentBaseLanguages = [...languages];
+    let incomingItems: TranslationItem[] = [];
+    let incomingLanguages: string[] = [];
 
     try {
       for (let i = 0; i < fileList.length; i++) {
@@ -95,15 +248,15 @@ export function App() {
         if (ext === 'json' || ext === 'jsonlink') {
           const text = await file.text();
           const parsed = parseJsonFile(text, file.name);
-          const res = mergeTranslations(currentBaseItems, currentBaseLanguages, parsed);
-          currentBaseItems = res.items;
-          currentBaseLanguages = res.languages;
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
         } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
           const buffer = await file.arrayBuffer();
           const parsed = parseSpreadsheet(buffer);
           const res = mergeTranslations(
-            currentBaseItems,
-            currentBaseLanguages,
+            incomingItems,
+            incomingLanguages,
             parsed.languages.reduce((acc, lang) => {
               acc[lang] = {};
               for (const it of parsed.items) {
@@ -112,19 +265,27 @@ export function App() {
               return acc;
             }, {} as Record<string, Record<string, string>>)
           );
-          currentBaseItems = res.items;
-          currentBaseLanguages = res.languages;
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
         }
       }
 
-      setItems(currentBaseItems);
-      setLanguages(currentBaseLanguages);
+      if (items.length === 0) {
+        // Direct initial load
+        setItems(incomingItems);
+        setLanguages(incomingLanguages);
+      } else {
+        // Show Diff & Merge preview modal
+        const diff = computeDiffResult(incomingItems, incomingLanguages);
+        setPendingDiff(diff);
+        setIsDiffMergeOpen(true);
+      }
     } catch (err: any) {
       alert(err?.message || 'Error parsing files');
     }
   };
 
-  // Extract namespace list from keys (e.g., "auth", "home", "action", "site", "register")
+  // Extract namespace list from keys
   const namespaces = useMemo(() => {
     const nsSet = new Set<string>();
     for (const item of items) {
@@ -174,25 +335,25 @@ export function App() {
 
   // Handlers for cell editing
   const handleUpdateCell = (key: string, lang: string, value: string) => {
-    setItems(prev =>
-      prev.map(item => (item.key === key ? { ...item, [lang]: value } : item))
+    setItems(
+      items.map(item => (item.key === key ? { ...item, [lang]: value } : item))
     );
   };
 
   const handleUpdateKey = (oldKey: string, newKey: string) => {
-    setItems(prev =>
-      prev.map(item => (item.key === oldKey ? { ...item, key: newKey } : item))
+    setItems(
+      items.map(item => (item.key === oldKey ? { ...item, key: newKey } : item))
     );
   };
 
   const handleDeleteRow = (key: string) => {
-    setItems(prev => prev.filter(item => item.key !== key));
+    setItems(items.filter(item => item.key !== key));
   };
 
   const handleDuplicateRow = (item: TranslationItem) => {
     const newKey = `${item.key}_copy`;
     const duplicated: TranslationItem = { ...item, key: newKey };
-    setItems(prev => [duplicated, ...prev]);
+    setItems([duplicated, ...items]);
   };
 
   const handleDeleteLanguage = (langToDelete: string) => {
@@ -202,8 +363,8 @@ export function App() {
     }
     if (window.confirm(`Are you sure you want to delete the column "${langToDelete.toUpperCase()}"?`)) {
       setLanguages(prev => prev.filter(l => l !== langToDelete));
-      setItems(prev =>
-        prev.map(item => {
+      setItems(
+        items.map(item => {
           const updated = { ...item };
           delete updated[langToDelete];
           return updated;
@@ -217,14 +378,14 @@ export function App() {
     for (const lang of languages) {
       newItem[lang] = values[lang] || '';
     }
-    setItems(prev => [newItem, ...prev]);
+    setItems([newItem, ...items]);
   };
 
   const handleAddLanguage = (langCode: string) => {
     if (!languages.includes(langCode)) {
       setLanguages(prev => [...prev, langCode]);
-      setItems(prev =>
-        prev.map(item => ({
+      setItems(
+        items.map(item => ({
           ...item,
           [langCode]: item[langCode] || '',
         }))
@@ -233,13 +394,19 @@ export function App() {
   };
 
   const handleImportComplete = (newItems: TranslationItem[], newLanguages: string[]) => {
-    setItems(newItems);
-    setLanguages(newLanguages);
+    if (items.length === 0) {
+      setItems(newItems);
+      setLanguages(newLanguages);
+    } else {
+      const diff = computeDiffResult(newItems, newLanguages);
+      setPendingDiff(diff);
+      setIsDiffMergeOpen(true);
+    }
   };
 
   const handleResetToSample = () => {
     const sample = getInitialTranslations();
-    setItems(sample.items);
+    setItemsWithoutHistory(sample.items);
     setLanguages(sample.languages);
     setSearchQuery('');
     setSelectedNamespace('all');
@@ -252,11 +419,105 @@ export function App() {
     }
   };
 
+  const handleOpenAiTranslate = (targetLang?: string) => {
+    setAiTargetLang(targetLang);
+    setIsAiTranslateOpen(true);
+  };
+
   // Quick stats summary
   const totalKeys = items.length;
   const totalMissing = useMemo(() => {
     return items.filter(item => languages.some(l => !(item[l] || '').trim())).length;
   }, [items, languages]);
+
+  // Command palette command definitions
+  const paletteCommands: CommandItem[] = useMemo(
+    () => [
+      {
+        id: 'ai-translate',
+        category: 'AI',
+        title: 'Auto-Translate Missing Keys (OpenRouter)',
+        description: 'Batch translate untranslated keys with variable protection',
+        shortcut: 'AI',
+        icon: <Sparkles className="size-3.5 text-primary" />,
+        action: () => handleOpenAiTranslate(),
+      },
+      {
+        id: 'add-key',
+        category: 'Spreadsheet',
+        title: 'Add New Translation Key',
+        description: 'Create a new translation entry with namespace',
+        shortcut: '↵',
+        icon: <Plus className="size-3.5 text-emerald-600" />,
+        action: () => setIsAddKeyOpen(true),
+      },
+      {
+        id: 'add-language',
+        category: 'Spreadsheet',
+        title: 'Add Language Column',
+        description: 'Add a new target language column (e.g. ja, zh, th, fr)',
+        icon: <Globe className="size-3.5 text-blue-500" />,
+        action: () => setIsAddLanguageOpen(true),
+      },
+      {
+        id: 'filter-missing',
+        category: 'View',
+        title: 'Filter: Show Only Missing Keys',
+        description: 'Focus only on keys needing translations',
+        icon: <AlertCircle className="size-3.5 text-amber-500" />,
+        action: () => setActiveFilter('missing'),
+      },
+      {
+        id: 'filter-all',
+        category: 'View',
+        title: 'Filter: Show All Translations',
+        description: 'Clear missing filter',
+        icon: <CheckCircle2 className="size-3.5 text-emerald-500" />,
+        action: () => setActiveFilter('all'),
+      },
+      {
+        id: 'undo',
+        category: 'History',
+        title: 'Undo Last Action',
+        shortcut: 'Ctrl+Z',
+        icon: <Undo2 className="size-3.5" />,
+        action: () => undo(),
+      },
+      {
+        id: 'redo',
+        category: 'History',
+        title: 'Redo Last Action',
+        shortcut: 'Ctrl+Y',
+        icon: <Redo2 className="size-3.5" />,
+        action: () => redo(),
+      },
+      {
+        id: 'save-project',
+        category: 'Export',
+        title: 'Save Project (.jsonlink)',
+        description: 'Save complete spreadsheet file for later restoration',
+        shortcut: 'Ctrl+S',
+        icon: <Save className="size-3.5 text-emerald-600" />,
+        action: () => setIsSaveProjectOpen(true),
+      },
+      {
+        id: 'export-dialog',
+        category: 'Export',
+        title: 'Export Translations (Excel, CSV, JSON, YAML, Android, iOS, TypeScript)',
+        description: 'Choose export format and download',
+        icon: <FileSpreadsheet className="size-3.5 text-purple-500" />,
+        action: () => setIsExportOpen(true),
+      },
+      {
+        id: 'toggle-theme',
+        category: 'View',
+        title: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+        icon: isDark ? <Sun className="size-3.5 text-amber-500" /> : <Moon className="size-3.5 text-indigo-400" />,
+        action: toggleTheme,
+      },
+    ],
+    [isDark, undo, redo]
+  );
 
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
@@ -440,9 +701,15 @@ export function App() {
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onOpenAiTranslate={() => handleOpenAiTranslate()}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           />
 
-          {/* Full-bleed Edge-to-Edge Spreadsheet (Zero side paddings, full screen grid) */}
+          {/* Full-bleed Edge-to-Edge Spreadsheet */}
           <SpreadsheetTable
             items={filteredItems}
             languages={languages}
@@ -453,6 +720,8 @@ export function App() {
             onDeleteLanguage={handleDeleteLanguage}
             onAddRow={() => setIsAddKeyOpen(true)}
             onOpenImport={() => setIsImportOpen(true)}
+            onBatchUpdate={setItems}
+            onOpenAiTranslate={handleOpenAiTranslate}
           />
         </div>
       )}
@@ -501,6 +770,37 @@ export function App() {
         onOpenChange={setIsSaveProjectOpen}
         items={items}
         languages={languages}
+      />
+
+      {/* AI Auto-Translation Modal */}
+      <AiTranslateModal
+        isOpen={isAiTranslateOpen}
+        onClose={() => {
+          setIsAiTranslateOpen(false);
+          setAiTargetLang(undefined);
+        }}
+        items={items}
+        languages={languages}
+        onApplyTranslations={setItems}
+        preselectedTargetLang={aiTargetLang}
+      />
+
+      {/* Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={paletteCommands}
+      />
+
+      {/* Diff & Merge Modal on Import */}
+      <DiffMergeModal
+        isOpen={isDiffMergeOpen}
+        onClose={() => {
+          setIsDiffMergeOpen(false);
+          setPendingDiff(null);
+        }}
+        diff={pendingDiff}
+        onConfirmMerge={handleConfirmMerge}
       />
     </div>
   );

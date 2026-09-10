@@ -10,7 +10,16 @@ export interface LanguageMeta {
   isRtl?: boolean;
 }
 
-export type ExportFormat = 'excel' | 'xlsx' | 'csv' | 'json-zip' | 'json-combined';
+export type ExportFormat =
+  | 'excel'
+  | 'xlsx'
+  | 'csv'
+  | 'json-zip'
+  | 'json-combined'
+  | 'yaml-zip'
+  | 'android-xml'
+  | 'ios-strings'
+  | 'typescript-dts';
 
 export interface ExportOptions {
   format: ExportFormat;

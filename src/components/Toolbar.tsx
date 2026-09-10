@@ -15,6 +15,9 @@ import {
   Sparkles,
   ChevronDown,
   Save,
+  Undo2,
+  Redo2,
+  Command,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,6 +46,12 @@ interface ToolbarProps {
   onResetToSample: () => void;
   onClearAll: () => void;
   hasItems: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onOpenAiTranslate?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -61,6 +70,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onResetToSample,
   onClearAll,
   hasItems,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onOpenAiTranslate,
+  onOpenCommandPalette,
 }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-card border-b border-border text-xs select-none">
@@ -157,6 +172,58 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5">
+        {/* Undo & Redo */}
+        <div className="flex items-center gap-0.5 border-r border-border pr-1 mr-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="size-7 cursor-pointer text-muted-foreground hover:text-foreground disabled:opacity-30"
+            title="Undo (Ctrl+Z / Cmd+Z)"
+          >
+            <Undo2 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRedo}
+            disabled={!canRedo}
+            className="size-7 cursor-pointer text-muted-foreground hover:text-foreground disabled:opacity-30"
+            title="Redo (Ctrl+Y / Cmd+Shift+Z)"
+          >
+            <Redo2 className="size-3.5" />
+          </Button>
+        </div>
+
+        {/* AI Translate */}
+        {onOpenAiTranslate && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenAiTranslate}
+            disabled={!hasItems}
+            className="gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/10 shadow-2xs font-semibold"
+            title="Auto-translate missing keys with AI (OpenRouter BYOK)"
+          >
+            <Sparkles className="size-3.5 text-primary" />
+            <span className="hidden md:inline">AI Translate</span>
+          </Button>
+        )}
+
+        {/* Command Palette badge */}
+        {onOpenCommandPalette && (
+          <button
+            type="button"
+            onClick={onOpenCommandPalette}
+            className="hidden xl:flex items-center gap-1.5 px-2 py-1 rounded bg-muted/60 hover:bg-muted border border-border text-[11px] text-muted-foreground cursor-pointer transition-colors"
+            title="Open Command Palette (Ctrl+K / Cmd+K)"
+          >
+            <Command className="size-3" />
+            <kbd className="font-mono text-[10px]">⌘K</kbd>
+          </button>
+        )}
+
         <Button
           variant="outline"
           size="sm"

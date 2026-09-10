@@ -32,6 +32,8 @@ export const sampleEnglishData: Record<string, string> = {
   "settings.theme.dark": "Dark Mode",
   "settings.theme.light": "Light Mode",
   "notifications.title": "Notifications",
+  "greeting.user": "Welcome back, {name}!",
+  "cart.summary": "You have {count} items in your cart.",
 };
 
 export const sampleMyanmarData: Record<string, string> = {
@@ -65,6 +67,8 @@ export const sampleMyanmarData: Record<string, string> = {
   "settings.theme.dark": "အမှောင်စနစ်",
   "settings.theme.light": "အလင်းစနစ်",
   "notifications.title": "အသိပေးချက်များ",
+  "greeting.user": "ပြန်လည်ကြိုဆိုပါသည်၊ {name}!",
+  "cart.summary": "လှည်းထဲတွင် ပစ္စည်း {count} ခု ရှိသည်။",
 };
 
 /**

@@ -17,6 +17,8 @@ import {
   Heart,
   Pin,
   PinOff,
+  AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +29,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { exportSingleLanguageJson } from '@/lib/exporter';
+import { tokenizeVariables, validateVariables } from '@/lib/variables';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -38,6 +41,8 @@ interface SpreadsheetTableProps {
   onOpenImport: () => void;
   onDeleteLanguage?: (lang: string) => void;
   onDuplicateRow?: (item: TranslationItem) => void;
+  onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
+  onOpenAiTranslate?: (targetLang?: string) => void;
 }
 
 interface EditingCell {
@@ -73,6 +78,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onOpenImport,
   onDeleteLanguage,
   onDuplicateRow,
+  onBatchUpdate,
+  onOpenAiTranslate,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -144,6 +151,87 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setTimeout(() => setCopiedNotification(null), 1500);
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (editingCell || !selectedCell) return;
+
+    const clipText = e.clipboardData.getData('text/plain');
+    if (!clipText) return;
+
+    const rawRows = clipText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    if (rawRows.length > 1 && rawRows[rawRows.length - 1] === '') {
+      rawRows.pop();
+    }
+
+    const grid = rawRows.map(r => r.split('\t'));
+    const isMultiCell = grid.length > 1 || (grid[0] && grid[0].length > 1);
+
+    if (!isMultiCell) {
+      const val = grid[0][0];
+      if (selectedCell.field === 'key') {
+        const trimmed = val.trim();
+        if (trimmed && trimmed !== selectedCell.key) {
+          onUpdateKey(selectedCell.key, trimmed);
+          setSelectedCell({ ...selectedCell, key: trimmed });
+        }
+      } else {
+        onUpdateCell(selectedCell.key, selectedCell.field, val);
+      }
+      setCopiedNotification('Pasted into cell');
+      setTimeout(() => setCopiedNotification(null), 1200);
+      return;
+    }
+
+    // Multi-cell block paste
+    e.preventDefault();
+    const updatedItems = items.map(item => ({ ...item }));
+    const startRow = selectedCell.rowIndex;
+    const startCol = selectedCell.colIndex;
+    let updatedCount = 0;
+
+    grid.forEach((rowCells, rOffset) => {
+      const targetRowIdx = startRow + rOffset;
+      if (targetRowIdx < updatedItems.length) {
+        rowCells.forEach((cellVal, cOffset) => {
+          const targetColIdx = startCol + cOffset;
+          if (targetColIdx === 0) {
+            const cleanKey = cellVal.trim();
+            if (cleanKey) {
+              updatedItems[targetRowIdx].key = cleanKey;
+              updatedCount++;
+            }
+          } else if (targetColIdx >= 1 && targetColIdx <= languages.length) {
+            const lang = languages[targetColIdx - 1];
+            updatedItems[targetRowIdx][lang] = cellVal;
+            updatedCount++;
+          }
+        });
+      }
+    });
+
+    if (onBatchUpdate) {
+      onBatchUpdate(updatedItems);
+    }
+    setCopiedNotification(`Pasted ${grid.length}×${grid[0].length} cells (${updatedCount} values)`);
+    setTimeout(() => setCopiedNotification(null), 2000);
+  };
+
+  useEffect(() => {
+    const handleGlobalCopy = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !editingCell && selectedCell) {
+        const item = items.find(i => i.key === selectedCell.key);
+        if (item) {
+          const text = selectedCell.field === 'key' ? item.key : item[selectedCell.field] || '';
+          navigator.clipboard.writeText(text);
+          setCopiedNotification(`Copied`);
+          setTimeout(() => setCopiedNotification(null), 1200);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalCopy);
+    return () => window.removeEventListener('keydown', handleGlobalCopy);
+  }, [selectedCell, editingCell, items]);
+
   // Find currently selected cell's value for the MS Excel Formula bar
   const selectedValue = selectedCell
     ? selectedCell.field === 'key'
@@ -180,7 +268,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col w-full h-full min-h-0 select-none bg-background">
+    <div
+      className="flex-1 flex flex-col w-full h-full min-h-0 select-none bg-background outline-none"
+      onPaste={handlePaste}
+      tabIndex={0}
+    >
       {/* MS Excel Style Formula Bar (Cell Address & Content Inspector) with 100% Solid Background */}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#fafafa] dark:bg-[#121214] border-b border-border text-xs shrink-0 z-25">
         {/* Name Box (e.g. A1, B12, or Key reference) */}
@@ -219,17 +311,24 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 }
               }
             }}
-            onBlur={handleSaveEdit}
-            onKeyDown={handleKeyDown}
-            placeholder="Select a cell to view or edit text..."
-            className="w-full h-7 px-2.5 bg-background border border-border rounded text-xs text-foreground outline-none focus:ring-1 focus:ring-primary shadow-2xs font-sans"
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSaveEdit();
+              }
+            }}
+            placeholder={
+              selectedCell ? `Content of ${selectedCell.key} [${selectedCell.field}]` : 'Select a cell...'
+            }
+            className="w-full px-2.5 py-1 bg-background border border-border rounded text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
           />
         </div>
 
+        {/* Copy / Paste notification pill */}
         {copiedNotification && (
-          <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 animate-in fade-in">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shadow-2xs font-medium animate-in fade-in duration-200">
             <Check className="size-3" />
-            <span>Copied {copiedNotification}</span>
+            <span>{copiedNotification.startsWith('Pasted') ? copiedNotification : `Copied ${copiedNotification}`}</span>
           </div>
         )}
       </div>
@@ -401,6 +500,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               </>
                             )}
                           </DropdownMenuItem>
+                          {onOpenAiTranslate && (
+                            <DropdownMenuItem
+                              onClick={() => onOpenAiTranslate(lang)}
+                              className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
+                            >
+                              <Sparkles className="size-3.5 text-primary" />
+                              <span>Auto-Translate with AI</span>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
@@ -547,6 +655,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + colIdx * LANG_COL_WIDTH
                       : undefined;
 
+                    const sourceLang = languages.includes('en') ? 'en' : languages[0];
+                    const sourceVal = item[sourceLang] || '';
+                    const varValidation =
+                      lang !== sourceLang && val ? validateVariables(sourceVal, val) : { isValid: true, missingVariables: [] };
+
                     return (
                       <td
                         key={lang}
@@ -605,7 +718,30 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               } ${!val ? 'text-amber-600/70 italic text-xs' : ''}`}
                             >
                               {val ? (
-                                val
+                                <div className="flex flex-wrap items-baseline gap-x-0.5">
+                                  {tokenizeVariables(val).map((tok, i) =>
+                                    tok.isVariable ? (
+                                      <span
+                                        key={i}
+                                        className="inline-block px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold border border-primary/20 align-baseline select-text"
+                                        title={`Interpolation Variable: ${tok.text}`}
+                                      >
+                                        {tok.text}
+                                      </span>
+                                    ) : (
+                                      <span key={i}>{tok.text}</span>
+                                    )
+                                  )}
+                                  {!varValidation.isValid && (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 ml-1.5 select-none"
+                                      title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
+                                    >
+                                      <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                      <span>Missing {varValidation.missingVariables.join(', ')}</span>
+                                    </span>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="flex items-center gap-1 font-sans not-italic text-amber-600 dark:text-amber-400">
                                   <span className="size-1.5 rounded-full bg-amber-500 shrink-0" />
@@ -635,6 +771,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           {item.key}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        {onOpenAiTranslate && (
+                          <DropdownMenuItem
+                            onClick={() => onOpenAiTranslate()}
+                            className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
+                          >
+                            <Sparkles className="size-3.5" />
+                            Translate with AI
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           onClick={() => handleCopyText(item.key, 'key name')}
                           className="gap-2 cursor-pointer text-xs"
