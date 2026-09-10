@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { TranslationItem } from '@/types';
 import { getInitialTranslations } from '@/data/sampleData';
 import { Toolbar } from '@/components/Toolbar';
@@ -54,14 +54,17 @@ export function App() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  const toggleTheme = () => {
-    const nextDark = !isDark;
-    setIsDark(nextDark);
-    if (nextDark) {
+  // Keep document element class in sync for class-based dark mode
+  useEffect(() => {
+    if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark(prev => !prev);
   };
 
   // When clicking logo, if user has data in table, prompt to save as .jsonlink

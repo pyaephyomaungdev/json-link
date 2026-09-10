@@ -329,7 +329,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               return (
                 <tr
                   key={item.key}
-                  className="hover:bg-muted/30 transition-colors group"
+                  className="group transition-colors"
                 >
                   {/* Row Number (Sticky Left #1: 100% solid background) */}
                   <td
@@ -341,7 +341,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className="py-1.5 px-2 text-center text-xs font-mono text-muted-foreground border-r border-border bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#f0f0f2] dark:group-hover:bg-[#1e1e22] sticky left-0 z-10 select-none cursor-pointer"
+                    className="py-1.5 px-2 text-center text-xs font-mono text-muted-foreground border-r border-border bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-10 select-none cursor-pointer transition-colors"
                   >
                     {rowNumber}
                   </td>
@@ -356,9 +356,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
-                    className={`py-1.5 px-3 font-mono text-xs border-r border-border bg-card group-hover:bg-[#f5f5f7] dark:group-hover:bg-[#1c1c20] sticky left-12 z-10 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] relative transition-all ${
+                    className={`py-1.5 px-3 font-mono text-xs border-r border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] sticky left-12 z-10 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] relative transition-colors cursor-pointer ${
                       isKeySelected
-                        ? 'outline outline-2 outline-primary outline-offset-[-2px] z-15'
+                        ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-15'
                         : ''
                     }`}
                   >
@@ -407,11 +407,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             rowIndex: rowIdx,
                           })
                         }
-                        className={`py-1.5 px-3 border-r border-border relative transition-all cursor-pointer ${
-                          !val ? 'bg-amber-500/5' : ''
+                        className={`py-1.5 px-3 border-r border-border relative transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
+                          !val
+                            ? 'bg-amber-500/5 dark:bg-amber-500/10 group-hover:bg-amber-500/10 dark:group-hover:bg-amber-500/20'
+                            : ''
                         } ${
                           isCellSelected
-                            ? 'outline outline-2 outline-primary outline-offset-[-2px] bg-primary/5 z-10'
+                            ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-10'
                             : ''
                         }`}
                       >
@@ -458,7 +460,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   })}
 
                   {/* Custom Row Actions Dropdown Menu */}
-                  <td className="py-1 px-1 text-center border-r border-border">
+                  <td className="py-1 px-1 text-center border-r border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] transition-colors">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer">
