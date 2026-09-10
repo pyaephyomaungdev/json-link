@@ -116,14 +116,9 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-primary mb-1">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Globe className="size-5" />
-            </div>
-            <DialogTitle className="text-base text-foreground">
-              Add New Language Column
-            </DialogTitle>
-          </div>
+          <DialogTitle className="text-base text-foreground">
+            Add New Language Column
+          </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Choose from standard world languages with native scripts, or search by language name.
           </DialogDescription>
