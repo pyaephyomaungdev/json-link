@@ -63,6 +63,19 @@ describe('findReplace.ts', () => {
       });
       expect(reg?.source).toBe('\\blog\\b');
     });
+
+    it('returns null for empty query string', () => {
+      const reg = buildSearchRegex({
+        query: '',
+        replacement: '',
+        scope: 'all',
+        matchCase: false,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      expect(reg).toBeNull();
+    });
   });
 
   describe('countMatches', () => {
@@ -77,9 +90,6 @@ describe('findReplace.ts', () => {
         languages,
       });
 
-      // 'account' matches in:
-      // item 0: key (auth.login.title - no), en (account: 1)
-      // item 2: key (account: 1), en (Account: 1), desc (Account: 1)
       expect(result.totalMatches).toBe(4);
       expect(result.affectedRows).toBe(2);
     });
@@ -112,6 +122,47 @@ describe('findReplace.ts', () => {
 
       expect(result.totalMatches).toBe(2);
       expect(result.affectedRows).toBe(2);
+    });
+
+    it('counts matches in description scope only', () => {
+      const result = countMatches(sampleItems, {
+        query: 'Account',
+        replacement: '',
+        scope: 'description',
+        matchCase: false,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      // 'Account' in descriptions: 'Account navigation tab'
+      expect(result.totalMatches).toBeGreaterThanOrEqual(1);
+    });
+
+    it('returns 0 matches when query does not exist', () => {
+      const result = countMatches(sampleItems, {
+        query: 'zzznomatch999',
+        replacement: '',
+        scope: 'all',
+        matchCase: false,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      expect(result.totalMatches).toBe(0);
+      expect(result.affectedRows).toBe(0);
+    });
+
+    it('returns 0 matches for empty query', () => {
+      const result = countMatches(sampleItems, {
+        query: '',
+        replacement: '',
+        scope: 'all',
+        matchCase: false,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      expect(result.totalMatches).toBe(0);
     });
   });
 
@@ -148,6 +199,34 @@ describe('findReplace.ts', () => {
       expect(count).toBe(2);
       expect(updatedItems[0].key).toBe('authentication.login_title');
       expect(updatedItems[1].key).toBe('authentication.login_btn');
+    });
+
+    it('returns count 0 and unchanged items when no matches', () => {
+      const { updatedItems, count } = executeFindReplace(sampleItems, {
+        query: 'zzznomatch999',
+        replacement: 'replacement',
+        scope: 'all',
+        matchCase: false,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      expect(count).toBe(0);
+      expect(updatedItems[0].en).toBe(sampleItems[0].en);
+    });
+
+    it('replaces with empty string (effectively deletes matched text)', () => {
+      const { updatedItems, count } = executeFindReplace(sampleItems, {
+        query: ' Settings',
+        replacement: '',
+        scope: 'en',
+        matchCase: true,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      expect(count).toBe(1);
+      expect(updatedItems[2].en).toBe('Account');
     });
   });
 });

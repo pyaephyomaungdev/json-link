@@ -174,4 +174,43 @@ describe('exporter.ts', () => {
       expect(URL.createObjectURL).toHaveBeenCalled();
     });
   });
+
+  describe('generateLanguageJsonData — edge cases', () => {
+    it('includes key with empty string when language value is missing', () => {
+      const items = [
+        { key: 'present', en: 'Hello', my: 'မင်္ဂလာ' },
+        { key: 'missing', en: 'World' }, // no 'my' value — will be ''
+      ];
+      const flat = generateLanguageJsonData(items, 'my', false);
+      expect(flat['present']).toBe('မင်္ဂလာ');
+      // 'missing' key is exported as empty string (not omitted)
+      expect(flat['missing']).toBe('');
+    });
+  });
+
+  describe('generateAndroidXml — special character escaping', () => {
+    it('escapes ampersand, quotes, and angle brackets in XML values', () => {
+      const items = [
+        { key: 'chars', en: 'AT&T "rocks" <tag>' },
+      ];
+      const xml = generateAndroidXml(items, 'en');
+      expect(xml).toContain('&amp;');
+      expect(xml).toContain('&lt;');
+    });
+
+    it('converts dots in key names to underscores for XML name attribute', () => {
+      const items = [
+        { key: 'auth.login.btn', en: 'Login' },
+      ];
+      const xml = generateAndroidXml(items, 'en');
+      expect(xml).toContain('name="auth_login_btn"');
+    });
+  });
+
+  describe('objectToYaml — edge cases', () => {
+    it('handles empty object without crashing', () => {
+      const yaml = objectToYaml({});
+      expect(typeof yaml).toBe('string');
+    });
+  });
 });

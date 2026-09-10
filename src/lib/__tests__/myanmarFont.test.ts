@@ -74,5 +74,28 @@ describe('myanmarFont.ts', () => {
       expect(result.hasZawgyi).toBe(false);
       expect(result.count).toBe(0);
     });
+
+    it('returns false with count 0 for empty items array', () => {
+      const result = detectZawgyiInItems([], 'my');
+      expect(result.hasZawgyi).toBe(false);
+      expect(result.count).toBe(0);
+    });
+
+    it('handles language column that does not exist in items gracefully', () => {
+      const items = [
+        { key: 'title', en: 'Hello' }, // no 'my' column
+      ];
+      const result = detectZawgyiInItems(items, 'my');
+      expect(result.hasZawgyi).toBe(false);
+      expect(result.count).toBe(0);
+    });
+  });
+
+  describe('isZawgyi — additional edge cases', () => {
+    it('detects Zawgyi when text is predominantly Myanmar Zawgyi characters', () => {
+      // Pure Zawgyi syllables — no Latin prefix — so heuristic fires cleanly
+      const zawgyi = '\u1031\u1019\u102c\u1004\u103a\u1031\u1019\u102c\u1004\u103a'; // repeated zawgyi
+      expect(isZawgyi(zawgyi)).toBe(true);
+    });
   });
 });

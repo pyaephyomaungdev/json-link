@@ -112,5 +112,38 @@ describe('variables.ts', () => {
       expect(validateVariables('', '{name}').isValid).toBe(true);
       expect(validateVariables('{name}', '').isValid).toBe(true);
     });
+
+    it('validates mixed format string with both {name} and %s in same source', () => {
+      const source = 'Hello {name}, you uploaded %s files';
+      const targetOk = 'မင်္ဂလာ {name}၊ %s ဖိုင်တင်ပြီး';
+      const targetBad = 'မင်္ဂလာ {name}၊ ဖိုင်တင်ပြီး'; // missing %s
+      expect(validateVariables(source, targetOk).isValid).toBe(true);
+      expect(validateVariables(source, targetBad).isValid).toBe(false);
+      expect(validateVariables(source, targetBad).missingVariables).toContain('%s');
+    });
+
+    it('validates Android-style positional %1$s and %2$d', () => {
+      const source = '%1$s has %2$d items';
+      const targetOk = '%1$s မှာ %2$d ခုရှိသည်';
+      const targetBad = 'ပစ္စည်း %2$d ခုရှိသည်'; // missing %1$s
+      expect(validateVariables(source, targetOk).isValid).toBe(true);
+      expect(validateVariables(source, targetBad).isValid).toBe(false);
+    });
+  });
+
+  describe('tokenizeVariables — additional edge cases', () => {
+    it('handles consecutive variables with no text between them', () => {
+      const tokens = tokenizeVariables('{first}{last}');
+      const varTokens = tokens.filter(t => t.isVariable);
+      expect(varTokens.length).toBe(2);
+      expect(varTokens[0].text).toBe('{first}');
+      expect(varTokens[1].text).toBe('{last}');
+    });
+
+    it('handles Printf variable %s inline', () => {
+      const tokens = tokenizeVariables('Uploaded %s successfully');
+      const varToken = tokens.find(t => t.isVariable);
+      expect(varToken?.text).toBe('%s');
+    });
   });
 });

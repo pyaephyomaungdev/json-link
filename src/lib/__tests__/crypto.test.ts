@@ -24,4 +24,35 @@ describe('crypto.ts', () => {
     const result = await decryptSecret('{"invalid":"json"}');
     expect(result).toBe('');
   });
+
+  it('handles completely non-JSON string without crashing', async () => {
+    const result = await decryptSecret('not-even-json!!!');
+    expect(result).toBe('');
+  });
+
+  it('encrypts and decrypts special characters (Myanmar, emoji, quotes)', async () => {
+    const special = 'မင်္ဂလာပါ 🎉 "quoted" & <tag>';
+    const encrypted = await encryptSecret(special);
+    expect(encrypted).not.toBe(special);
+    const decrypted = await decryptSecret(encrypted);
+    expect(decrypted).toBe(special);
+  });
+
+  it('encrypts and decrypts a long string (>500 chars) accurately', async () => {
+    const long = 'sk-or-v1-'.repeat(60); // ~540 chars
+    const encrypted = await encryptSecret(long);
+    const decrypted = await decryptSecret(encrypted);
+    expect(decrypted).toBe(long);
+  });
+
+  it('produces different ciphertext for same plaintext on each call (random IV)', async () => {
+    const key = 'my-secret-api-key';
+    const enc1 = await encryptSecret(key);
+    const enc2 = await encryptSecret(key);
+    // Each encryption uses a random IV so ciphertexts should differ
+    expect(enc1).not.toBe(enc2);
+    // But both should decrypt to the same value
+    expect(await decryptSecret(enc1)).toBe(key);
+    expect(await decryptSecret(enc2)).toBe(key);
+  });
 });
