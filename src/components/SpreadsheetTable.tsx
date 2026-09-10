@@ -275,6 +275,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       A
                     </span>
                     <span className="font-bold text-foreground">Translation Key</span>
+                    {isKeyFrozen && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFrozenCount(0);
+                        }}
+                        title="Key column is frozen. Click to unfreeze."
+                        className="inline-flex items-center p-0.5 rounded hover:bg-muted text-primary cursor-pointer transition-colors"
+                      >
+                        <Pin className="size-3 fill-primary/30 shrink-0" />
+                      </button>
+                    )}
                   </div>
 
                   <DropdownMenu>
@@ -297,7 +309,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           </>
                         ) : (
                           <>
-                            <Pin className="size-3.5 text-muted-foreground" />
+                            <Pin className="size-3.5 text-primary" />
                             <span>Freeze Key Column</span>
                           </>
                         )}
@@ -349,6 +361,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <span className="text-[11px] font-normal text-muted-foreground truncate">
                           {lang === 'my' ? '(မြန်မာ)' : lang === 'en' ? '(English)' : ''}
                         </span>
+                        {isLangFrozen && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFrozenCount(idx + 1);
+                            }}
+                            title={`${lang.toUpperCase()} column is frozen. Click to unfreeze.`}
+                            className="inline-flex items-center p-0.5 rounded hover:bg-muted text-primary cursor-pointer transition-colors"
+                          >
+                            <Pin className="size-3 fill-primary/30 shrink-0" />
+                          </button>
+                        )}
                       </div>
 
                       {/* Custom Column Header Actions Dropdown */}
@@ -372,7 +396,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               </>
                             ) : (
                               <>
-                                <Pin className="size-3.5 text-muted-foreground" />
+                                <Pin className="size-3.5 text-primary" />
                                 <span>Freeze up to {lang.toUpperCase()} Column</span>
                               </>
                             )}
@@ -478,7 +502,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       isKeyFrozen ? 'sticky z-20' : 'relative z-0'
                     } border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${
                       isKeySelected
-                        ? '!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] z-22'
+                        ? '!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] z-22'
                         : ''
                     }`}
                   >
@@ -541,11 +565,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           isLangFrozen ? 'sticky z-20' : 'relative z-0'
                         } ${getFreezeLineClass(isLangLastFrozen)} ${
                           !val
-                            ? 'bg-amber-500/5 dark:bg-amber-500/10 group-hover:bg-amber-500/10 dark:group-hover:bg-amber-500/20'
+                            ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
                             : ''
                         } ${
                           isCellSelected
-                            ? `!bg-primary/10 dark:!bg-primary/25 outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-22' : 'z-10'}`
+                            ? `!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-22' : 'z-10'}`
                             : ''
                         }`}
                       >
@@ -679,7 +703,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </span>
           <span className="text-muted-foreground">•</span>
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Pin className="size-3 text-muted-foreground shrink-0" />
+            <Pin className="size-3 text-primary shrink-0" />
             <span>Freeze:</span>
             <button
               onClick={() => setFrozenCount(safeFrozenCount > 0 ? 0 : 1)}
