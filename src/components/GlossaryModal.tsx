@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { GlossaryEntry, getStoredGlossary, saveStoredGlossary } from '@/lib/glossary';
 
@@ -106,11 +107,9 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
 
           <div className="flex items-center justify-between pt-1">
             <label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-foreground">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={newDoNotTranslate}
-                onChange={e => setNewDoNotTranslate(e.target.checked)}
-                className="size-3.5 rounded border-input text-primary"
+                onCheckedChange={checked => setNewDoNotTranslate(!!checked)}
               />
               <span className="flex items-center gap-1">
                 <ShieldAlert className="size-3 text-amber-600" />

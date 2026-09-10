@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -407,12 +408,11 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             {/* Remember Key on Device Checkbox (Secure AES-GCM) */}
             <div className="pt-0.5">
               <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-muted-foreground hover:text-foreground">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={rememberKey}
-                  onChange={e => handleToggleRemember(e.target.checked)}
+                  onCheckedChange={checked => handleToggleRemember(!!checked)}
                   disabled={isTranslating}
-                  className="size-3.5 mt-0.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                  className="mt-0.5"
                 />
                 <span>
                   <span className="font-medium text-foreground">Remember key on this device</span>{' '}

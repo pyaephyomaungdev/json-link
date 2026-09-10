@@ -9,7 +9,16 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Replace, ArrowRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Search, Replace, ArrowRight, ChevronDown, Check } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { countMatches, executeFindReplace, FindReplaceOptions } from '@/lib/findReplace';
 import { SUPPORTED_LANGUAGES } from '@/data/languages';
@@ -76,6 +85,13 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     return meta ? `${meta.name} (${code})` : code.toUpperCase();
   };
 
+  const getScopeLabel = (s: string) => {
+    if (s === 'all') return 'All Languages & Fields (Entire Project)';
+    if (s === 'key') return 'Translation Keys Only (key)';
+    if (s === 'description') return 'Developer Context Only (description)';
+    return getLanguageLabel(s);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6">
@@ -120,57 +136,82 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
             />
           </div>
 
-          {/* Scope selection */}
+          {/* Scope selection - Custom Dropdown Action Menu */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-foreground">
               Search In / Scope
             </label>
-            <select
-              value={scope}
-              onChange={(e) => setScope(e.target.value)}
-              className="w-full bg-background border border-input rounded-md px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
-            >
-              <option value="all">All Languages & Fields (Entire Project)</option>
-              <option value="key">Translation Keys Only (key)</option>
-              <option value="description">Developer Context Only (description)</option>
-              <optgroup label="Specific Language">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full h-8 px-2.5 bg-background border border-input rounded-md text-xs text-foreground flex items-center justify-between hover:bg-muted/30 cursor-pointer transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <span className="truncate">{getScopeLabel(scope)}</span>
+                  <ChevronDown className="size-3.5 text-muted-foreground shrink-0 ml-2" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-60 overflow-y-auto">
+                <DropdownMenuLabel className="text-[11px] text-muted-foreground">General Scope</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => setScope('all')}
+                  className="flex items-center justify-between text-xs cursor-pointer"
+                >
+                  <span>All Languages & Fields (Entire Project)</span>
+                  {scope === 'all' && <Check className="size-3.5 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setScope('key')}
+                  className="flex items-center justify-between text-xs cursor-pointer"
+                >
+                  <span>Translation Keys Only (key)</span>
+                  {scope === 'key' && <Check className="size-3.5 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setScope('description')}
+                  className="flex items-center justify-between text-xs cursor-pointer"
+                >
+                  <span>Developer Context Only (description)</span>
+                  {scope === 'description' && <Check className="size-3.5 text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[11px] text-muted-foreground">Specific Language Column</DropdownMenuLabel>
                 {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {getLanguageLabel(lang)}
-                  </option>
+                  <DropdownMenuItem
+                    key={lang}
+                    onClick={() => setScope(lang)}
+                    className="flex items-center justify-between text-xs cursor-pointer"
+                  >
+                    <span>{getLanguageLabel(lang)}</span>
+                    {scope === lang && <Check className="size-3.5 text-primary" />}
+                  </DropdownMenuItem>
                 ))}
-              </optgroup>
-            </select>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          {/* Options row */}
+          {/* Options row - Custom Checkboxes */}
           <div className="flex flex-wrap gap-4 pt-1 text-xs text-muted-foreground">
             <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={matchCase}
-                onChange={(e) => setMatchCase(e.target.checked)}
-                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                onCheckedChange={(checked) => setMatchCase(!!checked)}
               />
               <span>Match case (Aa)</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={wholeWord}
-                onChange={(e) => setWholeWord(e.target.checked)}
-                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                onCheckedChange={(checked) => setWholeWord(!!checked)}
               />
               <span>Whole word</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={isRegex}
-                onChange={(e) => setIsRegex(e.target.checked)}
-                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                onCheckedChange={(checked) => setIsRegex(!!checked)}
               />
               <span>Use Regex (.*)</span>
             </label>
