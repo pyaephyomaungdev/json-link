@@ -70,7 +70,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent hideCloseButton className="max-w-xl p-0 gap-0 overflow-hidden border border-border shadow-2xl bg-card">
+      <DialogContent hideCloseButton className="max-w-xl p-0 sm:p-0 gap-0 sm:gap-0 overflow-hidden border border-border shadow-2xl bg-card">
         {/* Search Input */}
         <div className="flex items-center px-3.5 py-3 border-b border-border bg-background gap-2">
           <Search className="size-4 text-muted-foreground shrink-0" />
@@ -175,13 +175,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="px-3.5 py-2 bg-muted/30 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground select-none">
-          <span className="flex items-center gap-2">
-            <span>Use <kbd className="font-mono bg-muted px-1 rounded">↑</kbd> <kbd className="font-mono bg-muted px-1 rounded">↓</kbd> to navigate</span>
+        <div className="px-3.5 py-2 bg-muted/30 border-t border-border flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground select-none">
+          <span className="sm:hidden text-[10px] text-muted-foreground">Tap an action to select</span>
+          <span className="hidden sm:flex items-center gap-2">
+            <span>Use <kbd className="font-mono bg-muted px-1 rounded text-[10px]">↑</kbd> <kbd className="font-mono bg-muted px-1 rounded text-[10px]">↓</kbd> to navigate</span>
             <span>•</span>
-            <span><kbd className="font-mono bg-muted px-1 rounded">Enter</kbd> to select</span>
+            <span><kbd className="font-mono bg-muted px-1 rounded text-[10px]">Enter</kbd> to select</span>
           </span>
-          <span className="font-mono text-[10px]">JSON Link Command Palette</span>
+          <span className="font-mono text-[10px] text-muted-foreground/70 shrink-0">Command Palette</span>
         </div>
       </DialogContent>
     </Dialog>
