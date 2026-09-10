@@ -385,22 +385,18 @@ export function App() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs pt-4 border-t border-border/60 w-full">
-                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 font-semibold text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs">
-                  <FileCode className="size-3.5 shrink-0" />
-                  <span>Project (.jsonlink)</span>
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground pt-4 border-t border-border/60">
+                <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> Project (.jsonlink)
                 </span>
-                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/10 border border-primary/20 font-medium text-primary text-[11px] sm:text-xs">
-                  <FileCode className="size-3.5 shrink-0" />
-                  <span>JSON (.json)</span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileCode className="size-3.5 text-primary" /> JSON (.json)
                 </span>
-                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 font-medium text-emerald-600 dark:text-emerald-400 text-[11px] sm:text-xs">
-                  <FileSpreadsheet className="size-3.5 shrink-0" />
-                  <span>Excel (.xlsx)</span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileSpreadsheet className="size-3.5 text-emerald-600" /> Excel (.xlsx)
                 </span>
-                <span className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-blue-500/10 border border-blue-500/20 font-medium text-blue-600 dark:text-blue-400 text-[11px] sm:text-xs">
-                  <FileSpreadsheet className="size-3.5 shrink-0" />
-                  <span>CSV (.csv)</span>
+                <span className="flex items-center gap-1 whitespace-nowrap">
+                  <FileSpreadsheet className="size-3.5 text-blue-500" /> CSV (.csv)
                 </span>
               </div>
             </div>

@@ -17,6 +17,12 @@ export const Logo: React.FC<LogoProps> = ({
     lg: 'size-12',
   };
 
+  const badgeRadii = {
+    sm: { outer: 'rounded-[8px]', inner: 'rounded-[6.5px]' },
+    md: { outer: 'rounded-xl', inner: 'rounded-[10px]' },
+    lg: { outer: 'rounded-[18px]', inner: 'rounded-[16px]' },
+  };
+
   const textSizes = {
     sm: 'text-xs',
     md: 'text-sm',
@@ -27,9 +33,9 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
       {/* Brand Icon Badge */}
       <div
-        className={`${iconSizes[size]} relative rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 p-[1.5px] shadow-sm shrink-0 flex items-center justify-center`}
+        className={`${iconSizes[size]} relative ${badgeRadii[size].outer} bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 p-[1.5px] shadow-sm shrink-0 flex items-center justify-center`}
       >
-        <div className="w-full h-full bg-[#090d16] rounded-[10px] flex items-center justify-center relative overflow-hidden">
+        <div className={`w-full h-full bg-[#090d16] ${badgeRadii[size].inner} flex items-center justify-center relative overflow-hidden`}>
           {/* Subtle background glow */}
           <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20" />
 
