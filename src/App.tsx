@@ -12,6 +12,7 @@ import { SaveProjectModal } from '@/components/SaveProjectModal';
 import { AiTranslateModal } from '@/components/AiTranslateModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
+import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { Logo } from '@/components/Logo';
 import {
   parseJsonFile,
@@ -78,6 +79,7 @@ export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isDiffMergeOpen, setIsDiffMergeOpen] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogConfig | null>(null);
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
@@ -319,7 +321,15 @@ export function App() {
         setIsDiffMergeOpen(true);
       }
     } catch (err: any) {
-      alert(err?.message || 'Error parsing files');
+      setConfirmDialog({
+        isOpen: true,
+        title: 'File Import Error',
+        description: err?.message || 'Error parsing uploaded files. Please check the file format and try again.',
+        variant: 'destructive',
+        isAlert: true,
+        confirmLabel: 'OK',
+        onConfirm: () => {},
+      });
     }
   };
 
@@ -396,26 +406,55 @@ export function App() {
 
   const handleDeleteLanguage = (langToDelete: string) => {
     if (languages.length <= 1) {
-      alert('You must have at least one language column.');
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Cannot Delete Column',
+        description: 'You must have at least one language column in your spreadsheet.',
+        variant: 'warning',
+        isAlert: true,
+        confirmLabel: 'Understood',
+        onConfirm: () => {},
+      });
       return;
     }
-    if (window.confirm(`Are you sure you want to delete the column "${langToDelete.toUpperCase()}"?`)) {
-      setLanguages(prev => prev.filter(l => l !== langToDelete));
-      setItems(
-        items.map(item => {
-          const updated = { ...item };
-          delete updated[langToDelete];
-          return updated;
-        })
-      );
-    }
+
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Language Column',
+      description: (
+        <span>
+          Are you sure you want to delete the column <strong className="font-mono text-foreground font-semibold">"{langToDelete.toUpperCase()}"</strong>? All translations in this column will be permanently removed.
+        </span>
+      ),
+      confirmLabel: 'Delete Column',
+      cancelLabel: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        setLanguages(prev => prev.filter(l => l !== langToDelete));
+        setItems(
+          items.map(item => {
+            const updated = { ...item };
+            delete updated[langToDelete];
+            return updated;
+          })
+        );
+      },
+    });
   };
 
   const handleRenameLanguage = (oldLang: string, newLang: string) => {
     const trimmedNew = newLang.trim().toLowerCase();
     if (!trimmedNew || trimmedNew === oldLang.toLowerCase()) return;
     if (languages.includes(trimmedNew)) {
-      alert(`Language column "${trimmedNew.toUpperCase()}" already exists.`);
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Language Already Exists',
+        description: `Language column "${trimmedNew.toUpperCase()}" already exists in the spreadsheet.`,
+        variant: 'warning',
+        isAlert: true,
+        confirmLabel: 'OK',
+        onConfirm: () => {},
+      });
       return;
     }
     setLanguages(prev => prev.map(l => (l === oldLang ? trimmedNew : l)));
@@ -473,9 +512,17 @@ export function App() {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear all translation keys?')) {
-      setItems([]);
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Clear All Translation Keys',
+      description: 'Are you sure you want to clear all translation keys? All rows in the spreadsheet will be removed. You can undo this action with Cmd+Z.',
+      confirmLabel: 'Clear All Keys',
+      cancelLabel: 'Keep Editing',
+      variant: 'destructive',
+      onConfirm: () => {
+        setItems([]);
+      },
+    });
   };
 
   const handleOpenAiTranslate = (targetLang?: string) => {
@@ -922,6 +969,12 @@ export function App() {
         }}
         diff={pendingDiff}
         onConfirmMerge={handleConfirmMerge}
+      />
+
+      {/* Reusable Custom Modal Confirmation / Alert Dialog */}
+      <ConfirmDialog
+        config={confirmDialog}
+        onClose={() => setConfirmDialog(null)}
       />
     </div>
   );

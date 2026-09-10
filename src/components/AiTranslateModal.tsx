@@ -214,7 +214,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     }
 
     if (eligibleItems.length === 0) {
-      alert('No eligible keys found to translate for the selected scope.');
+      setTranslationError('No eligible keys found to translate for the selected scope.');
       return;
     }
 
