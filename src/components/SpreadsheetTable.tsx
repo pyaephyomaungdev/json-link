@@ -159,12 +159,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
-      if (!resizingColRef.current) return;
-      const delta = ev.clientX - resizingColRef.current.startX;
-      const newW = Math.max(120, Math.min(900, resizingColRef.current.startWidth + delta));
+      const resize = resizingColRef.current;
+      if (!resize) return;
+      const delta = ev.clientX - resize.startX;
+      const newW = Math.max(120, Math.min(900, resize.startWidth + delta));
       setColumnWidths(prev => ({
         ...prev,
-        [resizingColRef.current!.colId]: newW,
+        [resize.colId]: newW,
       }));
     };
 
