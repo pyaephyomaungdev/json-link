@@ -4,6 +4,8 @@ import {
   getLanguageDisplayName,
   getStoredApiKey,
   setStoredApiKey,
+  isKeyRemembered,
+  clearStoredApiKey,
   getStoredModel,
   setStoredModel,
   getCachedOpenRouterModels,
@@ -12,17 +14,30 @@ import {
 } from '../openrouter';
 
 describe('openrouter.ts', () => {
-  const mockStorage: Record<string, string> = {};
+  const mockLocalStorage: Record<string, string> = {};
+  const mockSessionStorage: Record<string, string> = {};
 
   beforeEach(() => {
-    for (const k in mockStorage) delete mockStorage[k];
+    for (const k in mockLocalStorage) delete mockLocalStorage[k];
+    for (const k in mockSessionStorage) delete mockSessionStorage[k];
+
     vi.stubGlobal('localStorage', {
-      getItem: vi.fn((key: string) => mockStorage[key] || null),
+      getItem: vi.fn((key: string) => mockLocalStorage[key] || null),
       setItem: vi.fn((key: string, val: string) => {
-        mockStorage[key] = val;
+        mockLocalStorage[key] = val;
       }),
       removeItem: vi.fn((key: string) => {
-        delete mockStorage[key];
+        delete mockLocalStorage[key];
+      }),
+    });
+
+    vi.stubGlobal('sessionStorage', {
+      getItem: vi.fn((key: string) => mockSessionStorage[key] || null),
+      setItem: vi.fn((key: string, val: string) => {
+        mockSessionStorage[key] = val;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete mockSessionStorage[key];
       }),
     });
   });
@@ -45,13 +60,42 @@ describe('openrouter.ts', () => {
   });
 
   describe('API key and Model storage', () => {
-    it('persists and retrieves API key', () => {
-      expect(getStoredApiKey()).toBe('');
-      setStoredApiKey('sk-or-v1-testkey');
-      expect(getStoredApiKey()).toBe('sk-or-v1-testkey');
+    it('saves in sessionStorage only by default (remember = false)', async () => {
+      expect(await getStoredApiKey()).toBe('');
+      await setStoredApiKey('sk-or-v1-session-key', false);
 
-      setStoredApiKey('');
-      expect(getStoredApiKey()).toBe('');
+      expect(isKeyRemembered()).toBe(false);
+      expect(await getStoredApiKey()).toBe('sk-or-v1-session-key');
+      expect(mockSessionStorage['jsonlink_openrouter_api_key_session']).toBe('sk-or-v1-session-key');
+      expect(mockLocalStorage['jsonlink_openrouter_api_key_enc']).toBeUndefined();
+    });
+
+    it('encrypts in localStorage when remember = true', async () => {
+      await setStoredApiKey('sk-or-v1-secret', true);
+      expect(isKeyRemembered()).toBe(true);
+      expect(mockLocalStorage['jsonlink_openrouter_remember_key']).toBe('true');
+
+      // Check that localStorage does NOT contain the raw plain-text key
+      const storedEnc = mockLocalStorage['jsonlink_openrouter_api_key_enc'];
+      expect(storedEnc).toBeDefined();
+      expect(storedEnc).not.toContain('sk-or-v1-secret');
+
+      // Clear session storage to simulate reopening browser
+      delete mockSessionStorage['jsonlink_openrouter_api_key_session'];
+
+      // Successfully decrypts back
+      const retrieved = await getStoredApiKey();
+      expect(retrieved).toBe('sk-or-v1-secret');
+    });
+
+    it('clears stored API key completely', async () => {
+      await setStoredApiKey('sk-or-v1-temp', true);
+      clearStoredApiKey();
+
+      expect(isKeyRemembered()).toBe(false);
+      expect(await getStoredApiKey()).toBe('');
+      expect(mockSessionStorage['jsonlink_openrouter_api_key_session']).toBeUndefined();
+      expect(mockLocalStorage['jsonlink_openrouter_api_key_enc']).toBeUndefined();
     });
 
     it('persists and retrieves selected model', () => {

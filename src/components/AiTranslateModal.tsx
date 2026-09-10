@@ -34,6 +34,9 @@ import {
   Check,
   Search,
   X,
+  Shield,
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import {
   POPULAR_MODELS,
@@ -42,6 +45,8 @@ import {
   getCachedOpenRouterModels,
   getStoredApiKey,
   setStoredApiKey,
+  isKeyRemembered,
+  clearStoredApiKey,
   getStoredModel,
   setStoredModel,
   testOpenRouterKey,
@@ -79,7 +84,8 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [isCustomModelMode, setIsCustomModelMode] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
-  // Key verification state
+  // Key verification and persistence state
+  const [rememberKey, setRememberKey] = useState(false);
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [keyStatus, setKeyStatus] = useState<'untested' | 'valid' | 'invalid'>('untested');
   const [keyError, setKeyError] = useState('');
@@ -93,9 +99,11 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   // Load stored settings and fetch model catalog on mount or open
   useEffect(() => {
     if (isOpen) {
-      const storedKey = getStoredApiKey();
-      setApiKey(storedKey);
-      if (storedKey) setKeyStatus('valid');
+      setRememberKey(isKeyRemembered());
+      getStoredApiKey().then(storedKey => {
+        setApiKey(storedKey);
+        if (storedKey) setKeyStatus('valid');
+      });
 
       const storedM = getStoredModel();
       setSelectedModel(storedM);
@@ -160,7 +168,21 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
   const handleSaveKey = (newKey: string) => {
     setApiKey(newKey);
-    setStoredApiKey(newKey);
+    setStoredApiKey(newKey, rememberKey);
+    setKeyStatus('untested');
+    setKeyError('');
+  };
+
+  const handleToggleRemember = (checked: boolean) => {
+    setRememberKey(checked);
+    if (apiKey.trim()) {
+      setStoredApiKey(apiKey, checked);
+    }
+  };
+
+  const handleClearKey = () => {
+    clearStoredApiKey();
+    setApiKey('');
     setKeyStatus('untested');
     setKeyError('');
   };
@@ -178,7 +200,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     setIsTestingKey(false);
     if (res.valid) {
       setKeyStatus('valid');
-      setStoredApiKey(apiKey);
+      setStoredApiKey(apiKey, rememberKey);
     } else {
       setKeyStatus('invalid');
       setKeyError(res.error || 'Invalid API Key');
@@ -202,7 +224,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
     setProgress({ current: 0, total: eligibleItems.length });
 
     // Save key & model
-    setStoredApiKey(apiKey);
+    setStoredApiKey(apiKey, rememberKey);
     setStoredModel(selectedModel);
 
     const BATCH_SIZE = 8;
@@ -276,22 +298,36 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-1 text-xs">
-          {/* OpenRouter API Key Input */}
-          <div className="space-y-1.5 bg-muted/40 p-3 rounded-lg border border-border">
+          {/* OpenRouter API Key Input & Security Vault */}
+          <div className="space-y-2 bg-muted/40 p-3 rounded-lg border border-border">
             <div className="flex items-center justify-between">
               <label className="font-semibold text-foreground flex items-center gap-1.5">
                 <Key className="size-3.5 text-primary" />
                 OpenRouter API Key
               </label>
-              <a
-                href="https://openrouter.ai/keys"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-primary hover:underline flex items-center gap-1"
-              >
-                <span>Get API key</span>
-                <ExternalLink className="size-3" />
-              </a>
+              <div className="flex items-center gap-2.5">
+                {apiKey.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleClearKey}
+                    disabled={isTranslating}
+                    className="text-[11px] text-destructive hover:underline flex items-center gap-1 cursor-pointer"
+                    title="Disconnect and wipe API key from browser"
+                  >
+                    <Trash2 className="size-3" />
+                    <span>Clear</span>
+                  </button>
+                )}
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                >
+                  <span>Get API key</span>
+                  <ExternalLink className="size-3" />
+                </a>
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -319,7 +355,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 size="sm"
                 onClick={handleTestKey}
                 disabled={isTestingKey || !apiKey.trim() || isTranslating}
-                className="h-8 px-2.5 text-xs"
+                className="h-8 px-2.5 text-xs shrink-0"
               >
                 {isTestingKey ? (
                   <Loader2 className="size-3.5 animate-spin" />
@@ -331,9 +367,36 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
               </Button>
             </div>
 
+            {/* Remember Key on Device Checkbox (Secure AES-GCM) */}
+            <div className="pt-0.5">
+              <label className="flex items-start gap-2 cursor-pointer select-none text-[11px] text-muted-foreground hover:text-foreground">
+                <input
+                  type="checkbox"
+                  checked={rememberKey}
+                  onChange={e => handleToggleRemember(e.target.checked)}
+                  disabled={isTranslating}
+                  className="size-3.5 mt-0.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
+                />
+                <span>
+                  <span className="font-medium text-foreground">Remember key on this device</span>{' '}
+                  <span className="text-[10px] text-muted-foreground">
+                    (AES-256 encrypted in localStorage)
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground/80">
+                    {rememberKey
+                      ? 'Stored securely on this browser until you clear it.'
+                      : 'Stored in session memory only (automatically wiped when this tab closes).'}
+                  </span>
+                </span>
+              </label>
+            </div>
+
             {keyStatus === 'valid' && (
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="size-3" /> Key verified and saved in local storage.
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                <ShieldCheck className="size-3.5" />
+                <span>
+                  Key verified ({rememberKey ? 'AES-256 encrypted on device' : 'Session only — clears when tab closes'})
+                </span>
               </p>
             )}
 
@@ -342,6 +405,22 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 <AlertCircle className="size-3" /> {keyError}
               </p>
             )}
+
+            {/* Security Advisory Callout */}
+            <div className="bg-background/60 border border-border/70 rounded p-2 text-[10px] text-muted-foreground flex items-start gap-1.5 leading-relaxed">
+              <Shield className="size-3.5 text-primary shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-foreground">BYOK Privacy:</strong> Keys and translation content never touch any proxy server — requests go directly from your browser to OpenRouter. For best security, configure a usage limit (e.g. $1.00) at{' '}
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-foreground font-medium"
+                >
+                  openrouter.ai/keys
+                </a>.
+              </span>
+            </div>
           </div>
 
           {/* Model Selection via Custom Dropdown Menu with Search & Custom Model input */}

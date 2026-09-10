@@ -36,26 +36,130 @@ export const POPULAR_MODELS: OpenRouterModel[] = [
   },
 ];
 
-const STORAGE_KEY_API_KEY = 'jsonlink_openrouter_api_key';
+import { encryptSecret, decryptSecret } from './crypto';
+
+const SESSION_KEY_API_KEY = 'jsonlink_openrouter_api_key_session';
+const LOCAL_KEY_API_KEY_ENC = 'jsonlink_openrouter_api_key_enc';
+const LOCAL_KEY_REMEMBER = 'jsonlink_openrouter_remember_key';
+const LEGACY_STORAGE_KEY_API_KEY = 'jsonlink_openrouter_api_key';
 const STORAGE_KEY_MODEL = 'jsonlink_openrouter_model';
 
-export function getStoredApiKey(): string {
+/**
+ * Checks whether the user has opted to remember the API key on this device.
+ */
+export function isKeyRemembered(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY_API_KEY) || '';
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem(LOCAL_KEY_REMEMBER) === 'true';
   } catch {
-    return '';
+    return false;
   }
 }
 
-export function setStoredApiKey(key: string): void {
+/**
+ * Synchronously retrieves the API key from active session storage (if present).
+ */
+export function getStoredApiKeySync(): string {
   try {
-    if (key.trim()) {
-      localStorage.setItem(STORAGE_KEY_API_KEY, key.trim());
-    } else {
-      localStorage.removeItem(STORAGE_KEY_API_KEY);
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(SESSION_KEY_API_KEY) || '';
+    }
+  } catch {}
+  return '';
+}
+
+/**
+ * Retrieves the stored API key.
+ * 1. Checks sessionStorage (tab/session lifetime).
+ * 2. If remembered on device, decrypts AES-GCM encrypted key from localStorage.
+ * 3. Migrates any legacy plain-text key into the encrypted vault automatically.
+ */
+export async function getStoredApiKey(): Promise<string> {
+  try {
+    // 1. Check in-session storage first (ultra-fast & secure)
+    if (typeof sessionStorage !== 'undefined') {
+      const sessionKey = sessionStorage.getItem(SESSION_KEY_API_KEY);
+      if (sessionKey) return sessionKey;
+    }
+
+    // 2. If user opted to remember on this device, load and decrypt from localStorage
+    if (typeof localStorage !== 'undefined' && isKeyRemembered()) {
+      const encKey = localStorage.getItem(LOCAL_KEY_API_KEY_ENC);
+      if (encKey) {
+        const decrypted = await decryptSecret(encKey);
+        if (decrypted) {
+          // Cache in session storage for current tab
+          try {
+            sessionStorage.setItem(SESSION_KEY_API_KEY, decrypted);
+          } catch {}
+          return decrypted;
+        }
+      }
+
+      // 3. Migrate legacy plain-text key if found
+      const legacyKey = localStorage.getItem(LEGACY_STORAGE_KEY_API_KEY);
+      if (legacyKey) {
+        await setStoredApiKey(legacyKey, true);
+        return legacyKey;
+      }
     }
   } catch (e) {
-    console.error('Failed to save API key to localStorage', e);
+    console.warn('Failed to retrieve stored API key:', e);
+  }
+  return '';
+}
+
+/**
+ * Stores API key securely:
+ * - Always stored in sessionStorage for current tab session (auto-wiped when tab closes).
+ * - Only persisted to localStorage if `remember = true`, where it is AES-GCM encrypted.
+ */
+export async function setStoredApiKey(key: string, remember = false): Promise<void> {
+  const clean = key.trim();
+  if (!clean) {
+    clearStoredApiKey();
+    return;
+  }
+
+  try {
+    // Save to current tab session
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(SESSION_KEY_API_KEY, clean);
+    }
+
+    // Handle persistent storage
+    if (typeof localStorage !== 'undefined') {
+      if (remember) {
+        localStorage.setItem(LOCAL_KEY_REMEMBER, 'true');
+        const cipher = await encryptSecret(clean);
+        localStorage.setItem(LOCAL_KEY_API_KEY_ENC, cipher);
+        localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
+      } else {
+        localStorage.removeItem(LOCAL_KEY_REMEMBER);
+        localStorage.removeItem(LOCAL_KEY_API_KEY_ENC);
+        localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to set stored API key:', e);
+  }
+}
+
+/**
+ * Completely clears and revokes the API key from both session and persistent storage.
+ */
+export function clearStoredApiKey(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(SESSION_KEY_API_KEY);
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(LOCAL_KEY_REMEMBER);
+      localStorage.removeItem(LOCAL_KEY_API_KEY_ENC);
+      localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
+    }
+  } catch (e) {
+    console.error('Failed to clear stored API key:', e);
   }
 }
 
