@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BookMarked, Plus, Trash2, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, ShieldAlert } from 'lucide-react';
 import { GlossaryEntry, getStoredGlossary, saveStoredGlossary } from '@/lib/glossary';
 
 interface GlossaryModalProps {
@@ -61,19 +61,12 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <BookMarked className="size-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-semibold">
-                AI Translation Glossary & Terminology
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Enforce project terminology rules so AI models never mistranslate brand names or standard terms.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            AI Translation Glossary & Terminology
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            Enforce project terminology rules so AI models never mistranslate brand names or standard terms.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Add New Term Form */}

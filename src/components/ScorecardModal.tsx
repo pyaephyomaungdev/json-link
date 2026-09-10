@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Activity,
-  X,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
@@ -114,41 +121,27 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
     };
   }, [items, languages, sourceLanguage]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/95">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-white">Localization Health & Scorecard</h2>
-              <p className="text-xs text-slate-400">
-                Track completion progress, missing keys, and variable integrity across languages
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Localization Health & Scorecard
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            Track completion progress, missing keys, and variable integrity across languages.
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Overview metric cards */}
-        <div className="grid grid-cols-3 gap-3 p-6 pb-4 bg-slate-950/40 border-b border-slate-800/80">
-          <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl">
-            <div className="text-xs text-slate-400 font-medium">Overall Completion</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-muted/30 border border-border rounded-xl">
+          <div className="p-3 bg-card border border-border/80 rounded-lg shadow-xs">
+            <div className="text-[11px] text-muted-foreground font-medium">Overall Completion</div>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-bold text-white">{overallPercentage}%</span>
-              <span className="text-xs text-slate-400">avg across {languages.length} langs</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground">{overallPercentage}%</span>
+              <span className="text-[11px] text-muted-foreground">avg ({languages.length} langs)</span>
             </div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div className="w-full bg-muted h-1.5 rounded-full mt-2 overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 ${
                   overallPercentage >= 90
@@ -162,110 +155,115 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl">
-            <div className="text-xs text-slate-400 font-medium">Missing Translations</div>
+          <div className="p-3 bg-card border border-border/80 rounded-lg shadow-xs">
+            <div className="text-[11px] text-muted-foreground font-medium">Missing Translations</div>
             <div className="flex items-baseline gap-2 mt-1">
               <span
-                className={`text-2xl font-bold ${
-                  totalMissingKeys === 0 ? 'text-emerald-400' : 'text-amber-400'
+                className={`text-xl sm:text-2xl font-bold ${
+                  totalMissingKeys === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
                 }`}
               >
                 {totalMissingKeys}
               </span>
-              <span className="text-xs text-slate-400">keys empty</span>
+              <span className="text-[11px] text-muted-foreground">empty cells</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
-              <Layers className="w-3 h-3" />
-              <span>Across {items.length} total rows</span>
+            <div className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+              <Layers className="size-3" />
+              <span>Across {items.length} total keys</span>
             </div>
           </div>
 
-          <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl">
-            <div className="text-xs text-slate-400 font-medium">Variable Integrity</div>
+          <div className="p-3 bg-card border border-border/80 rounded-lg shadow-xs">
+            <div className="text-[11px] text-muted-foreground font-medium">Variable Integrity</div>
             <div className="flex items-baseline gap-2 mt-1">
               <span
-                className={`text-2xl font-bold ${
-                  allIssues.length === 0 ? 'text-emerald-400' : 'text-rose-400'
+                className={`text-xl sm:text-2xl font-bold ${
+                  allIssues.length === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {allIssues.length}
               </span>
-              <span className="text-xs text-slate-400">mismatches</span>
+              <span className="text-[11px] text-muted-foreground">mismatches</span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" />
+            <div className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+              <ShieldCheck className="size-3" />
               <span>ICU, %s, curly braces</span>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 px-6 pt-3 border-b border-slate-800 bg-slate-900/60">
+        <div className="flex items-center gap-2 border-b border-border pt-1">
           <button
+            type="button"
             onClick={() => setActiveTab('completion')}
-            className={`pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'completion'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            <CheckCircle2 className="w-3.5 h-3.5" />
+            <CheckCircle2 className="size-3.5" />
             Language Completion ({languages.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('variables')}
-            className={`pb-2.5 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+            className={`pb-2 px-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'variables'
-                ? 'border-rose-500 text-rose-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-rose-500 text-rose-600 dark:text-rose-400'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5" />
+            <AlertTriangle className="size-3.5" />
             Variable Warnings ({allIssues.length})
           </button>
         </div>
 
         {/* Tab content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-3">
+        <div className="overflow-y-auto flex-1 space-y-2.5 max-h-72 pr-1">
           {activeTab === 'completion' && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {langStats.map((stat) => (
                 <div
                   key={stat.lang}
-                  className="p-3.5 bg-slate-950/60 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors"
+                  className="p-3 bg-card border border-border rounded-xl hover:border-primary/40 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-slate-200">{stat.label}</span>
+                      <span className="font-medium text-xs sm:text-sm text-foreground">{stat.label}</span>
                       {stat.lang === sourceLanguage && (
-                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-mono">
+                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono">
                           Source
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-slate-300">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="text-xs font-semibold text-foreground">
                         {stat.percentage}%
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         ({stat.translated}/{stat.total})
                       </span>
                       {stat.missing > 0 && onTranslateMissing && (
-                        <button
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
                             onClose();
                             onTranslateMissing(stat.lang);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg transition-colors ml-2"
+                          className="h-6 px-2 text-[11px] font-medium text-primary border-primary/30 hover:bg-primary/10 cursor-pointer gap-1"
                         >
-                          <Sparkles className="w-3 h-3" />
-                          <span>Translate Missing ({stat.missing})</span>
-                        </button>
+                          <Sparkles className="size-3" />
+                          <span>Translate ({stat.missing})</span>
+                        </Button>
                       )}
                     </div>
                   </div>
 
-                  <div className="w-full bg-slate-800 h-2 rounded-full mt-2.5 overflow-hidden">
+                  <div className="w-full bg-muted h-2 rounded-full mt-2 overflow-hidden">
                     <div
                       className={`h-full transition-all duration-300 ${
                         stat.percentage === 100
@@ -285,12 +283,12 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
           )}
 
           {activeTab === 'variables' && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {allIssues.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 border border-dashed border-slate-800 rounded-xl">
-                  <ShieldCheck className="w-8 h-8 mx-auto text-emerald-400 mb-2 opacity-80" />
-                  <p className="text-sm font-medium text-slate-300">All Variables Intact</p>
-                  <p className="text-xs text-slate-500 mt-1">
+                <div className="p-8 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                  <ShieldCheck className="size-8 mx-auto text-emerald-500 mb-2 opacity-80" />
+                  <p className="text-sm font-medium text-foreground">All Variables Intact</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     No missing curly braces, sprintf tags (%s), or parameters detected in translations.
                   </p>
                 </div>
@@ -298,37 +296,37 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
                 allIssues.map((issue, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 bg-slate-950/60 border border-rose-900/40 rounded-xl space-y-2 text-xs"
+                    className="p-3 bg-card border border-rose-500/30 rounded-xl space-y-2 text-xs"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-slate-300 font-medium">{issue.key}</span>
-                      <span className="uppercase text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">
+                      <span className="font-mono text-foreground font-medium">{issue.key}</span>
+                      <span className="uppercase text-[10px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-mono font-medium">
                         {issue.lang}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-slate-400 bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground bg-muted/40 p-2 rounded-lg border border-border">
                       <div>
-                        <span className="text-[10px] text-slate-500 block uppercase font-semibold">
+                        <span className="text-[10px] text-muted-foreground block uppercase font-semibold">
                           Source ({sourceLanguage})
                         </span>
-                        <span className="text-slate-200">{issue.sourceText}</span>
+                        <span className="text-foreground">{issue.sourceText}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 block uppercase font-semibold">
+                        <span className="text-[10px] text-muted-foreground block uppercase font-semibold">
                           Translation ({issue.lang})
                         </span>
-                        <span className="text-slate-200">{issue.targetText}</span>
+                        <span className="text-foreground">{issue.targetText}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-rose-400 text-[11px]">
-                      <AlertTriangle className="w-3 h-3" />
+                    <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 text-[11px]">
+                      <AlertTriangle className="size-3" />
                       <span>Missing parameter(s):</span>
                       {issue.missingVars.map((v, vIdx) => (
                         <code
                           key={vIdx}
-                          className="bg-rose-950/80 text-rose-200 px-1 py-0.5 rounded font-mono text-[10px] border border-rose-800/60"
+                          className="bg-rose-500/10 text-rose-600 dark:text-rose-400 px-1 py-0.5 rounded font-mono text-[10px] border border-rose-500/20"
                         >
                           {v}
                         </code>
@@ -342,15 +340,18 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-3.5 border-t border-slate-800 bg-slate-950/70">
-          <button
+        <DialogFooter className="flex flex-row items-center justify-end gap-2 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
+            className="flex-1 sm:flex-none h-8 text-xs cursor-pointer"
           >
             Close
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

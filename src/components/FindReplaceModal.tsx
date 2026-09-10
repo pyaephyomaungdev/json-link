@@ -1,5 +1,15 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Replace, X, ArrowRight } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, Replace, ArrowRight } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { countMatches, executeFindReplace, FindReplaceOptions } from '@/lib/findReplace';
 import { SUPPORTED_LANGUAGES } from '@/data/languages';
@@ -52,8 +62,6 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     return countMatches(items, options);
   }, [items, options, query]);
 
-  if (!isOpen) return null;
-
   const handleReplaceAll = () => {
     if (!query) return;
     const { updatedItems, count } = executeFindReplace(items, options);
@@ -69,68 +77,58 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2 text-white font-medium">
-            <div className="p-1.5 rounded-md bg-blue-500/20 text-blue-400">
-              <Replace className="w-4 h-4" />
-            </div>
-            <span>Find & Replace Across Languages</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-1 rounded-md hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Find & Replace Across Languages
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            Search and replace text across translation keys, descriptions, or specific language columns.
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Body */}
-        <div className="p-5 space-y-4 text-sm">
+        <div className="flex flex-col gap-4 py-1 text-xs">
           {/* Find input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-blue-400" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Search className="size-3.5 text-primary" />
               Find
             </label>
-            <div className="relative">
-              <input
-                ref={queryInputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search term or regex..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm font-mono"
-              />
-            </div>
+            <Input
+              ref={queryInputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search term or regex..."
+              className="h-8 text-xs font-mono"
+            />
           </div>
 
           {/* Replace input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Replace className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Replace className="size-3.5 text-primary" />
               Replace With
             </label>
-            <input
+            <Input
               type="text"
               value={replacement}
               onChange={(e) => setReplacement(e.target.value)}
               placeholder="Replacement text..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+              className="h-8 text-xs font-mono"
             />
           </div>
 
           {/* Scope selection */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-foreground">
               Search In / Scope
             </label>
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-blue-500"
+              className="w-full bg-background border border-input rounded-md px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
             >
               <option value="all">All Languages & Fields (Entire Project)</option>
               <option value="key">Translation Keys Only (key)</option>
@@ -146,76 +144,79 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           </div>
 
           {/* Options row */}
-          <div className="flex flex-wrap gap-4 pt-1 text-xs text-slate-300">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="flex flex-wrap gap-4 pt-1 text-xs text-muted-foreground">
+            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <input
                 type="checkbox"
                 checked={matchCase}
                 onChange={(e) => setMatchCase(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500/20"
+                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
               />
               <span>Match case (Aa)</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <input
                 type="checkbox"
                 checked={wholeWord}
                 onChange={(e) => setWholeWord(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500/20"
+                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
               />
               <span>Whole word</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <input
                 type="checkbox"
                 checked={isRegex}
                 onChange={(e) => setIsRegex(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500/20"
+                className="size-3.5 rounded border-input text-primary focus:ring-primary/20 cursor-pointer"
               />
               <span>Use Regex (.*)</span>
             </label>
           </div>
 
           {/* Match counter banner */}
-          <div className="rounded-lg bg-slate-950 border border-slate-800 px-3.5 py-2.5 flex items-center justify-between text-xs">
-            <span className="text-slate-400">Occurrences:</span>
+          <div className="rounded-lg bg-muted/40 border border-border px-3.5 py-2.5 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Occurrences:</span>
             {query.trim() ? (
               matchStats.totalMatches > 0 ? (
-                <span className="text-blue-400 font-medium">
+                <span className="text-primary font-medium">
                   {matchStats.totalMatches} match{matchStats.totalMatches > 1 ? 'es' : ''} in{' '}
                   {matchStats.affectedRows} row{matchStats.affectedRows > 1 ? 's' : ''}
                 </span>
               ) : (
-                <span className="text-slate-500 italic">No matches found</span>
+                <span className="text-muted-foreground italic">No matches found</span>
               )
             ) : (
-              <span className="text-slate-500 italic">Enter search term</span>
+              <span className="text-muted-foreground italic">Enter search term</span>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-950/60">
-          <button
+        <DialogFooter className="flex flex-row items-center justify-between sm:justify-between gap-2 pt-3">
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            className="h-8 text-xs cursor-pointer"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
             disabled={!query.trim() || matchStats.totalMatches === 0}
             onClick={handleReplaceAll}
-            className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+            className="h-8 text-xs font-semibold cursor-pointer gap-1.5"
           >
             <span>Replace All</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
+            <ArrowRight className="size-3.5" />
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
