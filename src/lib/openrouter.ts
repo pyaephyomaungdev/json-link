@@ -229,9 +229,12 @@ export function getCachedOpenRouterModels(): OpenRouterModel[] {
   return POPULAR_MODELS;
 }
 
+import { GlossaryEntry, formatGlossaryForPrompt, getStoredGlossary } from './glossary';
+
 export interface TranslationRequestItem {
   key: string;
   sourceText: string;
+  description?: string;
 }
 
 export interface TranslateBatchOptions {
@@ -240,6 +243,7 @@ export interface TranslateBatchOptions {
   sourceLang: string;
   targetLang: string;
   items: TranslationRequestItem[];
+  glossary?: GlossaryEntry[];
 }
 
 /**
@@ -307,6 +311,7 @@ export async function translateBatchWithOpenRouter({
   sourceLang,
   targetLang,
   items,
+  glossary,
 }: TranslateBatchOptions): Promise<Record<string, string>> {
   if (!apiKey.trim()) {
     throw new Error('Please provide an OpenRouter API key.');
@@ -319,6 +324,9 @@ export async function translateBatchWithOpenRouter({
   const srcName = getLanguageDisplayName(sourceLang);
   const tgtName = getLanguageDisplayName(targetLang);
 
+  const activeGlossary = glossary !== undefined ? glossary : getStoredGlossary();
+  const glossaryInstructions = formatGlossaryForPrompt(activeGlossary);
+
   const systemPrompt = `You are an expert localization and internationalization (i18n) translator specializing in software UI strings.
 Your mission is to translate software UI strings from ${srcName} (${sourceLang}) to natural, professional ${tgtName} (${targetLang}).
 
@@ -326,14 +334,15 @@ CRITICAL RULES:
 1. PRESERVE VARIABLES EXACTLY:
    - Interpolation placeholders like {name}, {count}, {{username}}, %s, %d, %1$s, {0}, $1 MUST NEVER be translated, modified, or omitted.
    - Example in Myanmar: "Welcome, {name}!" -> "ကြိုဆိုပါသည်၊ {name}!" (DO NOT write {နာမည်} or remove {name}).
-2. MAINTAIN TONE:
+2. MAINTAIN TONE & CONTEXT:
    - UI strings should sound modern, concise, polite, and natural for software applications.
    - For Myanmar (my), use modern standard Unicode typography (Pyidaungsu / Noto Sans Myanmar).
+   - If a description or context is provided for a string, use it to disambiguate the translation accurately.
 3. RETURN STRICT JSON:
    - You must output ONLY a valid JSON object where keys are the translation keys provided and values are the translated strings.
-   - Do NOT wrap in markdown code fences (\`\`\`json). Output pure raw JSON only.`;
+   - Do NOT wrap in markdown code fences (\`\`\`json). Output pure raw JSON only.${glossaryInstructions}`;
 
-  const userPayload = {
+  const userPayload: any = {
     task: `Translate the following ${items.length} strings from ${srcName} to ${tgtName}:`,
     sourceLanguage: sourceLang,
     targetLanguage: targetLang,
@@ -342,6 +351,17 @@ CRITICAL RULES:
       return acc;
     }, {} as Record<string, string>),
   };
+
+  // Attach context descriptions if any items have them
+  const hasDescriptions = items.some(it => !!it.description?.trim());
+  if (hasDescriptions) {
+    userPayload.contexts = items.reduce((acc, item) => {
+      if (item.description?.trim()) {
+        acc[item.key] = item.description.trim();
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  }
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',

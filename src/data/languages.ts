@@ -88,3 +88,17 @@ export function formatLanguageLabel(code: string): string {
   }
   return code.toUpperCase();
 }
+
+export const SUPPORTED_LANGUAGES = ISO_LANGUAGES;
+
+const RTL_LANG_CODES = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'yi']);
+
+/**
+ * Check if a language code is written Right-to-Left (RTL)
+ */
+export function isRtlLanguage(code: string): boolean {
+  if (!code) return false;
+  const primary = code.toLowerCase().split('-')[0].split('_')[0];
+  return RTL_LANG_CODES.has(primary);
+}
+

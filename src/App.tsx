@@ -10,6 +10,9 @@ import { ExportModal } from '@/components/ExportModal';
 import { ExitConfirmDialog } from '@/components/ExitConfirmDialog';
 import { SaveProjectModal } from '@/components/SaveProjectModal';
 import { AiTranslateModal } from '@/components/AiTranslateModal';
+import { FindReplaceModal } from '@/components/FindReplaceModal';
+import { ScorecardModal } from '@/components/ScorecardModal';
+import { GlossaryModal } from '@/components/GlossaryModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
@@ -22,6 +25,7 @@ import {
   parseYamlFile,
   mergeTranslations,
 } from '@/lib/parser';
+import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -40,6 +44,10 @@ import {
   Redo2,
   Save,
   Pencil,
+  Replace,
+  Activity,
+  BookOpen,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -80,6 +88,9 @@ export function App() {
   const [isDiffMergeOpen, setIsDiffMergeOpen] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogConfig | null>(null);
+  const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
+  const [isScorecardOpen, setIsScorecardOpen] = useState(false);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
@@ -103,13 +114,20 @@ export function App() {
     setIsDark(prev => !prev);
   };
 
-  // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo
+  // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Command Palette: Ctrl+K or Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(prev => !prev);
+        return;
+      }
+
+      // Find & Replace: Ctrl+H or Cmd+H
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setIsFindReplaceOpen(prev => !prev);
         return;
       }
 
@@ -530,6 +548,20 @@ export function App() {
     setIsAiTranslateOpen(true);
   };
 
+  const handleGeneratePseudoLocale = () => {
+    const sourceLang = languages.includes('en') ? 'en' : languages[0];
+    const pseudoRecords = generatePseudoLocaleRecords(items, sourceLang);
+    const pseudoCode = 'qps-ploc';
+    if (!languages.includes(pseudoCode)) {
+      setLanguages([...languages, pseudoCode]);
+    }
+    const updated = items.map(item => ({
+      ...item,
+      [pseudoCode]: pseudoRecords[item.key] || '',
+    }));
+    setItems(updated);
+  };
+
   // Quick stats summary
   const totalKeys = items.length;
   const totalMissing = useMemo(() => {
@@ -539,6 +571,39 @@ export function App() {
   // Command palette command definitions
   const paletteCommands: CommandItem[] = useMemo(
     () => [
+      {
+        id: 'find-replace',
+        category: 'Spreadsheet',
+        title: 'Find & Replace Across Languages',
+        description: 'Search and replace across keys, translations, and context with Regex',
+        shortcut: 'Cmd+H',
+        icon: <Replace className="size-3.5 text-blue-500" />,
+        action: () => setIsFindReplaceOpen(true),
+      },
+      {
+        id: 'scorecard',
+        category: 'View',
+        title: 'Localization Health & Completion Scorecard',
+        description: 'Track progress %, missing translations, and variable integrity',
+        icon: <Activity className="size-3.5 text-emerald-500" />,
+        action: () => setIsScorecardOpen(true),
+      },
+      {
+        id: 'glossary',
+        category: 'AI',
+        title: 'AI Translation Glossary & Termbase',
+        description: 'Manage brand name and term translation rules',
+        icon: <BookOpen className="size-3.5 text-purple-500" />,
+        action: () => setIsGlossaryOpen(true),
+      },
+      {
+        id: 'pseudoloc',
+        category: 'Spreadsheet',
+        title: 'Generate Pseudolocale (qps-ploc)',
+        description: 'Accent expansion test column for UI layout stress-testing',
+        icon: <FlaskConical className="size-3.5 text-amber-500" />,
+        action: handleGeneratePseudoLocale,
+      },
       {
         id: 'ai-translate',
         category: 'AI',
@@ -718,7 +783,44 @@ export function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {items.length > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsFindReplaceOpen(true)}
+                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
+                title="Find & Replace Across Languages (Cmd+H / Ctrl+H)"
+              >
+                <Replace className="size-3.5 text-blue-500" />
+                <span>Find / Replace</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsScorecardOpen(true)}
+                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
+                title="Localization Health & Scorecard"
+              >
+                <Activity className="size-3.5 text-emerald-500" />
+                <span>Scorecard</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsGlossaryOpen(true)}
+                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
+                title="AI Translation Glossary & Termbase"
+              >
+                <BookOpen className="size-3.5 text-purple-500" />
+                <span>Glossary</span>
+              </Button>
+            </>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -975,6 +1077,35 @@ export function App() {
       <ConfirmDialog
         config={confirmDialog}
         onClose={() => setConfirmDialog(null)}
+      />
+
+      {/* Find & Replace Across Languages (Cmd+H / Ctrl+H) */}
+      <FindReplaceModal
+        isOpen={isFindReplaceOpen}
+        onClose={() => setIsFindReplaceOpen(false)}
+        items={items}
+        languages={languages}
+        onApplyReplace={(updatedItems) => {
+          setItems(updatedItems);
+        }}
+      />
+
+      {/* Localization Health & Completion Scorecard */}
+      <ScorecardModal
+        isOpen={isScorecardOpen}
+        onClose={() => setIsScorecardOpen(false)}
+        items={items}
+        languages={languages}
+        sourceLanguage={languages.includes('en') ? 'en' : languages[0]}
+        onTranslateMissing={(targetLang) => {
+          handleOpenAiTranslate(targetLang);
+        }}
+      />
+
+      {/* Standalone AI Translation Glossary & Termbase */}
+      <GlossaryModal
+        isOpen={isGlossaryOpen}
+        onClose={() => setIsGlossaryOpen(false)}
       />
     </div>
   );

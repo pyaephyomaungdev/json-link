@@ -1,6 +1,7 @@
 export interface TranslationItem {
   key: string;
-  [lang: string]: string; // e.g. en: "Retry", my: "ထပ်ကြိုးစားမည်"
+  description?: string; // Developer context, usage notes, or translator comment
+  [lang: string]: string | undefined; // e.g. en: "Retry", my: "ထပ်ကြိုးစားမည်"
 }
 
 export interface LanguageMeta {

@@ -1,174 +1,205 @@
-# JSON Link 🌐
+# JSON Link
 
-A modern, high-performance web application designed for multilingual localization (`i18n`) workflows. View, edit, and translate your JSON localization files side-by-side in an authentic, edge-to-edge Microsoft Excel spreadsheet interface, with full roundtrip support for Excel (`.xlsx`), CSV, JSON files, YAML, Android XML, iOS Strings, TypeScript definitions, and portable `.jsonlink` project files.
+A modern, high-performance web application designed for multilingual localization (i18n) workflows. View, edit, validate, and translate your localization files side-by-side in an authentic, edge-to-edge spreadsheet interface, with roundtrip support for Excel (.xlsx), CSV, JSON, YAML, Android XML, iOS Strings, TypeScript definitions, and portable .jsonlink project files.
 
-> **Developed with ❤️ by Pyae Phyo Maung**  
-> **Repository:** [https://github.com/pyaephyomaungdev/json-link](https://github.com/pyaephyomaungdev/json-link)
-
----
-
-## ✨ Features
-
-### 📊 Authentic MS Excel Spreadsheet Interface
-- **Edge-to-Edge Full-Bleed Grid**: Full viewport spreadsheet with zero outer margins or padding, clean Excel gridlines, row numbers (`1, 2, 3...`), and column letters (`A, B, C...`).
-- **Dynamic Freeze Panes**:
-  - **Sticky Top**: Column headers stay pinned at the top while scrolling vertically.
-  - **Freeze Left**: Index (`#`) and Translation Key columns stay pinned at the left while scrolling horizontally through languages.
-  - **Custom Freeze / Unfreeze**: Pin any language column with 1 click from the header dropdown menu.
-- **Formula Bar (`fx`)**: Name box displaying active cell address (e.g. `B14 [EN]`) with a full-width text inspector and editor.
-- **Inline Cell Editing**: Double-click or click to edit text directly. Full native font support for English, Myanmar Unicode (Pyidaungsu / Noto Sans), Thai, Japanese, Chinese, and RTL languages without character clipping.
-- **Multi-Cell Copy & Paste**: Paste tab-separated or newline-separated values from Google Sheets / Excel directly into cells.
-- **Undo / Redo History**: Full state time-machine (`Cmd+Z` / `Ctrl+Z`, `Cmd+Y` / `Ctrl+Y`) supporting up to 50 historical snapshots.
+> Developed by Pyae Phyo Maung  
+> Repository: https://github.com/pyaephyomaungdev/json-link
 
 ---
 
-### 🛡️ i18n Quality & Variable Protection (Crash Prevention)
-- **Variable / Interpolation Highlighter**:
-  - Automatically tokenizes and renders visual color badges for parameter placeholders:
-    - **ICU MessageFormat / Braces**: `{name}`, `{count}`, `{0}`
-    - **Mustache / Handlebars**: `{{username}}`, `{{total}}`
-    - **Printf / C / Python / PHP format**: `%s`, `%d`, `%1$s`, `%(name)s`
-    - **Positional parameters**: `$1`, `$2`
-- **Missing Variable Warning (⚠️)**:
-  - If a translator or AI accidentally deletes a variable or translates inside braces (e.g. changing `{username}` to `{နာမည်}`), an immediate alert badge (⚠️) appears in the cell with a tooltip detailing the exact missing placeholder, preventing app crashes at runtime.
+## Features
+
+### Authentic Spreadsheet Interface
+- Edge-to-Edge Grid: Full viewport spreadsheet with zero outer margins, clean gridlines, row numbers (1, 2, 3...), and column letters (A, B, C...).
+- Dynamic Freeze Panes:
+  - Sticky Top: Column headers stay pinned at the top while scrolling vertically.
+  - Freeze Left: Index (#) and Translation Key columns stay pinned at the left while scrolling horizontally through languages.
+  - Custom Freeze and Unfreeze: Pin any language column with one click from the header dropdown menu.
+- Formula Bar (fx): Displays active cell address (e.g. B14 [en]) with a full-width text inspector and editor.
+- Inline Cell Editing: Click or double-click to edit text directly. Full native font rendering for English, Myanmar Unicode (Pyidaungsu / Noto Sans), Thai, Japanese, Chinese, and Right-to-Left languages.
+- Multi-Cell Copy and Paste: Paste tab-separated or newline-separated values from Google Sheets or Microsoft Excel directly into cells.
+- Undo and Redo History: Full state time-machine (Cmd+Z / Ctrl+Z, Cmd+Y / Ctrl+Y) supporting up to 50 historical snapshots.
 
 ---
 
-### 🤖 AI Auto-Translate (OpenRouter BYOK)
-- **Batch Translation**: Translate missing or all keys automatically in configurable batches while strictly preserving interpolation variables.
-- **Any OpenRouter Model**: Select from popular models (Gemini 2.5 Flash, DeepSeek V3, GPT-4o Mini, Claude 3.5 Haiku) or search the live OpenRouter catalog and input any custom model ID.
-- **Searchable ISO 639-1 Language Picker**: Search languages by standard code, English name, or native script (e.g. မြန်မာ, ภาษาไทย, 日本語, 한국어, Español, Français).
-
-#### 🔒 BYOK Security & Privacy Architecture
-- **Session-Only Storage by Default**: Your API key is stored in browser session memory (`sessionStorage`) and is **automatically wiped** when you close the tab or window.
-- **Web Crypto AES-GCM 256-bit Encryption**: If you choose the *"Remember key on this device"* option, your key is client-side encrypted using the browser's native **Web Crypto API (SubtleCrypto)** before saving to `localStorage`. The raw plain-text key is never written to disk.
-- **Zero Backend Server**: JSON Link is a 100% client-side Single Page Application (SPA). Requests are dispatched directly from your browser to OpenRouter's official API (`https://openrouter.ai/api/v1/`). Your keys and translation strings never transit through any third-party proxy or intermediary server.
-- **1-Click Disconnect**: Instantly wipe and revoke all stored credentials across session and local storage with a single click on the `Clear` button.
-- **Usage Recommendation**: We advise creating a dedicated, scoped API key with a strict spending limit (e.g., $1.00 - $2.00) in your OpenRouter dashboard.
+### Myanmar Unicode and Zawgyi Auto-Detector and Converter
+- Real-Time Font Detection: Automatically analyzes text in columns to detect legacy Zawgyi encoding patterns (e.g., pre-posed vowel e ordering, Zawgyi medial consonants).
+- Warning Badge: Displays a Zawgyi indicator on language headers when Zawgyi text is detected.
+- One-Click Conversion:
+  - Zawgyi to Unicode Converter: Accurately converts legacy Zawgyi encodings to standard Myanmar Unicode with proper syllable and consonant reordering.
+  - Unicode to Zawgyi Converter: Allows exporting or preparing legacy strings when required for older devices.
 
 ---
 
-### 💾 `.jsonlink` Project Save & Restore
-- **Portable Project File**: Save your complete workspace state (all keys, active language columns, translations, and metadata) as a single `.jsonlink` file (e.g. `translations.jsonlink`).
-- **Exit Protection Dialog**: Navigating away or clicking the home logo while working prompts you to save your project file so you never lose unsaved work.
-- **Instant Restore**: Drag and drop any `.jsonlink` file into the upload dropzone to instantly restore your workspace.
-- **Auto-Save Drafts**: Work is automatically drafted locally so a sudden refresh never wipes your progress.
+### AI Translation Glossary and Termbase
+- Strict AI Terminology Enforcement: Define custom brand names, technical terms, and product names that must be preserved or translated in a specific way.
+- Rule Types:
+  - Keep Original: Strict instruction to the AI model never to translate or alter brand names (e.g., "JSON Link" remains "JSON Link").
+  - Custom Target Translation: Explicit definition of the exact target term the AI must output.
+- Dedicated Management Modal: Add, remove, and review terms directly from the AI Translation modal or the top navigation bar.
 
 ---
 
-### 📤 Universal Exporters (All Major Frameworks)
-- **Flutter & Ruby on Rails**: Indented YAML (`.yaml` ZIP archive) with language-prefix stripping option.
-- **Android**: `res/values/strings.xml` and `res/values-<lang>/strings.xml` (XML-escaped ZIP archive).
-- **iOS**: Apple Xcode `<lang>.lproj/Localizable.strings` (escaped `.strings` ZIP archive).
-- **TypeScript**: `translations.d.ts` declaration file featuring strongly-typed union types (`type TranslationKey = ...`) for complete IDE autocomplete.
-- **Microsoft Excel (`.xlsx`)**: Formatted multi-column workbook with header styling, dynamic column width auto-fit, and full Unicode rendering.
-- **CSV (`.csv`)**: Embedded with **UTF-8 BOM (`\uFEFF`)** to guarantee flawless opening in Excel (Windows & Mac) without Unicode character corruption.
-- **JSON (ZIP & Single Combined)**: Export individual JSON files (`en.json`, `my.json`, etc.) in a ZIP archive or as a single combined multi-language object (`{ "en": {...}, "my": {...} }`), with flat or nested dot-notation unflattening options.
+### Pseudolocalization (Layout Stress Testing)
+- One-Click Pseudolocale Generation (qps-ploc): Automatically transforms source language strings into accented, lengthened pseudolocalized strings.
+- Visual Inspection:
+  - Homoglyph Accent Expansion: Maps ASCII letters to accented characters (e.g., "Settings" becomes "[!!! Šééttîîññĝš !!!]").
+  - 35 Percent Length Padding: Tests whether UI buttons and card components wrap or truncate when text expands in languages like German or Myanmar.
+  - Delimiter Wrapping: Surrounds strings with markers to detect untranslated, hardcoded strings in codebases.
+  - Variable Preservation: All interpolation placeholders ({name}, {{count}}, %s) remain completely intact and uncorrupted.
 
 ---
 
-### 📥 Bidirectional Import & Smart Diff / Merge
-- **Drag-and-Drop Any Format**: Import `.jsonlink`, `.json`, `.xlsx`, `.csv`, `.yaml`, Android `strings.xml`, or iOS `Localizable.strings`.
-- **Smart Diff / Merge Comparison**:
-  - Automatically compares incoming files against your existing spreadsheet.
-  - Interactive Diff Modal displays new keys, modified keys, and unchanged counts.
-  - **3 Merge Modes**:
-    1. **Full Merge**: Update existing keys and append new keys.
-    2. **Add New Keys Only**: Keep existing translations intact; only add missing keys.
-    3. **Overwrite / Replace**: Cleanly replace with incoming file.
+### Find and Replace Across Languages
+- Dedicated Modal and Shortcut (Cmd+H / Ctrl+H): Rapidly search and replace strings across the entire translation dataset.
+- Granular Scopes:
+  - All Languages and Fields
+  - Translation Keys Only
+  - Developer Context / Description Only
+  - Specific Language Column
+- Search Criteria:
+  - Match Case (case sensitive)
+  - Whole Word
+  - Regular Expressions (Regex) with capture group replacement ($1, $2)
+- Match Statistics: Displays real-time count of matching occurrences and affected rows before executing replacements.
+- Safe Execution: Every replace action registers with the history manager for instant undo.
 
 ---
 
-### ⚡ Keyboard Shortcuts & Command Palette (`Cmd+K` / `Ctrl+K`)
-- `Cmd + K` / `Ctrl + K`: Open Command Palette to search commands, add keys, add languages, switch models, export, or toggle theme.
-- `Cmd + Z` / `Ctrl + Z`: Undo last action.
-- `Cmd + Y` / `Ctrl + Y` (or `Cmd + Shift + Z`): Redo last action.
-- `Cmd + S` / `Ctrl + S`: Save `.jsonlink` project file.
-- `Esc`: Close open modal dialogs.
-- `Enter` / `Double Click`: Edit selected cell.
+### Developer Context and Description Column
+- Context per Translation Key: Add explanations, button locations, and formatting notes for human translators and AI models.
+- AI Context Injection: Descriptions are automatically supplied to OpenRouter AI prompts to produce more accurate, context-aware translations.
+- Comment Export Support:
+  - Android strings.xml: Exported as XML comments above resource entries.
+  - iOS Localizable.strings: Exported as C-style block comments above string keys.
+  - Excel and CSV: Exported as a dedicated Description column.
+- Toggleable Visibility: Show or hide the context column directly from the Formula Bar or Key column dropdown menu.
 
 ---
 
-## 🧪 Automated Testing & Continuous Integration
-
-Quality and stability are guaranteed through a comprehensive test suite and continuous integration pipeline:
-
-- **Testing Framework**: [Vitest](https://vitest.dev/) (Native Vite integration, ultra-fast test runner).
-- **Test Coverage**: **71 Unit Tests across 7 suites** testing 100% of core engines:
-  - `parser.test.ts`: Object flattening/unflattening, JSON, Android XML, iOS strings, YAML, and binary Excel/CSV parsing.
-  - `exporter.test.ts`: JSON, YAML, Android strings.xml, iOS Localizable.strings, CSV (BOM), and TypeScript declarations.
-  - `variables.test.ts`: ICU, Mustache, Printf, positional tokenization and missing variable validation.
-  - `crypto.test.ts`: Web Crypto AES-GCM 256-bit encryption, decryption, and corruption resilience.
-  - `openrouter.test.ts`: BYOK client, session storage isolation, encrypted local persistence, and validation.
-  - `project.test.ts`: `.jsonlink` project file validation and local storage draft persistence.
-  - `languages.test.ts`: ISO 639-1 dataset consistency and language code lookup.
-- **GitHub Actions CI (`.github/workflows/ci.yml`)**:
-  - Automated workflow triggers on every push and pull request to `main`.
-  - Runs clean install (`npm ci`), full test execution (`npm test`), and production TypeScript build (`npm run build`).
+### Localization Health and Completion Scorecard
+- Real-Time Completion Tracking: Visual dashboard displaying completion percentages across all active languages.
+- Metrics and Diagnostics:
+  - Overall project completion percentage.
+  - Number of missing translations per language.
+  - Number of variable integrity warnings.
+- Quick AI Batch Translation: One-click button on each language row to launch AI translation targeting only missing keys.
+- Variable Integrity Audit: Lists all keys where translations miss source interpolation parameters.
 
 ---
 
-## 🛠 Tech Stack
-
-- **Framework**: React 19 + TypeScript + Vite 6
-- **Styling**: Tailwind CSS v4 (`@tailwindcss/vite`)
-- **UI Components**: `shadcn/ui` design system & Radix UI primitives
-- **Icons**: `lucide-react`
-- **Spreadsheet & Compression**: `xlsx` (SheetJS) & `jszip`
-- **Testing**: Vitest 5.0
-- **CI/CD**: GitHub Actions
+### Native Right-to-Left (RTL) Language Layout
+- Automatic Script Direction: Automatically applies dir="rtl" and right text alignment for RTL languages (Arabic, Hebrew, Persian, Urdu).
+- Bidirectional Formula Bar: When an RTL cell is selected, the formula inspector bar adapts its direction to RTL automatically.
 
 ---
 
-## 🚀 Getting Started
+### Variable and Interpolation Protection
+- Parameter Highlighter:
+  - Automatically tokenizes and renders visual tags for interpolation placeholders:
+    - ICU MessageFormat: {name}, {count}, {0}
+    - Mustache / Handlebars: {{username}}, {{total}}
+    - Printf format: %s, %d, %1$s, %(name)s
+    - Positional parameters: $1, $2
+- Missing Variable Validation:
+  - Alert badges identify translations missing expected placeholders, preventing runtime application crashes.
+
+---
+
+### AI Auto-Translate (OpenRouter BYOK)
+- Batch Translation: Translate missing or all keys automatically while preserving variables and adhering to glossary terms.
+- Any OpenRouter Model: Select recommended models (Gemini 2.5 Flash, DeepSeek V3, GPT-4o Mini, Claude 3.5 Haiku) or provide any custom model ID.
+- Searchable ISO 639-1 Language Picker: Filter languages by standard code, English name, or native script.
+
+#### BYOK Security Architecture
+- Session-Only Storage by Default: API keys are stored in browser session memory (sessionStorage) and wiped upon closing the browser tab.
+- Web Crypto AES-GCM 256-bit Encryption: Optional "Remember key on this device" encrypts keys client-side before storing in localStorage.
+- Zero Intermediary Server: Client-side Single Page Application. Requests travel directly from the browser to OpenRouter (https://openrouter.ai/api/v1/).
+
+---
+
+### Universal Exporters
+- Flutter and Ruby on Rails: Indented YAML (.yaml ZIP archive) with language-prefix stripping options.
+- Android: res/values/strings.xml and res/values-<lang>/strings.xml with XML comments.
+- iOS: Apple Xcode <lang>.lproj/Localizable.strings with comments.
+- TypeScript: translations.d.ts declaration file with union types for TranslationKey and SupportedLanguage.
+- Microsoft Excel (.xlsx): Multi-column workbook with header formatting, dynamic column auto-sizing, and Unicode support.
+- CSV (.csv): Prefixed with UTF-8 BOM (\uFEFF) for seamless opening in Excel on Windows and macOS.
+- JSON (ZIP and Single Combined): Export individual JSON files or single combined files with flat or unflattened nested structures.
+
+---
+
+### Bidirectional Import and Smart Diff / Merge
+- Supported Formats: .jsonlink, .json, .xlsx, .csv, .yaml, Android .xml, iOS .strings.
+- Smart Diff Inspection:
+  - Compares incoming files against existing spreadsheet contents.
+  - Interactive modal displays new keys, modified keys, and unchanged counts.
+  - Merge Modes: Full Merge, Add New Keys Only, or Overwrite.
+
+---
+
+### Keyboard Shortcuts and Command Palette (Cmd+K / Ctrl+K)
+- Cmd+K / Ctrl+K: Open Command Palette.
+- Cmd+H / Ctrl+H: Open Find and Replace dialog.
+- Cmd+Z / Ctrl+Z: Undo last action.
+- Cmd+Y / Ctrl+Y (or Cmd+Shift+Z): Redo last action.
+- Cmd+S / Ctrl+S: Save .jsonlink project file.
+- Esc: Close open modal dialogs.
+- Enter / Double Click: Edit active cell.
+
+---
+
+## Automated Testing and CI
+
+Quality and stability are verified with a suite of automated tests:
+
+- Testing Framework: Vitest (Vite-native test runner).
+- Test Coverage: 101 Unit Tests across 11 test suites:
+  - findReplace.test.ts: Search, scope filtering, whole-word matching, regex replacement.
+  - myanmarFont.test.ts: Zawgyi detection heuristics, Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
+  - glossary.test.ts: Termbase storage, serialization, and prompt formatting.
+  - pseudoloc.test.ts: Homoglyph mapping, expansion padding, variable preservation.
+  - exporter.test.ts: JSON, YAML, Android strings.xml with comments, iOS Localizable.strings with comments, CSV BOM, TypeScript d.ts.
+  - parser.test.ts: Object flattening and unflattening, JSON, Android XML, iOS strings, YAML, Excel, CSV with descriptions.
+  - openrouter.test.ts: BYOK translation, glossary prompt injection, response recovery, JSON repair.
+  - crypto.test.ts: AES-GCM 256-bit encryption, decryption, and key derivation.
+  - variables.test.ts: ICU, Mustache, Printf tokenization and validation.
+  - languages.test.ts: ISO definitions, labels, and RTL language detection.
+  - project.test.ts: .jsonlink serialization and workspace restoration.
+- Continuous Integration: GitHub Actions workflow running on every push and pull request.
+
+---
+
+## Getting Started
 
 ### Prerequisites
-
-- **Node.js**: `v20.0.0` or higher (LTS recommended)
-- **npm**, **pnpm**, or **bun**
+- Node.js 18 or higher
+- npm 9 or higher
 
 ### Installation
-
 ```bash
-# Clone repository
 git clone https://github.com/pyaephyomaungdev/json-link.git
 cd json-link
-
-# Install dependencies
 npm install
 ```
 
-### Development
-
+### Development Server
 ```bash
-# Start local development server
 npm run dev
 ```
 
-Open your browser at `http://localhost:5173` to start using JSON Link.
-
-### Run Unit Tests
-
+### Running Automated Tests
 ```bash
-# Run unit test suite once
 npm test
-
-# Run tests in interactive watch mode
-npm run test:watch
 ```
 
 ### Production Build
-
 ```bash
-# Build TypeScript and bundle production assets
 npm run build
-
-# Preview production build locally
-npm run preview
 ```
 
 ---
 
-## 📄 License
+## License
 
-MIT License © 2026 Developed with ❤️ by **Pyae Phyo Maung**
+MIT License. Free and open source for individuals and teams worldwide.

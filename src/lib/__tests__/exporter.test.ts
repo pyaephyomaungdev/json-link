@@ -9,6 +9,8 @@ import {
   exportToYamlZip,
   exportToAndroidXmlZip,
   exportToIosStringsZip,
+  generateAndroidXml,
+  generateIosStrings,
 } from '../exporter';
 import { TranslationItem } from '@/types';
 
@@ -114,6 +116,34 @@ describe('exporter.ts', () => {
     it('exports XLSX workbook without errors', () => {
       exportToExcel(sampleItems, languages, 'test.xlsx');
       expect(URL.createObjectURL).toHaveBeenCalled();
+    });
+  });
+
+  describe('Android XML and iOS Strings generation with description', () => {
+    const itemsWithDesc: TranslationItem[] = [
+      {
+        key: 'button.save',
+        en: 'Save Changes',
+        description: 'Button in user profile to save profile edits',
+      },
+      {
+        key: 'button.cancel',
+        en: 'Cancel',
+      },
+    ];
+
+    it('generates Android XML with comment above key if description exists', () => {
+      const xml = generateAndroidXml(itemsWithDesc, 'en');
+      expect(xml).toContain('<!-- Button in user profile to save profile edits -->');
+      expect(xml).toContain('<string name="button_save">Save Changes</string>');
+      expect(xml).toContain('<string name="button_cancel">Cancel</string>');
+    });
+
+    it('generates iOS strings with comment above key if description exists', () => {
+      const strings = generateIosStrings(itemsWithDesc, 'en');
+      expect(strings).toContain('/* Button in user profile to save profile edits */');
+      expect(strings).toContain('"button.save" = "Save Changes";');
+      expect(strings).toContain('"button.cancel" = "Cancel";');
     });
   });
 

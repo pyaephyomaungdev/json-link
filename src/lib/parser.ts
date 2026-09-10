@@ -209,11 +209,16 @@ export function parseSpreadsheet(data: ArrayBuffer): { items: TranslationItem[];
     keyColIndex = 0;
   }
 
+  // Identify Description / Context column index
+  const descColIndex = headerRow.findIndex(
+    (h, idx) => idx !== keyColIndex && /^(description|context|comment|developer_comment)$/i.test(h)
+  );
+
   const languages: string[] = [];
   const langIndices: { lang: string; colIdx: number }[] = [];
 
   for (let c = 0; c < headerRow.length; c++) {
-    if (c === keyColIndex) continue;
+    if (c === keyColIndex || c === descColIndex) continue;
     const colName = headerRow[c];
     if (colName) {
       const cleanLang = colName.toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -239,6 +244,12 @@ export function parseSpreadsheet(data: ArrayBuffer): { items: TranslationItem[];
     const item: TranslationItem = { key };
     for (const { lang, colIdx } of langIndices) {
       item[lang] = String(row[colIdx] ?? '').trim();
+    }
+    if (descColIndex !== -1 && row[descColIndex] !== undefined && row[descColIndex] !== null) {
+      const desc = String(row[descColIndex]).trim();
+      if (desc) {
+        item.description = desc;
+      }
     }
 
     items.push(item);

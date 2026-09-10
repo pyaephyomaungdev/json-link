@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { TranslationItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +20,9 @@ import {
   AlertTriangle,
   Sparkles,
   Pencil,
+  FileText,
+  Type,
+  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,6 +34,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportSingleLanguageJson } from '@/lib/exporter';
 import { tokenizeVariables, validateVariables } from '@/lib/variables';
+import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi } from '@/lib/myanmarFont';
+import { isRtlLanguage } from '@/data/languages';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -101,8 +106,49 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const ROW_NUM_WIDTH = 48;
   const KEY_COL_WIDTH = 280;
+  const DESC_COL_WIDTH = 220;
   const LANG_COL_WIDTH = 280;
   const MENU_COL_WIDTH = 56;
+
+  const [showDescription, setShowDescription] = useState<boolean>(() => {
+    return items.some(i => i.description && i.description.trim() !== '');
+  });
+
+  const zawgyiStats = useMemo(() => {
+    const stats: Record<string, ReturnType<typeof detectZawgyiInItems>> = {};
+    for (const lang of languages) {
+      stats[lang] = detectZawgyiInItems(items, lang);
+    }
+    return stats;
+  }, [items, languages]);
+
+  const handleConvertZawgyiToUnicode = (lang: string) => {
+    if (!onBatchUpdate) return;
+    const updated = items.map(item => {
+      const val = item[lang];
+      if (typeof val === 'string' && val) {
+        return { ...item, [lang]: zawgyiToUnicode(val) };
+      }
+      return item;
+    });
+    onBatchUpdate(updated);
+    setCopiedNotification(`Converted ${lang.toUpperCase()} to Unicode`);
+    setTimeout(() => setCopiedNotification(null), 1500);
+  };
+
+  const handleConvertUnicodeToZawgyi = (lang: string) => {
+    if (!onBatchUpdate) return;
+    const updated = items.map(item => {
+      const val = item[lang];
+      if (typeof val === 'string' && val) {
+        return { ...item, [lang]: unicodeToZawgyi(val) };
+      }
+      return item;
+    });
+    onBatchUpdate(updated);
+    setCopiedNotification(`Converted ${lang.toUpperCase()} to Zawgyi`);
+    setTimeout(() => setCopiedNotification(null), 1500);
+  };
 
   const getFreezeLineClass = (isLast: boolean) =>
     isLast
@@ -300,6 +346,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <input
             ref={formulaInputRef}
             type="text"
+            dir={selectedCell && isRtlLanguage(selectedCell.field) ? 'rtl' : 'ltr'}
             value={editingCell ? editingCell.value : selectedValue}
             onChange={e => {
               if (selectedCell) {
@@ -323,9 +370,26 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             placeholder={
               selectedCell ? `Content of ${selectedCell.key} [${selectedCell.field}]` : 'Select a cell...'
             }
-            className="w-full px-2.5 py-1 bg-background border border-border rounded text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+            className={`w-full px-2.5 py-1 bg-background border border-border rounded text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${
+              selectedCell && isRtlLanguage(selectedCell.field) ? 'text-right' : 'text-left'
+            }`}
           />
         </div>
+
+        {/* Toggle Context (Description) Column */}
+        <button
+          type="button"
+          onClick={() => setShowDescription(!showDescription)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors cursor-pointer shrink-0 ${
+            showDescription
+              ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 font-medium'
+              : 'bg-background border-border text-muted-foreground hover:text-foreground'
+          }`}
+          title="Toggle Developer Context / Description Column"
+        >
+          <FileText className="size-3 text-blue-500" />
+          <span>{showDescription ? 'Context (Visible)' : 'Context'}</span>
+        </button>
 
         {/* Copy / Paste notification pill */}
         {copiedNotification && (
@@ -343,6 +407,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <colgroup>
             <col style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH }} />
             <col style={{ width: KEY_COL_WIDTH, minWidth: KEY_COL_WIDTH }} />
+            {showDescription && (
+              <col style={{ width: DESC_COL_WIDTH, minWidth: DESC_COL_WIDTH }} />
+            )}
             {languages.map(lang => (
               <col key={lang} style={{ width: LANG_COL_WIDTH, minWidth: LANG_COL_WIDTH }} />
             ))}
@@ -398,7 +465,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <ChevronDown className="size-3" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
+                    <DropdownMenuContent align="start" className="w-52">
                       <DropdownMenuLabel>Column: Key (A)</DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => setFrozenCount(isKeyFrozen ? 0 : 1)}
@@ -416,6 +483,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           </>
                         )}
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setShowDescription(!showDescription)}
+                        className="gap-2 cursor-pointer text-xs"
+                      >
+                        <FileText className="size-3.5 text-blue-500" />
+                        <span>{showDescription ? 'Hide Context Column' : 'Show Context Column'}</span>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => {
@@ -432,13 +506,44 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </div>
               </th>
 
+              {/* Context / Description Header */}
+              {showDescription && (
+                <th
+                  style={{
+                    width: DESC_COL_WIDTH,
+                    minWidth: DESC_COL_WIDTH,
+                  }}
+                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-border"
+                >
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded shrink-0">
+                        B
+                      </span>
+                      <span className="font-bold text-foreground text-xs truncate">
+                        Developer Context
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowDescription(false)}
+                      className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted cursor-pointer"
+                      title="Hide Developer Context column"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                </th>
+              )}
+
               {/* Language Column Headers */}
               {languages.map((lang, idx) => {
                 const isLangFrozen = safeFrozenCount >= idx + 2;
                 const isLangLastFrozen = safeFrozenCount === idx + 2;
+                const descOffset = showDescription ? DESC_COL_WIDTH : 0;
                 const langLeft = isLangFrozen
-                  ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + idx * LANG_COL_WIDTH
+                  ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + idx * LANG_COL_WIDTH
                   : undefined;
+                const colLetter = getColumnLetter(showDescription ? idx + 2 : idx + 1);
 
                 return (
                   <th
@@ -455,7 +560,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="font-mono text-[11px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded shrink-0">
-                          {getColumnLetter(idx + 1)}
+                          {colLetter}
                         </span>
                         <span
                           onDoubleClick={(e) => {
@@ -475,6 +580,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <span className="text-[11px] font-normal text-muted-foreground truncate">
                           {lang === 'my' ? '(မြန်မာ)' : lang === 'en' ? '(English)' : ''}
                         </span>
+                        {/* Zawgyi font detected badge */}
+                        {zawgyiStats[lang]?.hasZawgyi && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConvertZawgyiToUnicode(lang);
+                            }}
+                            title={`Zawgyi font detected (${zawgyiStats[lang].count} keys)! Click to convert to Unicode.`}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 cursor-pointer transition-colors shrink-0"
+                          >
+                            <AlertTriangle className="size-2.5" />
+                            <span>Zawgyi ({zawgyiStats[lang].count})</span>
+                          </button>
+                        )}
                         {isLangFrozen && (
                           <button
                             onClick={(e) => {
@@ -497,7 +616,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             <ChevronDown className="size-3" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuLabel>Column: {lang.toUpperCase()}</DropdownMenuLabel>
                           {onRenameLanguage && (
                             <DropdownMenuItem
@@ -528,6 +647,22 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 <span>Freeze up to {lang.toUpperCase()} Column</span>
                               </>
                             )}
+                          </DropdownMenuItem>
+                          {zawgyiStats[lang]?.hasZawgyi && (
+                            <DropdownMenuItem
+                              onClick={() => handleConvertZawgyiToUnicode(lang)}
+                              className="gap-2 cursor-pointer text-xs font-semibold text-amber-600 dark:text-amber-400 focus:text-amber-500"
+                            >
+                              <Sparkles className="size-3.5 text-amber-500" />
+                              <span>Convert Zawgyi → Unicode ({zawgyiStats[lang].count})</span>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => handleConvertUnicodeToZawgyi(lang)}
+                            className="gap-2 cursor-pointer text-xs"
+                          >
+                            <Type className="size-3.5 text-muted-foreground" />
+                            <span>Convert Unicode → Zawgyi</span>
                           </DropdownMenuItem>
                           {onOpenAiTranslate && (
                             <DropdownMenuItem
@@ -670,6 +805,57 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     )}
                   </td>
 
+                  {/* Context / Description Cell */}
+                  {showDescription && (
+                    <td
+                      style={{ width: DESC_COL_WIDTH, minWidth: DESC_COL_WIDTH }}
+                      onClick={() =>
+                        setSelectedCell({
+                          key: item.key,
+                          field: 'description',
+                          colIndex: 1,
+                          rowIndex: rowIdx,
+                        })
+                      }
+                      className={`py-1.5 px-3 text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] border-b border-border transition-colors cursor-pointer ${
+                        selectedCell?.key === item.key && selectedCell.field === 'description'
+                          ? '!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                          : ''
+                      }`}
+                    >
+                      {editingCell?.key === item.key && editingCell.field === 'description' ? (
+                        <input
+                          ref={inputRef as React.RefObject<HTMLInputElement>}
+                          type="text"
+                          value={editingCell.value}
+                          onChange={e =>
+                            setEditingCell({ ...editingCell, value: e.target.value })
+                          }
+                          onBlur={handleSaveEdit}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Context for translators..."
+                          className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
+                        />
+                      ) : (
+                        <div
+                          className="min-h-[24px] flex items-center cursor-pointer"
+                          onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
+                          title="Double-click to edit context"
+                        >
+                          <span
+                            className={`truncate text-xs ${
+                              item.description
+                                ? 'text-muted-foreground'
+                                : 'text-muted-foreground/40 italic'
+                            }`}
+                          >
+                            {item.description || 'Add context...'}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                  )}
+
                   {/* Language Translation Cells */}
                   {languages.map((lang, colIdx) => {
                     const val = item[lang] || '';
@@ -678,10 +864,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     const isCellSelected =
                       selectedCell?.key === item.key && selectedCell.field === lang;
                     const isMyanmar = lang === 'my';
+                    const isRtl = isRtlLanguage(lang);
                     const isLangFrozen = safeFrozenCount >= colIdx + 2;
                     const isLangLastFrozen = safeFrozenCount === colIdx + 2;
+                    const descOffset = showDescription ? DESC_COL_WIDTH : 0;
                     const langLeft = isLangFrozen
-                      ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + colIdx * LANG_COL_WIDTH
+                      ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + colIdx * LANG_COL_WIDTH
                       : undefined;
 
                     const sourceLang = languages.includes('en') ? 'en' : languages[0];
@@ -692,6 +880,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     return (
                       <td
                         key={lang}
+                        dir={isRtl ? 'rtl' : 'ltr'}
                         style={{
                           width: LANG_COL_WIDTH,
                           minWidth: LANG_COL_WIDTH,
@@ -701,7 +890,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           setSelectedCell({
                             key: item.key,
                             field: lang,
-                            colIndex: colIdx + 1,
+                            colIndex: colIdx + (showDescription ? 2 : 1),
                             rowIndex: rowIdx,
                           })
                         }
@@ -722,6 +911,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         {isEditing ? (
                           <textarea
                             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                            dir={isRtl ? 'rtl' : 'ltr'}
                             value={editingCell.value}
                             onChange={e =>
                               setEditingCell({ ...editingCell, value: e.target.value })
@@ -731,10 +921,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             rows={Math.max(2, editingCell.value.split('\n').length)}
                             className={`w-full px-2 py-1 bg-background border-2 border-primary rounded text-sm outline-none shadow-xs resize-y ${
                               isMyanmar ? 'leading-relaxed font-sans' : ''
-                            }`}
+                            } ${isRtl ? 'text-right font-sans' : 'text-left'}`}
                           />
                         ) : (
                           <div
+                            dir={isRtl ? 'rtl' : 'ltr'}
                             className="min-h-[26px] flex items-start justify-between gap-1"
                             onDoubleClick={() => handleStartEdit(item.key, lang, val)}
                             title="Double-click to edit"
@@ -744,7 +935,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 isMyanmar
                                   ? 'leading-relaxed font-sans text-foreground'
                                   : 'text-foreground'
-                              } ${!val ? 'text-amber-600/70 italic text-xs' : ''}`}
+                              } ${!val ? 'text-amber-600/70 italic text-xs' : ''} ${
+                                isRtl ? 'text-right' : 'text-left'
+                              }`}
                             >
                               {val ? (
                                 <div className="flex flex-wrap items-baseline gap-x-0.5">

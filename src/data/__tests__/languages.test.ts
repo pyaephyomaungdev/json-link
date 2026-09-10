@@ -3,6 +3,7 @@ import {
   ISO_LANGUAGES,
   getLanguageByCode,
   formatLanguageLabel,
+  isRtlLanguage,
 } from '../languages';
 
 describe('languages.ts', () => {
@@ -52,6 +53,23 @@ describe('languages.ts', () => {
 
     it('falls back to uppercase code for unknown code', () => {
       expect(formatLanguageLabel('custom-code')).toBe('CUSTOM-CODE');
+    });
+  });
+
+  describe('isRtlLanguage', () => {
+    it('identifies RTL languages correctly', () => {
+      expect(isRtlLanguage('ar')).toBe(true);
+      expect(isRtlLanguage('he')).toBe(true);
+      expect(isRtlLanguage('fa')).toBe(true);
+      expect(isRtlLanguage('ur')).toBe(true);
+      expect(isRtlLanguage('ar-EG')).toBe(true);
+    });
+
+    it('identifies LTR languages correctly', () => {
+      expect(isRtlLanguage('en')).toBe(false);
+      expect(isRtlLanguage('my')).toBe(false);
+      expect(isRtlLanguage('th')).toBe(false);
+      expect(isRtlLanguage('zh')).toBe(false);
     });
   });
 });

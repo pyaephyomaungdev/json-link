@@ -37,6 +37,7 @@ import {
   Shield,
   ShieldCheck,
   Trash2,
+  BookOpen,
 } from 'lucide-react';
 import {
   POPULAR_MODELS,
@@ -53,6 +54,8 @@ import {
   translateBatchWithOpenRouter,
   getLanguageDisplayName,
 } from '@/lib/openrouter';
+import { GlossaryModal } from './GlossaryModal';
+import { getStoredGlossary } from '@/lib/glossary';
 
 interface AiTranslateModalProps {
   isOpen: boolean;
@@ -89,6 +92,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [keyStatus, setKeyStatus] = useState<'untested' | 'valid' | 'invalid'>('untested');
   const [keyError, setKeyError] = useState('');
+
+  // Glossary modal state
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
+  const [glossaryCount, setGlossaryCount] = useState(() => getStoredGlossary().length);
 
   // Batch Translation running state
   const [isTranslating, setIsTranslating] = useState(false);
@@ -733,6 +740,37 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             </div>
           </div>
 
+          {/* AI Translation Glossary / Termbase */}
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-background border border-border/80">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded bg-blue-500/10 text-blue-400">
+                <BookOpen className="size-3.5" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">AI Translation Glossary & Termbase</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {glossaryCount > 0
+                    ? `${glossaryCount} custom term rule${glossaryCount > 1 ? 's' : ''} strictly enforced`
+                    : 'Enforce brand names, product titles, and terms'}
+                </div>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsGlossaryOpen(true)}
+              className="h-7 px-2.5 text-xs gap-1.5 cursor-pointer"
+            >
+              <span>Glossary</span>
+              {glossaryCount > 0 && (
+                <span className="bg-primary/20 text-primary text-[10px] font-mono px-1 rounded">
+                  {glossaryCount}
+                </span>
+              )}
+            </Button>
+          </div>
+
           {/* Live Progress Bar */}
           {isTranslating && (
             <div className="space-y-1.5 pt-2 border-t border-border">
@@ -800,6 +838,14 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           )}
         </DialogFooter>
       </DialogContent>
+
+      <GlossaryModal
+        isOpen={isGlossaryOpen}
+        onClose={() => {
+          setIsGlossaryOpen(false);
+          setGlossaryCount(getStoredGlossary().length);
+        }}
+      />
     </Dialog>
   );
 };
