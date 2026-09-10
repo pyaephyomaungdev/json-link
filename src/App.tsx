@@ -457,6 +457,11 @@ export function App() {
     setItems([duplicated, ...items]);
   };
 
+  const handleBatchUpdate = (updatedSubset: TranslationItem[]) => {
+    const updatedMap = new Map(updatedSubset.map(i => [i.key, i]));
+    setItems(items.map(item => updatedMap.get(item.key) || item));
+  };
+
   const handleDeleteLanguage = (langToDelete: string) => {
     if (languages.length <= 1) {
       setConfirmDialog({
@@ -1023,7 +1028,7 @@ export function App() {
             onRenameLanguage={handleRenameLanguage}
             onAddRow={() => setIsAddKeyOpen(true)}
             onOpenImport={() => setIsImportOpen(true)}
-            onBatchUpdate={setItems}
+            onBatchUpdate={handleBatchUpdate}
             onOpenAiTranslate={handleOpenAiTranslate}
           />
         </div>

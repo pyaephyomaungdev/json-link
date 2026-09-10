@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportSingleLanguageJson } from '@/lib/exporter';
 import { tokenizeVariables, validateVariables } from '@/lib/variables';
-import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi } from '@/lib/myanmarFont';
+import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 
 interface SpreadsheetTableProps {
@@ -124,16 +124,34 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const handleConvertZawgyiToUnicode = (lang: string) => {
     if (!onBatchUpdate) return;
+    let count = 0;
     const updated = items.map(item => {
       const val = item[lang];
-      if (typeof val === 'string' && val) {
+      if (typeof val === 'string' && isZawgyi(val)) {
+        count++;
         return { ...item, [lang]: zawgyiToUnicode(val) };
       }
       return item;
     });
-    onBatchUpdate(updated);
-    setCopiedNotification(`Converted ${lang.toUpperCase()} to Unicode`);
-    setTimeout(() => setCopiedNotification(null), 1500);
+    if (count > 0) {
+      onBatchUpdate(updated);
+      setCopiedNotification(`Converted ${count} Zawgyi cell${count > 1 ? 's' : ''} to Unicode`);
+    } else {
+      setCopiedNotification(`No Zawgyi text detected in ${lang.toUpperCase()}`);
+    }
+    setTimeout(() => setCopiedNotification(null), 2000);
+  };
+
+  const handleConvertCellZawgyiToUnicode = (key: string, lang: string) => {
+    const item = items.find(i => i.key === key);
+    if (!item) return;
+    const val = item[lang];
+    if (typeof val === 'string' && val) {
+      const converted = zawgyiToUnicode(val);
+      onUpdateCell(key, lang, converted);
+      setCopiedNotification(`Converted cell to Unicode`);
+      setTimeout(() => setCopiedNotification(null), 1500);
+    }
   };
 
   const handleConvertUnicodeToZawgyi = (lang: string) => {
@@ -395,7 +413,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         {copiedNotification && (
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shadow-2xs font-medium animate-in fade-in duration-200">
             <Check className="size-3" />
-            <span>{copiedNotification.startsWith('Pasted') ? copiedNotification : `Copied ${copiedNotification}`}</span>
+            <span>
+              {copiedNotification.startsWith('Pasted') ||
+              copiedNotification.startsWith('Converted') ||
+              copiedNotification.startsWith('No ') ||
+              copiedNotification.startsWith('Copied')
+                ? copiedNotification
+                : `Copied ${copiedNotification}`}
+            </span>
           </div>
         )}
       </div>
@@ -513,7 +538,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     width: DESC_COL_WIDTH,
                     minWidth: DESC_COL_WIDTH,
                   }}
-                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-border"
+                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-r border-border"
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -817,7 +842,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           rowIndex: rowIdx,
                         })
                       }
-                      className={`py-1.5 px-3 text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] border-b border-border transition-colors cursor-pointer ${
+                      className={`py-1.5 px-3 text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] border-b border-r border-border transition-colors cursor-pointer ${
                         selectedCell?.key === item.key && selectedCell.field === 'description'
                           ? '!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] z-10'
                           : ''
@@ -859,6 +884,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   {/* Language Translation Cells */}
                   {languages.map((lang, colIdx) => {
                     const val = item[lang] || '';
+                    const isZawgyiCell = isZawgyi(val);
                     const isEditing =
                       editingCell?.key === item.key && editingCell.field === lang;
                     const isCellSelected =
@@ -894,7 +920,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             rowIndex: rowIdx,
                           })
                         }
-                        className={`py-1.5 px-3 border-b border-border transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
+                        className={`py-2 px-3 border-b border-border transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
                           isLangFrozen ? 'sticky z-15' : 'relative z-0'
                         } ${getFreezeLineClass(isLangLastFrozen)} ${
                           !val
@@ -908,21 +934,50 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             : ''
                         }`}
                       >
-                        {isEditing ? (
-                          <textarea
-                            ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                            dir={isRtl ? 'rtl' : 'ltr'}
-                            value={editingCell.value}
-                            onChange={e =>
-                              setEditingCell({ ...editingCell, value: e.target.value })
-                            }
-                            onBlur={handleSaveEdit}
-                            onKeyDown={handleKeyDown}
-                            rows={Math.max(2, editingCell.value.split('\n').length)}
-                            className={`w-full px-2 py-1 bg-background border-2 border-primary rounded text-sm outline-none shadow-xs resize-y ${
-                              isMyanmar ? 'leading-relaxed font-sans' : ''
-                            } ${isRtl ? 'text-right font-sans' : 'text-left'}`}
+                        {/* Excel-style Corner Flag for Zawgyi warning */}
+                        {isZawgyiCell && (
+                          <div
+                            className="absolute top-0 left-0 w-0 h-0 border-t-[8px] border-r-[8px] border-t-amber-500 border-r-transparent pointer-events-none z-20"
+                            title="Zawgyi font detected"
                           />
+                        )}
+
+                        {isEditing ? (
+                          <div className="w-full">
+                            <textarea
+                              ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                              dir={isRtl ? 'rtl' : 'ltr'}
+                              value={editingCell.value}
+                              onChange={e =>
+                                setEditingCell({ ...editingCell, value: e.target.value })
+                              }
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyDown}
+                              rows={Math.max(2, editingCell.value.split('\n').length)}
+                              className={`w-full px-2 py-1 bg-background border-2 border-primary rounded text-sm outline-none shadow-xs resize-y ${
+                                isMyanmar ? 'leading-relaxed font-sans' : ''
+                              } ${isRtl ? 'text-right font-sans' : 'text-left'}`}
+                            />
+                            {isZawgyi(editingCell.value) && (
+                              <div className="mt-1 flex items-center justify-between">
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setEditingCell({
+                                      ...editingCell,
+                                      value: zawgyiToUnicode(editingCell.value),
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors"
+                                  title="Convert to Unicode"
+                                >
+                                  <AlertTriangle className="size-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                  <span>Convert Zawgyi → Unicode</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <div
                             dir={isRtl ? 'rtl' : 'ltr'}
@@ -940,28 +995,50 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               }`}
                             >
                               {val ? (
-                                <div className="flex flex-wrap items-baseline gap-x-0.5">
-                                  {tokenizeVariables(val).map((tok, i) =>
-                                    tok.isVariable ? (
-                                      <span
-                                        key={i}
-                                        className="inline-block px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold border border-primary/20 align-baseline select-text"
-                                        title={`Interpolation Variable: ${tok.text}`}
-                                      >
-                                        {tok.text}
-                                      </span>
-                                    ) : (
-                                      <span key={i}>{tok.text}</span>
-                                    )
-                                  )}
-                                  {!varValidation.isValid && (
-                                    <span
-                                      className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 ml-1.5 select-none"
-                                      title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
-                                    >
-                                      <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                      <span>Missing {varValidation.missingVariables.join(', ')}</span>
-                                    </span>
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex flex-wrap items-baseline gap-x-0.5 leading-relaxed">
+                                    {tokenizeVariables(val).map((tok, i) =>
+                                      tok.isVariable ? (
+                                        <span
+                                          key={i}
+                                          className="inline-block px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold border border-primary/20 align-baseline select-text"
+                                          title={`Interpolation Variable: ${tok.text}`}
+                                        >
+                                          {tok.text}
+                                        </span>
+                                      ) : (
+                                        <span key={i}>{tok.text}</span>
+                                      )
+                                    )}
+                                  </div>
+
+                                  {/* Dedicated Warning & Action Badges row with proper clearance */}
+                                  {(isZawgyiCell || !varValidation.isValid) && (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                      {isZawgyiCell && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleConvertCellZawgyiToUnicode(item.key, lang);
+                                          }}
+                                          title="Zawgyi font detected in this cell! Click to convert to Unicode."
+                                          className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/20 hover:bg-amber-500/35 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all shadow-2xs select-none"
+                                        >
+                                          <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                          <span>Zawgyi (!)</span>
+                                        </button>
+                                      )}
+                                      {!varValidation.isValid && (
+                                        <span
+                                          className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 select-none"
+                                          title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
+                                        >
+                                          <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                          <span>Missing {varValidation.missingVariables.join(', ')}</span>
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               ) : (

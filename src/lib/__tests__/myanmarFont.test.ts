@@ -35,6 +35,18 @@ describe('myanmarFont.ts', () => {
       expect(uni).toContain('\u101e\u1031'); // Consonant followed by e-vowel in Unicode
     });
 
+    it('converts complex real-world Zawgyi text to Unicode accurately', () => {
+      const zg = 'သိမ္ဆည္းမႈ ေအာင္ျမင္ပါသည္။';
+      const uni = zawgyiToUnicode(zg);
+      expect(uni).toBe('သိမ်ဆည်းမှု အောင်မြင်ပါသည်။');
+      expect(isZawgyi(uni)).toBe(false);
+
+      expect(zawgyiToUnicode('မလုပ္ေတာ့ပါ')).toBe('မလုပ်တော့ပါ');
+      expect(zawgyiToUnicode('သို႔မဟုတ္')).toBe('သို့မဟုတ်');
+      expect(zawgyiToUnicode('ျမန္မာ')).toBe('မြန်မာ');
+      expect(zawgyiToUnicode('ေဒါင္းလုဒ္')).toBe('ဒေါင်းလုဒ်');
+    });
+
     it('converts Unicode to Zawgyi with pre-posed vowel', () => {
       const uni = 'စေတနာ';
       const zg = unicodeToZawgyi(uni);
