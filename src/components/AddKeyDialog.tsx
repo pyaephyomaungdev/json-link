@@ -15,7 +15,7 @@ interface AddKeyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   languages: string[];
-  onAddKey: (key: string, values: Record<string, string>) => void;
+  onAddKey: (key: string, values: Record<string, string>, description?: string) => void;
   existingKeys: string[];
 }
 
@@ -27,12 +27,14 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
   existingKeys,
 }) => {
   const [keyName, setKeyName] = useState('');
+  const [description, setDescription] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
       setKeyName('');
+      setDescription('');
       setValues({});
       setError(null);
     }
@@ -56,7 +58,7 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
       return;
     }
 
-    onAddKey(trimmedKey, values);
+    onAddKey(trimmedKey, values, description.trim() || undefined);
     onOpenChange(false);
   };
 
@@ -87,6 +89,18 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
                 autoFocus
               />
               {error && <span className="text-xs text-destructive font-medium">{error}</span>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>Context / Description <span className="text-muted-foreground font-normal">(Optional)</span></span>
+              </label>
+              <Input
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="e.g. Shown on navbar header, translator note"
+                className="text-xs"
+              />
             </div>
 
             <div className="border-t border-border pt-3 flex flex-col gap-3">

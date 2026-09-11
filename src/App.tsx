@@ -229,8 +229,8 @@ export function App() {
         return;
       }
 
-      // Find & Replace: Ctrl+H or Cmd+H
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
+      // Find & Replace: Ctrl+F, Cmd+F, Ctrl+H, or Cmd+H
+      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'h')) {
         e.preventDefault();
         setIsFindReplaceOpen(prev => !prev);
         return;
@@ -751,10 +751,13 @@ export function App() {
     );
   };
 
-  const handleAddKey = (newKey: string, values: Record<string, string>) => {
+  const handleAddKey = (newKey: string, values: Record<string, string>, description?: string) => {
     const newItem: TranslationItem = { key: newKey };
     for (const lang of languages) {
       newItem[lang] = values[lang] || '';
+    }
+    if (description?.trim()) {
+      newItem.description = description.trim();
     }
     setItems([newItem, ...items]);
   };
@@ -851,7 +854,7 @@ export function App() {
         category: 'Spreadsheet',
         title: 'Find & Replace Across Languages',
         description: 'Search and replace across keys, translations, and context with Regex',
-        shortcut: 'Cmd+H',
+        shortcut: 'Cmd+F',
         icon: <Replace className="size-3.5 text-blue-500" />,
         action: () => setIsFindReplaceOpen(true),
       },
@@ -958,7 +961,7 @@ export function App() {
       {
         id: 'export-dialog',
         category: 'Export',
-        title: 'Export Translations (Excel, CSV, JSON, YAML, Android, iOS, TypeScript)',
+        title: 'Export Translations (Excel, CSV, JSON, Flutter ARB, YAML, Android, iOS, TypeScript)',
         description: 'Choose export format and download',
         icon: <FileSpreadsheet className="size-3.5 text-purple-500" />,
         action: () => setIsExportOpen(true),
@@ -1091,7 +1094,7 @@ export function App() {
                 size="sm"
                 onClick={() => setIsFindReplaceOpen(true)}
                 className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
-                title="Find & Replace Across Languages (Cmd+H / Ctrl+H)"
+                title="Find & Replace Across Languages (Cmd+F / Cmd+H)"
               >
                 <Replace className="size-3.5 text-blue-500" />
                 <span>Find / Replace</span>
@@ -1112,15 +1115,16 @@ export function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLinterOpen(true)}
-                className={`h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer ${
-                  lintIssueCount > 0
-                    ? 'text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
-                    : 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10'
-                }`}
+                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
                 title="Localization QA & Consistency Linter"
               >
-                <Sparkles className="size-3.5" />
-                <span>{lintIssueCount > 0 ? `Linter (${lintIssueCount})` : 'Linter'}</span>
+                <Sparkles className="size-3.5 text-amber-500" />
+                <span>Linter</span>
+                {lintIssueCount > 0 && (
+                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-medium leading-tight">
+                    {lintIssueCount}
+                  </span>
+                )}
               </Button>
 
               <Button
@@ -1195,7 +1199,7 @@ export function App() {
                   Drop translation files here to open spreadsheet
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm sm:max-w-md leading-relaxed mx-auto">
-                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
+                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
                 </p>
               </div>
 
