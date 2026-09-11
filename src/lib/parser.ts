@@ -419,3 +419,73 @@ export function parseYamlFile(
 
   return { [inferred]: flat };
 }
+
+/**
+ * Parses Flutter ARB (.arb) content into { items: TranslationItem[]; languages: string[] }
+ * ARB files have format:
+ * {
+ *   "@@locale": "en",
+ *   "appName": "App Title",
+ *   "@appName": {
+ *     "description": "The title of the application"
+ *   }
+ * }
+ */
+export function parseArbFile(
+  content: string,
+  filename: string
+): { items: TranslationItem[]; languages: string[] } {
+  const parsed = JSON.parse(content);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('Invalid ARB structure: Root must be a JSON object.');
+  }
+
+  // 1. Determine language
+  let lang = '';
+  if (typeof parsed['@@locale'] === 'string' && parsed['@@locale'].trim()) {
+    lang = parsed['@@locale'].trim();
+  } else if (typeof parsed['@locale'] === 'string' && parsed['@locale'].trim()) {
+    lang = parsed['@locale'].trim();
+  } else {
+    lang = inferLanguageFromFilename(filename);
+  }
+
+  // Normalize language (e.g. en_US -> en-US)
+  lang = lang.replace('_', '-');
+
+  const descriptions: Record<string, string> = {};
+
+  // First pass: collect descriptions and metadata
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.startsWith('@@')) {
+      continue; // Global ARB attribute
+    }
+    if (key.startsWith('@')) {
+      const targetKey = key.slice(1);
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        if (typeof (value as any).description === 'string') {
+          descriptions[targetKey] = (value as any).description.trim();
+        }
+      }
+    }
+  }
+
+  // Second pass: collect translation keys
+  const items: TranslationItem[] = [];
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.startsWith('@')) {
+      continue; // Skip metadata keys
+    }
+    const item: TranslationItem = {
+      key,
+      [lang]: typeof value === 'string' ? value : String(value ?? ''),
+    };
+    if (descriptions[key]) {
+      item.description = descriptions[key];
+    }
+    items.push(item);
+  }
+
+  return { items, languages: [lang] };
+}
+

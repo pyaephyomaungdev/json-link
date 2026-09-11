@@ -26,6 +26,7 @@ import {
   parseAndroidXml,
   parseIosStrings,
   parseYamlFile,
+  parseArbFile,
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
@@ -505,6 +506,34 @@ export function App() {
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
           incomingLanguages = res.languages;
+        } else if (ext === 'arb') {
+          const text = await file.text();
+          const parsed = parseArbFile(text, file.name);
+          if (incomingItems.length === 0) {
+            incomingItems = parsed.items;
+            incomingLanguages = parsed.languages;
+          } else {
+            for (const l of parsed.languages) {
+              if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+            }
+            const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+            for (const item of parsed.items) {
+              if (!existingMap.has(item.key)) {
+                incomingItems.push({ ...item });
+                existingMap.set(item.key, item);
+              } else {
+                const target = existingMap.get(item.key)!;
+                for (const l of parsed.languages) {
+                  if (item[l] !== undefined && item[l] !== '') {
+                    target[l] = item[l];
+                  }
+                }
+                if (item.description && !target.description) {
+                  target.description = item.description;
+                }
+              }
+            }
+          }
         }
       }
 
@@ -1141,7 +1170,7 @@ export function App() {
                   }
                 }}
                 multiple
-                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings"
+                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
                 className="hidden"
               />
 

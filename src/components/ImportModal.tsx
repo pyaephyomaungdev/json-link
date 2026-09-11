@@ -16,6 +16,7 @@ import {
   parseAndroidXml,
   parseIosStrings,
   parseYamlFile,
+  parseArbFile,
   mergeTranslations,
 } from '@/lib/parser';
 import { TranslationItem } from '@/types';
@@ -31,7 +32,7 @@ interface ImportModalProps {
 interface LoadedFile {
   name: string;
   size: number;
-  type: 'json' | 'excel' | 'csv' | 'yaml' | 'xml' | 'strings';
+  type: 'json' | 'excel' | 'csv' | 'yaml' | 'xml' | 'strings' | 'arb';
   data: { [lang: string]: Record<string, string> } | { items: TranslationItem[]; languages: string[] };
 }
 
@@ -118,8 +119,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             type: 'yaml',
             data: parsed,
           });
+        } else if (ext === 'arb') {
+          const text = await file.text();
+          const parsed = parseArbFile(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'arb',
+            data: parsed,
+          });
         } else {
-          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, .csv, .yaml, .xml, or .strings`);
+          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, .csv, .yaml, .xml, .strings, or .arb`);
         }
       }
 
@@ -229,7 +239,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
-              accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings"
+              accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
               className="hidden"
             />
             <div className="p-3 rounded-full bg-primary/10 text-primary">
@@ -240,7 +250,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Click to browse or drop your translation files here
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, Excel, CSV, YAML, Android XML, or iOS Strings
+                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, ARB, Excel, CSV, YAML, Android XML, or iOS Strings
               </p>
             </div>
           </div>

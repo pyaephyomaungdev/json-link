@@ -10,6 +10,7 @@ import {
   parseIosStrings,
   parseYamlFile,
   parseSpreadsheet,
+  parseArbFile,
 } from '../parser';
 import { TranslationItem } from '@/types';
 
@@ -345,4 +346,77 @@ en:
       );
     });
   });
+
+  describe('parseArbFile', () => {
+    it('parses standard Flutter ARB file with @@locale and descriptions', () => {
+      const arbContent = JSON.stringify({
+        '@@locale': 'en',
+        '@@last_modified': '2026-09-11T12:00:00Z',
+        'appTitle': 'JSON Link',
+        '@appTitle': {
+          'description': 'Main title of the application shown on navbar',
+        },
+        'btnSubmit': 'Submit Form',
+        '@btnSubmit': {
+          'description': 'Label for the submit button',
+        },
+        'welcomeUser': 'Welcome, {name}!',
+      }, null, 2);
+
+      const result = parseArbFile(arbContent, 'app_en.arb');
+      expect(result.languages).toEqual(['en']);
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]).toEqual({
+        key: 'appTitle',
+        en: 'JSON Link',
+        description: 'Main title of the application shown on navbar',
+      });
+      expect(result.items[1]).toEqual({
+        key: 'btnSubmit',
+        en: 'Submit Form',
+        description: 'Label for the submit button',
+      });
+      expect(result.items[2]).toEqual({
+        key: 'welcomeUser',
+        en: 'Welcome, {name}!',
+      });
+    });
+
+    it('infers language from filename if @@locale is absent', () => {
+      const arbContent = JSON.stringify({
+        'greeting': 'မင်္ဂလာပါ',
+        '@greeting': {
+          'description': 'Burmese standard greeting',
+        },
+      });
+
+      const result = parseArbFile(arbContent, 'intl_my.arb');
+      expect(result.languages).toEqual(['my']);
+      expect(result.items[0]).toEqual({
+        key: 'greeting',
+        my: 'မင်္ဂလာပါ',
+        description: 'Burmese standard greeting',
+      });
+    });
+
+    it('supports @locale attribute as fallback for language code', () => {
+      const arbContent = JSON.stringify({
+        '@locale': 'th',
+        'save': 'บันทึก',
+      });
+
+      const result = parseArbFile(arbContent, 'messages.arb');
+      expect(result.languages).toEqual(['th']);
+      expect(result.items[0].key).toBe('save');
+      expect(result.items[0].th).toBe('บันทึก');
+    });
+
+    it('throws error for invalid JSON or non-object root', () => {
+      expect(() => parseArbFile('invalid json', 'app.arb')).toThrow();
+      expect(() => parseArbFile('["not", "an", "object"]', 'app.arb')).toThrow(
+        'Invalid ARB structure: Root must be a JSON object.'
+      );
+    });
+  });
 });
+

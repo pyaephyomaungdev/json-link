@@ -5,6 +5,26 @@ import path from 'path';
 
 export default defineConfig({
   base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-xlsx': ['xlsx'],
+          'vendor-jszip': ['jszip'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-radix': [
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip',
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

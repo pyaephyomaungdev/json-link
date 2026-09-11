@@ -171,6 +171,22 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return items.some(i => i.description && i.description.trim() !== '');
   });
 
+  // Clamp selectedCell column index when columns change (e.g. description toggled off)
+  useEffect(() => {
+    if (!selectedCell) return;
+    const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
+    if (selectedCell.colIndex >= totalCols) {
+      const newCol = Math.max(0, totalCols - 1);
+      let newField = 'key';
+      if (showDescription && newCol === 1) newField = 'description';
+      else if (newCol > 0) {
+        const langIdx = showDescription ? newCol - 2 : newCol - 1;
+        newField = languages[langIdx] || 'key';
+      }
+      setSelectedCell(prev => prev ? { ...prev, colIndex: newCol, field: newField } : null);
+    }
+  }, [showDescription, languages]);
+
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
 
@@ -385,7 +401,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Keyboard navigation across cells when NOT editing
   const handleTableKeyDown = (e: React.KeyboardEvent) => {
-    if (editingCell || !selectedCell) return;
+    if (editingCell || !selectedCell || items.length === 0) return;
 
     const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
     const totalRows = items.length;
@@ -483,7 +499,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    if (editingCell || !selectedCell) return;
+    if (editingCell || !selectedCell || items.length === 0) return;
 
     const clipText = e.clipboardData.getData('text/plain');
     if (!clipText) return;
