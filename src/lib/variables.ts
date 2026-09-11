@@ -35,6 +35,34 @@ function setBoundedCache<K, V>(map: Map<K, V>, key: K, value: V) {
 }
 
 /**
+ * Returns true when a (target) translation contains ONLY interpolation placeholders
+ * and no actual translated text. AI batch translation can produce values like
+ * "{user}" alone — they look filled, but no human-readable text exists.
+ * Uses the cached tokenizer so this costs O(1) on repeated values.
+ */
+export function isPlaceholderOnly(text: string | undefined): boolean {
+  if (!text || typeof text !== 'string') return false;
+  const plain = tokenizeVariables(text)
+    .filter(t => !t.isVariable)
+    .map(t => t.text.trim())
+    .join('');
+  return plain === '';
+}
+
+/**
+ * True when a cell has no meaningful content: empty/whitespace OR placeholder-only.
+ * Used for "missing translations" filters, stats and linter checks so that
+ * machine-generated placeholder fills are not counted as completed translations.
+ */
+export function isEffectivelyMissing(text: string | undefined): boolean {
+  if (text === undefined || text === null) return true;
+  if (typeof text !== 'string') return true;
+  const trimmed = text.trim();
+  if (trimmed === '') return true;
+  return isPlaceholderOnly(trimmed);
+}
+
+/**
  * Extracts all unique interpolation variables from a string.
  */
 export function extractVariables(text: string): string[] {

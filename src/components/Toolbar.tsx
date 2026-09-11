@@ -21,6 +21,7 @@ import {
   Command,
   Replace,
   Activity,
+  BookOpen,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +61,7 @@ interface ToolbarProps {
   onOpenFindReplace?: () => void;
   onOpenScorecard?: () => void;
   onOpenLinter?: () => void;
+  onOpenGlossary?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -89,6 +91,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenFindReplace,
   onOpenScorecard,
   onOpenLinter,
+  onOpenGlossary,
 }) => {
   // Local search query for zero-latency keystrokes + 150ms debounce to parent
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -391,47 +394,53 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <DropdownMenuContent align="end" className="w-56">
             {/* Mobile shortcuts */}
             {onOpenCommandPalette && (
-              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs md:hidden">
+              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Command className="size-3.5 text-muted-foreground" />
                 <span>Command Palette</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
               </DropdownMenuItem>
             )}
             {onOpenFindReplace && hasItems && (
-              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Replace className="size-3.5 text-blue-500" />
                 <span>Find &amp; Replace</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘H</kbd>
               </DropdownMenuItem>
             )}
             {onOpenScorecard && hasItems && (
-              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Activity className="size-3.5 text-emerald-500" />
                 <span>Localization Scorecard</span>
               </DropdownMenuItem>
             )}
             {onOpenLinter && hasItems && (
-              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Sparkles className="size-3.5 text-amber-500" />
                 <span>QA Linter</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenGlossary && hasItems && (
+              <DropdownMenuItem onClick={onOpenGlossary} className="gap-2 cursor-pointer text-xs xl:hidden">
+                <BookOpen className="size-3.5 text-purple-500" />
+                <span>Glossary &amp; Termbase</span>
               </DropdownMenuItem>
             )}
             {onOpenSaveProject && (
               <DropdownMenuItem
                 onClick={onOpenSaveProject}
                 disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs md:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+                className="gap-2 cursor-pointer text-xs lg:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
               >
                 <Save className="size-3.5" />
                 <span>Save Project (.jsonlink)</span>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs sm:hidden">
+            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs lg:hidden">
               <Globe className="size-3.5" />
               <span>Add Language Column</span>
             </DropdownMenuItem>
             {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
-              <DropdownMenuSeparator className="md:hidden" />
+              <DropdownMenuSeparator className="lg:hidden" />
             )}
 
             <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>

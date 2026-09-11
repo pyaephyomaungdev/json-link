@@ -22,6 +22,7 @@ import { AboutPage } from '@/components/AboutPage';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { Logo } from '@/components/Logo';
 import { runLocalizationLinter } from '@/lib/linter';
+import { isEffectivelyMissing } from '@/lib/variables';
 import {
   parseJsonFile,
   parseSpreadsheet,
@@ -39,6 +40,8 @@ import {
   Sun,
   Sparkles,
   UploadCloud,
+  Upload,
+  Download,
   FileSpreadsheet,
   FileCode,
   Plus,
@@ -646,15 +649,15 @@ export function App() {
     const query = searchQuery.trim().toLowerCase();
 
     return items.filter(item => {
-      // Global Missing filter
+      // Global Missing filter — blank OR placeholder-only (AI-variable-only) counts as missing
       if (activeFilter === 'missing') {
-        const hasMissing = languages.some(lang => !(item[lang] || '').trim());
+        const hasMissing = languages.some(lang => isEffectivelyMissing(item[lang]));
         if (!hasMissing) return false;
       }
 
       // Specific Column Missing filter (from column header badge)
       if (filterMissingLang) {
-        const isMissingInLang = !(item[filterMissingLang] || '').trim();
+        const isMissingInLang = isEffectivelyMissing(item[filterMissingLang]);
         if (!isMissingInLang) return false;
       }
 
@@ -1118,9 +1121,10 @@ export function App() {
             </span>
           )}
 
-          {/* Header Stats Badges */}
+          {/* Header Stats Badges — lg+ only on the ribbon; narrower screens get the
+              same numbers from the table footer / StatsBar instead of an overflow */}
           {totalKeys > 0 && (
-            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground min-w-0">
+            <div className="hidden lg:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground min-w-0">
               <span className="flex items-center gap-1 font-medium text-foreground whitespace-nowrap shrink-0">
                 <Key className="size-3 text-primary shrink-0" /> {totalKeys.toLocaleString()} keys
               </span>
@@ -1131,7 +1135,7 @@ export function App() {
                 title={`Languages: ${languages.join(', ')} — click to add or manage`}
               >
                 <Globe className="size-3 text-emerald-600 shrink-0" />
-                <span className="whitespace-nowrap truncate max-w-[140px] lg:max-w-[220px]">
+                <span className="whitespace-nowrap truncate max-w-[90px] sm:max-w-[110px] lg:max-w-[120px] xl:max-w-[220px]">
                   {languages.slice(0, 3).map(l => l.toUpperCase()).join(', ')}
                   {languages.length > 3 ? ` +${languages.length - 3}` : ''}
                 </span>
@@ -1172,7 +1176,7 @@ export function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsFindReplaceOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
+                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
                 title="Find & Replace Across Languages (Cmd+F / Cmd+H)"
               >
                 <Replace className="size-3.5 text-blue-500" />
@@ -1183,7 +1187,7 @@ export function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsScorecardOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
+                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
                 title="Localization Health & Scorecard"
               >
                 <Activity className="size-3.5 text-emerald-500" />
@@ -1194,7 +1198,7 @@ export function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLinterOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden sm:flex cursor-pointer"
+                className="h-7 px-2 text-xs gap-1.5 hidden lg:flex cursor-pointer"
                 title="Localization QA & Consistency Linter"
               >
                 <Sparkles className="size-3.5 text-amber-500" />
@@ -1210,7 +1214,7 @@ export function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsGlossaryOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden lg:flex cursor-pointer"
+                className="h-7 px-2 text-xs gap-1.5 hidden xl:flex cursor-pointer"
                 title="AI Translation Glossary & Termbase"
               >
                 <BookOpen className="size-3.5 text-purple-500" />
@@ -1245,8 +1249,8 @@ export function App() {
       {/* Main Content Area */}
       {items.length === 0 ? (
         // Empty Upload View
-        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="max-w-2xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
+        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
+          <div className="max-w-2xl md:max-w-3xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
             <div
               onDragOver={e => {
                 e.preventDefault();
@@ -1261,7 +1265,7 @@ export function App() {
                 }
               }}
               onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${isHeroDragOver
+              className={`border-2 border-dashed rounded-xl md:rounded-2xl p-5 sm:p-8 md:p-9 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 sm:gap-4 bg-card/60 ${isHeroDragOver
                 ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
                 : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
                 }`}
@@ -1279,16 +1283,18 @@ export function App() {
                 className="hidden"
               />
 
-              <div className="mb-1 sm:mb-2">
-                <Logo size="lg" showText={false} />
+              <div className="mb-1 sm:mb-2 shrink-0">
+                <Logo size="sm" showText={false} className="md:hidden" />
+                <Logo size="lg" showText={false} className="hidden md:block" />
               </div>
 
               <div>
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                <h2 className="text-[15px] sm:text-base md:text-lg font-bold tracking-tight text-foreground leading-snug">
                   Drop translation files here to open spreadsheet
                 </h2>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm sm:max-w-md leading-relaxed mx-auto">
-                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-1.5 max-w-xs sm:max-w-sm md:max-w-md leading-relaxed mx-auto">
+                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>
+                  ), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
                 </p>
               </div>
 
@@ -1311,30 +1317,30 @@ export function App() {
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-4 gap-y-2 text-xs pt-3.5 sm:pt-4 border-t border-border/60">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2 text-[10px] sm:text-[11px] md:text-xs pt-3 sm:pt-3.5 border-t border-border/60">
                 <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> Project (.jsonlink)
+                  <FileCode className="size-3 sm:size-3.5" /> Project (.jsonlink)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> JSON (.json)
+                  <FileCode className="size-3 sm:size-3.5" /> JSON (.json)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3.5" /> Excel (.xlsx)
+                  <FileSpreadsheet className="size-3 sm:size-3.5" /> Excel (.xlsx)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3.5" /> CSV (.csv)
+                  <FileSpreadsheet className="size-3 sm:size-3.5" /> CSV (.csv)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> YAML (.yaml)
+                  <FileCode className="size-3 sm:size-3.5" /> YAML (.yaml)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> Flutter ARB (.arb)
+                  <FileCode className="size-3 sm:size-3.5" /> Flutter ARB (.arb)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> Android (.xml)
+                  <FileCode className="size-3 sm:size-3.5" /> Android (.xml)
                 </span>
                 <span className="flex items-center gap-1 font-medium text-pink-600 dark:text-pink-400 whitespace-nowrap">
-                  <FileCode className="size-3.5" /> iOS (.strings)
+                  <FileCode className="size-3 sm:size-3.5" /> iOS (.strings)
                 </span>
               </div>
             </div>
@@ -1397,6 +1403,7 @@ export function App() {
             onOpenFindReplace={() => setIsFindReplaceOpen(true)}
             onOpenScorecard={() => setIsScorecardOpen(true)}
             onOpenLinter={() => setIsLinterOpen(true)}
+            onOpenGlossary={() => setIsGlossaryOpen(true)}
           />
 
           {/* Full-bleed Edge-to-Edge Spreadsheet */}
@@ -1421,6 +1428,31 @@ export function App() {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}
           />
+
+            {/* Primary actions always within reach on narrow viewports
+                (complements the ⋯ overflow menu; hidden ≥ sm) */}
+            {items.length > 0 && (
+              <div className="sm:hidden shrink-0 grid grid-cols-3 gap-px bg-border border-t border-border">
+                <button
+                  onClick={() => setIsImportOpen(true)}
+                  className="flex items-center justify-center gap-1.5 h-11 bg-card text-xs font-medium text-foreground active:bg-muted cursor-pointer"
+                >
+                  <Upload className="size-3.5" /> Import
+                </button>
+                <button
+                  onClick={() => setIsExportOpen(true)}
+                  className="flex items-center justify-center gap-1.5 h-11 bg-primary text-xs font-semibold text-primary-foreground active:bg-primary/90 cursor-pointer"
+                >
+                  <Download className="size-3.5" /> Export
+                </button>
+                <button
+                  onClick={() => setIsSaveProjectOpen(true)}
+                  className="flex items-center justify-center gap-1.5 h-11 bg-emerald-600 text-xs font-semibold text-white active:bg-emerald-700 cursor-pointer"
+                >
+                  <Save className="size-3.5" /> Save
+                </button>
+              </div>
+            )}
         </div>
       )}
 

@@ -3,6 +3,8 @@ import {
   extractVariables,
   tokenizeVariables,
   validateVariables,
+  isPlaceholderOnly,
+  isEffectivelyMissing,
 } from '../variables';
 
 describe('variables.ts', () => {
@@ -210,6 +212,40 @@ describe('variables.ts', () => {
       // Simply asserting repeated calls still return correct results afterwards
       expect(extractVariables('greeting-0 {param}')).toContain('{param}');
       expect(tokenizeVariables('greeting-0 {param}').some(t => t.text === '{param}')).toBe(true);
+    });
+  });
+
+  describe('isPlaceholderOnly / isEffectivelyMissing', () => {
+    it('flags values made up solely of interpolation variables', () => {
+      expect(isPlaceholderOnly('{user}')).toBe(true);
+      expect(isPlaceholderOnly('{{count}}')).toBe(true);
+      expect(isPlaceholderOnly('%s')).toBe(true);
+      expect(isPlaceholderOnly('%1$s')).toBe(true);
+      expect(isPlaceholderOnly('  {name}  ')).toBe(true);
+      expect(isPlaceholderOnly('{a} {b}')).toBe(true);
+    });
+
+    it('does not flag real translations or mixed placeholder text', () => {
+      expect(isPlaceholderOnly('Welcome back')).toBe(false);
+      expect(isPlaceholderOnly('သင့်အကောင့်သို့ ဝင်ပါ')).toBe(false);
+      // Mixed: real text plus placeholders is still a valid translation
+      expect(isPlaceholderOnly('Hello {user}!')).toBe(false);
+      expect(isPlaceholderOnly('{count} မြန်မာ')).toBe(false);
+    });
+
+    it('returns false for undefined/empty input in isPlaceholderOnly', () => {
+      expect(isPlaceholderOnly(undefined)).toBe(false);
+      expect(isPlaceholderOnly('')).toBe(false);
+    });
+
+    it('isEffectivelyMissing treats blank + placeholder-only as missing', () => {
+      expect(isEffectivelyMissing('')).toBe(true);
+      expect(isEffectivelyMissing('   ')).toBe(true);
+      expect(isEffectivelyMissing(undefined)).toBe(true);
+      expect(isEffectivelyMissing('{user}')).toBe(true);
+      expect(isEffectivelyMissing('%s')).toBe(true);
+      expect(isEffectivelyMissing('Hello')).toBe(false);
+      expect(isEffectivelyMissing('Hello {user}')).toBe(false);
     });
   });
 });
