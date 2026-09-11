@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { encryptSecret, decryptSecret } from '../crypto';
 
 describe('crypto.ts', () => {
@@ -21,13 +21,23 @@ describe('crypto.ts', () => {
   });
 
   it('handles corrupted cipher payload safely without crashing', async () => {
+    // Silence the expected console.warn from decryptSecret's catch block —
+    // this negative-path test intentionally feeds malformed payloads.
+    const errSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
     const result = await decryptSecret('{"invalid":"json"}');
     expect(result).toBe('');
+
+    errSpy.mockRestore();
   });
 
   it('handles completely non-JSON string without crashing', async () => {
+    const errSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
     const result = await decryptSecret('not-even-json!!!');
     expect(result).toBe('');
+
+    errSpy.mockRestore();
   });
 
   it('encrypts and decrypts special characters (Myanmar, emoji, quotes)', async () => {
