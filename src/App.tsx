@@ -14,10 +14,12 @@ import { FindReplaceModal } from '@/components/FindReplaceModal';
 import { ScorecardModal } from '@/components/ScorecardModal';
 import { GlossaryModal } from '@/components/GlossaryModal';
 import { LinterModal } from '@/components/LinterModal';
+import { DocsPage } from '@/components/DocsPage';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { AboutPage } from '@/components/AboutPage';
+import { NotFoundPage } from '@/components/NotFoundPage';
 import { Logo } from '@/components/Logo';
 import { runLocalizationLinter } from '@/lib/linter';
 import {
@@ -132,11 +134,34 @@ export function App() {
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
 
-  // Linter report calculations
-  const lintReport = useMemo(() => {
-    return runLocalizationLinter(items, languages);
+  // Debounced linter issue count (300ms) to avoid CPU spikes during fast typing.
+  // After the debounce elapses the scan is pushed into idle time when available,
+  // so typing remains smooth even mid-scan.
+  const [lintIssueCount, setLintIssueCount] = useState<number>(0);
+  useEffect(() => {
+    if (items.length === 0) {
+      setLintIssueCount(0);
+      return;
+    }
+    let idleHandle: number | null = null;
+    const timer = setTimeout(() => {
+      const compute = () => {
+        const report = runLocalizationLinter(items, languages);
+        setLintIssueCount(report.totalIssues);
+      };
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        idleHandle = window.requestIdleCallback(compute, { timeout: 1000 });
+      } else {
+        compute();
+      }
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      if (idleHandle !== null) {
+        window.cancelIdleCallback(idleHandle);
+      }
+    };
   }, [items, languages]);
-  const lintIssueCount = lintReport.totalIssues;
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);
@@ -173,14 +198,23 @@ export function App() {
     setIsDark(prev => !prev);
   };
 
-  // Simple path-based routing: /about renders the About page (SPA fallback served by host)
-  const [route, setRoute] = useState<'app' | 'about'>(() =>
-    window.location.pathname.replace(/\/+$/, '') === '/about' ? 'about' : 'app'
-  );
+  // Simple path-based routing: /about, /docs render dedicated pages (SPA fallback served by host)
+  const [route, setRoute] = useState<'app' | 'about' | 'docs' | 'not-found'>(() => {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    if (path === '/about') return 'about';
+    if (path === '/docs') return 'docs';
+    if (path === '' || path === '/') return 'app';
+    // Any unrecognised path → 404
+    return 'not-found';
+  });
 
   useEffect(() => {
     const onPopState = () => {
-      setRoute(window.location.pathname.replace(/\/+$/, '') === '/about' ? 'about' : 'app');
+      const path = window.location.pathname.replace(/\/+$/, '');
+      if (path === '/about') setRoute('about');
+      else if (path === '/docs') setRoute('docs');
+      else if (path === '' || path === '/') setRoute('app');
+      else setRoute('not-found');
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -197,6 +231,25 @@ export function App() {
     if (window.location.pathname === '/about') {
       window.history.pushState({}, '', '/');
     }
+    setRoute('app');
+  };
+
+  const openDocs = () => {
+    if (window.location.pathname !== '/docs') {
+      window.history.pushState({}, '', '/docs');
+    }
+    setRoute('docs');
+  };
+
+  const closeDocs = () => {
+    if (window.location.pathname === '/docs') {
+      window.history.pushState({}, '', '/');
+    }
+    setRoute('app');
+  };
+
+  const closeNotFound = () => {
+    window.history.pushState({}, '', '/');
     setRoute('app');
   };
 
@@ -433,7 +486,7 @@ export function App() {
                 continue;
               }
             }
-          } catch {}
+          } catch { }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
@@ -466,7 +519,7 @@ export function App() {
                   continue;
                 }
               }
-            } catch {}
+            } catch { }
           }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
@@ -567,7 +620,7 @@ export function App() {
         variant: 'destructive',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
     }
   };
@@ -656,7 +709,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -694,7 +747,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'Understood',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -734,7 +787,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -855,7 +908,7 @@ export function App() {
         title: 'Find & Replace Across Languages',
         description: 'Search and replace across keys, translations, and context with Regex',
         shortcut: 'Cmd+F',
-        icon: <Replace className="size-3.5 text-blue-500" />,
+        icon: <Replace className="size-3.5" />,
         action: () => setIsFindReplaceOpen(true),
       },
       {
@@ -864,7 +917,7 @@ export function App() {
         title: 'Localization QA & Consistency Linter',
         description: 'Scan and auto-fix whitespace, variable mismatches, duplicates, and expansion',
         shortcut: 'Lint',
-        icon: <Sparkles className="size-3.5 text-amber-500" />,
+        icon: <Sparkles className="size-3.5" />,
         action: () => setIsLinterOpen(true),
       },
       {
@@ -872,7 +925,7 @@ export function App() {
         category: 'View',
         title: 'Localization Health & Completion Scorecard',
         description: 'Track progress %, missing translations, and variable integrity',
-        icon: <Activity className="size-3.5 text-emerald-500" />,
+        icon: <Activity className="size-3.5" />,
         action: () => setIsScorecardOpen(true),
       },
       {
@@ -880,7 +933,7 @@ export function App() {
         category: 'AI',
         title: 'AI Translation Glossary & Termbase',
         description: 'Manage brand name and term translation rules',
-        icon: <BookOpen className="size-3.5 text-purple-500" />,
+        icon: <BookOpen className="size-3.5" />,
         action: () => setIsGlossaryOpen(true),
       },
       {
@@ -888,7 +941,7 @@ export function App() {
         category: 'Spreadsheet',
         title: 'Generate Pseudolocale (qps-ploc)',
         description: 'Accent expansion test column for UI layout stress-testing',
-        icon: <FlaskConical className="size-3.5 text-amber-500" />,
+        icon: <FlaskConical className="size-3.5" />,
         action: handleGeneratePseudoLocale,
       },
       {
@@ -897,7 +950,7 @@ export function App() {
         title: 'Auto-Translate Missing Keys (OpenRouter)',
         description: 'Batch translate untranslated keys with variable protection',
         shortcut: 'AI',
-        icon: <Sparkles className="size-3.5 text-primary" />,
+        icon: <Sparkles className="size-3.5" />,
         action: () => handleOpenAiTranslate(),
       },
       {
@@ -906,7 +959,7 @@ export function App() {
         title: 'Add New Translation Key',
         description: 'Create a new translation entry with namespace',
         shortcut: '↵',
-        icon: <Plus className="size-3.5 text-emerald-600" />,
+        icon: <Plus className="size-3.5" />,
         action: () => setIsAddKeyOpen(true),
       },
       {
@@ -914,7 +967,7 @@ export function App() {
         category: 'Spreadsheet',
         title: 'Add Language Column',
         description: 'Add a new target language column (e.g. ja, zh, th, fr)',
-        icon: <Globe className="size-3.5 text-blue-500" />,
+        icon: <Globe className="size-3.5" />,
         action: () => setIsAddLanguageOpen(true),
       },
       {
@@ -922,7 +975,7 @@ export function App() {
         category: 'View',
         title: 'Filter: Show Only Missing Keys',
         description: 'Focus only on keys needing translations',
-        icon: <AlertCircle className="size-3.5 text-amber-500" />,
+        icon: <AlertCircle className="size-3.5" />,
         action: () => setActiveFilter('missing'),
       },
       {
@@ -930,7 +983,7 @@ export function App() {
         category: 'View',
         title: 'Filter: Show All Translations',
         description: 'Clear missing filter',
-        icon: <CheckCircle2 className="size-3.5 text-emerald-500" />,
+        icon: <CheckCircle2 className="size-3.5" />,
         action: () => setActiveFilter('all'),
       },
       {
@@ -955,7 +1008,7 @@ export function App() {
         title: 'Save Project (.jsonlink)',
         description: 'Save complete spreadsheet file for later restoration',
         shortcut: 'Ctrl+S',
-        icon: <Save className="size-3.5 text-emerald-600" />,
+        icon: <Save className="size-3.5" />,
         action: () => setIsSaveProjectOpen(true),
       },
       {
@@ -963,22 +1016,31 @@ export function App() {
         category: 'Export',
         title: 'Export Translations (Excel, CSV, JSON, Flutter ARB, YAML, Android, iOS, TypeScript)',
         description: 'Choose export format and download',
-        icon: <FileSpreadsheet className="size-3.5 text-purple-500" />,
+        icon: <FileSpreadsheet className="size-3.5" />,
         action: () => setIsExportOpen(true),
+      },
+      {
+        id: 'user-guide',
+        category: 'Help',
+        title: 'User Guide & Documentation',
+        description: 'Comprehensive guides, formats, shortcuts, and spreadsheet features',
+        shortcut: 'Docs',
+        icon: <BookOpen className="size-3.5" />,
+        action: openDocs,
       },
       {
         id: 'about',
         category: 'Help',
         title: 'About JSON Link',
         description: 'Learn about the project, privacy, and tech stack',
-        icon: <Info className="size-3.5 text-emerald-500" />,
+        icon: <Info className="size-3.5" />,
         action: openAbout,
       },
       {
         id: 'toggle-theme',
         category: 'View',
         title: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-        icon: isDark ? <Sun className="size-3.5 text-amber-500" /> : <Moon className="size-3.5 text-indigo-400" />,
+        icon: isDark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />,
         action: toggleTheme,
       },
     ],
@@ -987,7 +1049,25 @@ export function App() {
 
   // Dedicated About page route (/about)
   if (route === 'about') {
-    return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} />;
+    return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} onOpenDocs={openDocs} />;
+  }
+
+  // Dedicated Documentation page route (/docs)
+  if (route === 'docs') {
+    return <DocsPage onBack={closeDocs} isDark={isDark} onToggleTheme={toggleTheme} />;
+  }
+
+  // 404 Not Found for any unrecognised URL path
+  if (route === 'not-found') {
+    return (
+      <NotFoundPage
+        onBack={closeNotFound}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onOpenDocs={openDocs}
+        onOpenAbout={openAbout}
+      />
+    );
   }
 
   return (
@@ -1062,11 +1142,10 @@ export function App() {
                   <span>•</span>
                   <button
                     onClick={() => setActiveFilter(activeFilter === 'missing' ? 'all' : 'missing')}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors ${
-                      activeFilter === 'missing'
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30'
-                        : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
-                    }`}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors ${activeFilter === 'missing'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30'
+                      : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+                      }`}
                     title={activeFilter === 'missing' ? 'Showing missing keys only. Click to show all.' : 'Click to filter missing translations'}
                   >
                     <AlertCircle className="size-3 shrink-0" />
@@ -1142,6 +1221,17 @@ export function App() {
 
           <Button
             variant="ghost"
+            size="sm"
+            onClick={openDocs}
+            className="h-7 px-2 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            title="User Guide & Documentation"
+          >
+            <BookOpen className="size-3.5" />
+            <span className="hidden sm:inline font-medium">Docs</span>
+          </Button>
+
+          <Button
+            variant="ghost"
             size="icon"
             onClick={toggleTheme}
             className="size-7 rounded cursor-pointer"
@@ -1171,11 +1261,10 @@ export function App() {
                 }
               }}
               onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${
-                isHeroDragOver
-                  ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-                  : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
-              }`}
+              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${isHeroDragOver
+                ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
+                : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
+                }`}
             >
               <input
                 type="file"
@@ -1222,27 +1311,30 @@ export function App() {
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-4 gap-y-2 text-xs text-muted-foreground pt-3.5 sm:pt-4 border-t border-border/60">
-                <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+              <div className="flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-4 gap-y-2 text-xs pt-3.5 sm:pt-4 border-t border-border/60">
+                <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                   <FileCode className="size-3.5" /> Project (.jsonlink)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileCode className="size-3.5 text-primary" /> JSON (.json)
+                <span className="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> JSON (.json)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3.5 text-emerald-600" /> Excel (.xlsx)
+                <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <FileSpreadsheet className="size-3.5" /> Excel (.xlsx)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3.5 text-blue-500" /> CSV (.csv)
+                <span className="flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">
+                  <FileSpreadsheet className="size-3.5" /> CSV (.csv)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileCode className="size-3.5 text-amber-500" /> YAML (.yaml)
+                <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> YAML (.yaml)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileCode className="size-3.5 text-purple-500" /> Android (.xml)
+                <span className="flex items-center gap-1 font-medium text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> Flutter ARB (.arb)
                 </span>
-                <span className="flex items-center gap-1 whitespace-nowrap">
-                  <FileCode className="size-3.5 text-pink-500" /> iOS (.strings)
+                <span className="flex items-center gap-1 font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> Android (.xml)
+                </span>
+                <span className="flex items-center gap-1 font-medium text-pink-600 dark:text-pink-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> iOS (.strings)
                 </span>
               </div>
             </div>

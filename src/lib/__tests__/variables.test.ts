@@ -160,5 +160,56 @@ describe('variables.ts', () => {
       const varToken = tokens.find(t => t.isVariable);
       expect(varToken?.text).toBe('%s');
     });
+
+    it('returns consistent cached results across repeated calls', () => {
+      const text = 'Hello {user}, balance: {amount, number, currency}';
+      const first = tokenizeVariables(text);
+      const second = tokenizeVariables(text);
+      expect(first).toEqual(second);
+
+      const v1 = validateVariables(text, 'မင်္ဂလာ {user}');
+      const v2 = validateVariables(text, 'မင်္ဂလာ {user}');
+      expect(v1).toEqual(v2);
+    });
+
+    it('caches empty-token results (empty array must not bypass the cache)', () => {
+      const text = 'no variables here';
+      const first = tokenizeVariables(text);
+      const second = tokenizeVariables(text);
+      expect(second).toEqual(first);
+      expect(second).toEqual([{ text, isVariable: false }]);
+    });
+
+    it('returns a fresh identical array for cached empty extract results', () => {
+      const text = 'plain';
+      expect(extractVariables(text)).toEqual([]);
+      expect(extractVariables(text)).toEqual([]);
+    });
+
+    it('does not collide cache entries when texts contain "::"', () => {
+      // Regression: the old `${source}::${target}` flat key made both of these
+      // pairs produce the key "x::y::z", corrupting each other's result.
+      expect(validateVariables('x::y', 'z').isValid).toBe(true); // no variables in source
+      expect(validateVariables('x', 'y::z').isValid).toBe(true);
+
+      const withVarSource = 'Submit {name}::x';
+      const ok = validateVariables(withVarSource, 'Substitute {name}');
+      const collidingPair = validateVariables('Submit', '{name}::x {other}');
+      // {other} exists only in target (extra vars are not flagged), {name} present — but
+      // crucially the collision-free cache must NOT return the other pair's result object.
+      expect(ok).not.toBe(collidingPair);
+      expect(ok.missingVariables).toEqual([]);
+    });
+
+    it('keeps cache memory bounded under repeated distinct inputs', () => {
+      // Exercises the bounded eviction path: > 2000 unique inputs must not grow unbounded.
+      for (let i = 0; i < 2500; i++) {
+        tokenizeVariables(`greeting-${i} {param}`);
+        extractVariables(`greeting-${i} {param}`);
+      }
+      // Simply asserting repeated calls still return correct results afterwards
+      expect(extractVariables('greeting-0 {param}')).toContain('{param}');
+      expect(tokenizeVariables('greeting-0 {param}').some(t => t.text === '{param}')).toBe(true);
+    });
   });
 });

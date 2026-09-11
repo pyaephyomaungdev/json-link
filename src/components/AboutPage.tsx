@@ -22,12 +22,14 @@ import {
   Lock,
   FileCode,
   Table2,
+  MousePointerClick,
 } from 'lucide-react';
 
 interface AboutPageProps {
   onBack: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  onOpenDocs?: () => void;
 }
 
 const APP_VERSION = 'v1.0.0';
@@ -42,10 +44,16 @@ const highlights = [
       'Freeze panes, live formula bar, Excel-style keyboard navigation, drag column resizing, multi-cell paste, and full undo / redo history.',
   },
   {
-    icon: <FileSpreadsheet className="size-4 text-blue-500" />,
-    title: '10+ Formats In & Out',
+    icon: <MousePointerClick className="size-4 text-purple-500" />,
+    title: 'Cell Context Menu & 1-Click Revert',
     description:
-      'Roundtrip nested & flat JSON, Excel, CSV, YAML, Flutter ARB, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
+      'Right-click any translation cell to copy, paste, clear, revert changes to initial values, or convert Myanmar Zawgyi encoding on the fly.',
+  },
+  {
+    icon: <FileSpreadsheet className="size-4 text-blue-500" />,
+    title: '10+ Formats & Flutter ARB',
+    description:
+      'Roundtrip nested & flat JSON, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
   },
   {
     icon: <Sparkles className="size-4 text-violet-500" />,
@@ -85,6 +93,16 @@ const developerFeatures = [
     description: 'Cmd+K palette, Cmd+H find & replace, Cmd+Z / Y undo-redo, arrow-key cell navigation.',
   },
   {
+    icon: <MousePointerClick className="size-3.5 text-primary" />,
+    title: 'Right-Click Context Menu',
+    description: 'Copy, Paste from clipboard, Clear, 1-Click Revert cell, Zawgyi converter, and row AI translation.',
+  },
+  {
+    icon: <FileCode className="size-3.5 text-primary" />,
+    title: 'Flutter ARB & Multi-Platform Bundles',
+    description: 'Two-way Flutter .arb roundtrip with @key metadata, single-file downloads, and complete multi-platform ZIP bundle.',
+  },
+  {
     icon: <Undo2 className="size-3.5 text-primary" />,
     title: 'History & Diff Merge',
     description: '50 undo snapshots and a diff modal that inspects new, modified, and unchanged keys before applying.',
@@ -99,14 +117,9 @@ const developerFeatures = [
     title: 'Glossary & Termbase',
     description: 'Brand names and technical terms with "keep original" or custom target rules enforced in AI prompts.',
   },
-  {
-    icon: <FileCode className="size-3.5 text-primary" />,
-    title: 'Project Bundle ZIP',
-    description: 'One-click archive: web JSON, Flutter ARB, iOS .strings, Android strings.xml, and TypeScript d.ts.',
-  },
 ];
 
-export function AboutPage({ onBack, isDark, onToggleTheme }: AboutPageProps) {
+export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPageProps) {
   // Esc key returns to the app
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -171,12 +184,23 @@ export function AboutPage({ onBack, isDark, onToggleTheme }: AboutPageProps) {
             <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
               <Badge variant="success">Free & Open Source</Badge>
               <Badge variant="secondary">MIT License</Badge>
-              <Badge variant="warning">154 Automated Tests</Badge>
+              <Badge variant="warning">266 Automated Tests</Badge>
               <Badge variant="outline" className="gap-1">
                 <Lock className="size-3 text-emerald-500" /> 100% Client-Side
               </Badge>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2.5 mt-5">
+              {onOpenDocs && (
+                <Button
+                  variant="secondary"
+                  onClick={onOpenDocs}
+                  className="gap-2 font-medium cursor-pointer"
+                  size="sm"
+                >
+                  <BookOpen className="size-3.5 text-primary" />
+                  User Guide & Docs
+                </Button>
+              )}
               <Button
                 onClick={() => window.open(GITHUB_URL, '_blank', 'noopener')}
                 className="gap-2 font-semibold cursor-pointer"

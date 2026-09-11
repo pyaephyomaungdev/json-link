@@ -250,7 +250,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Click to browse or drop your translation files here
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, ARB, Excel, CSV, YAML, Android XML, or iOS Strings
+                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">Flutter ARB</span>, Excel, CSV, YAML, Android XML, or iOS Strings
               </p>
             </div>
           </div>

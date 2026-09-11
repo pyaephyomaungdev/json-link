@@ -385,6 +385,20 @@ export async function exportToArbZip(
 }
 
 /**
+ * Export a single language Flutter ARB file directly (app_<lang>.arb)
+ */
+export function exportSingleLanguageArb(
+  items: TranslationItem[],
+  lang: string
+) {
+  const data = generateArbData(items, lang);
+  const cleanLang = lang.replace('-', '_');
+  const arbStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([arbStr], { type: 'application/json;charset=utf-8;' });
+  downloadBlob(blob, `app_${cleanLang}.arb`);
+}
+
+/**
  * Export TypeScript Type Definitions (translations.d.ts)
  */
 export function exportToTypeScriptDts(

@@ -124,3 +124,84 @@ body {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
+
+/* ============================================================
+   Dialog Motion — "Elegant Spring Pop"
+   Custom CSS-only keyframes (Tailwind v4 has no animate-in
+   utilities in this project, so data-[state] animate-* classes
+   were silently no-ops). Applied via .jl-dialog-* classes in
+   src/components/ui/dialog.tsx. GPU-friendly: opacity/transform
+   only. Honors prefers-reduced-motion.
+   ============================================================ */
+
+@keyframes jl-dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes jl-dialog-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes jl-dialog-content-in {
+  from {
+    opacity: 0;
+    /* Centered content uses translate(-50%, -50%); animate its full transform */
+    transform: translate(-50%, calc(-50% + 16px)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    /* Overshoot via >1 cubic-bezier y-value gives the spring "pop" settle */
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes jl-dialog-content-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
+  }
+}
+
+.jl-dialog-overlay[data-state='open'] {
+  animation: jl-dialog-overlay-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.jl-dialog-overlay[data-state='closed'] {
+  animation: jl-dialog-overlay-out 120ms ease-in both;
+}
+
+.jl-dialog-content {
+  /*holds centered position even before/without the animation running */
+  transform: translate(-50%, -50%);
+}
+
+.jl-dialog-content[data-state='open'] {
+  animation: jl-dialog-content-in 180ms cubic-bezier(0.34, 1.26, 0.64, 1) both;
+}
+
+.jl-dialog-content[data-state='closed'] {
+  animation: jl-dialog-content-out 120ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jl-dialog-overlay[data-state='open'],
+  .jl-dialog-overlay[data-state='closed'],
+  .jl-dialog-content[data-state='open'],
+  .jl-dialog-content[data-state='closed'] {
+    animation-duration: 1ms;
+  }
+}

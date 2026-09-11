@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
@@ -90,6 +90,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenScorecard,
   onOpenLinter,
 }) => {
+  // Local search query for zero-latency keystrokes + 150ms debounce to parent
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Clear any pending debounce on unmount so onSearchChange never fires on a dead component
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSearchInputChange = (val: string) => {
+    setLocalSearch(val);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      onSearchChange(val);
+    }, 150);
+  };
+
+  const handleClearSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    setLocalSearch('');
+    onSearchChange('');
+  };
+
   return (
     <HorizontalScrollContainer
       gradientFrom="from-card"
@@ -98,19 +134,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     >
       {/* Left: Search & Filter Controls */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-        {/* Compact Search Input */}
+        {/* Compact Search Input with Zero-Latency Local State */}
         <div className="relative w-32 sm:w-44 lg:w-56 shrink-0">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
           <Input
-            value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={e => handleSearchInputChange(e.target.value)}
             placeholder="Search keys..."
             className="pl-7 pr-6 h-7 text-xs bg-background"
             disabled={!hasItems}
           />
-          {searchQuery && (
+          {localSearch && (
             <button
-              onClick={() => onSearchChange('')}
+              onClick={handleClearSearch}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
             >
               <X className="size-2.5" />
@@ -161,23 +197,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Compact Filter Segmented Group */}
         {hasItems && (
-          <div className="flex items-center rounded border border-border p-0.5 bg-muted/40 h-7 shrink-0">
+          <div className="flex items-center rounded-md border border-border/80 p-0.5 bg-muted/60 h-7 shrink-0 shadow-2xs">
             <button
               onClick={() => onFilterChange('all')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               All
             </button>
             <button
               onClick={() => onFilterChange('missing')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                 activeFilter === 'missing'
-                  ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50 font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Missing
@@ -391,7 +427,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs sm:hidden">
-              <Globe className="size-3.5 text-muted-foreground" />
+              <Globe className="size-3.5" />
               <span>Add Language Column</span>
             </DropdownMenuItem>
             {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
@@ -400,13 +436,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
             <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-              <Sparkles className="size-3.5 text-primary" />
+              <Sparkles className="size-3.5" />
               Load Sample Data (32 keys)
             </DropdownMenuItem>
             {hasItems && (
               <>
                 <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-                  <RotateCcw className="size-3.5 text-muted-foreground" />
+                  <RotateCcw className="size-3.5" />
                   Reset to Sample
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

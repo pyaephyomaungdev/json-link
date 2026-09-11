@@ -26,6 +26,17 @@ A modern, high-performance web application designed for multilingual localizatio
 
 ---
 
+### Cell Right-Click Context Menu
+- Right-Click Action Trigger: Right-click any translation cell to open a dedicated context menu:
+  - Copy cell value directly to the clipboard (`Cmd+C` / `Ctrl+C`).
+  - Paste clipboard content into the targeted cell (`Cmd+V` / `Ctrl+V`).
+  - Clear cell content with full undo support.
+  - 1-Click Revert to Original Value: Instantly restores the cell back to its initial imported or saved value.
+  - Zawgyi ⇄ Unicode Converter: Converts cell encoding on demand with Rabbit algorithm accuracy.
+  - AI Translate This Row: Batch translates the active key across any missing target languages with variable safety.
+
+---
+
 ### Myanmar Unicode and Zawgyi Auto-Detector and Converter
 - Real-Time Font Detection: Automatically analyzes text in columns to detect legacy Zawgyi encoding patterns (e.g., pre-posed vowel e ordering, Zawgyi medial consonants).
 - Warning Badge: Displays a Zawgyi indicator on language headers when Zawgyi text is detected.
@@ -154,6 +165,10 @@ A modern, high-performance web application designed for multilingual localizatio
   - `ios-strings/{lang}.lproj/Localizable.strings` (iOS Xcode Swift/Obj-C)
   - `android-res/values-{lang}/strings.xml` (Android strings.xml)
   - `typescript/translations.d.ts` (TypeScript type declarations)
+- Flutter ARB (.arb):
+  - Two-way roundtrip preserving `@key` descriptions and variable placeholder parameters.
+  - Dedicated ARB ZIP archive (`app_en.arb`, `app_my.arb`, etc.).
+  - 1-Click single-file download (`Download app_<lang>.arb`) directly from any spreadsheet language column header dropdown menu.
 - Flutter and Ruby on Rails: Indented YAML (.yaml ZIP archive) with language-prefix stripping options.
 - Android: res/values/strings.xml and res/values-<lang>/strings.xml with XML comments.
 - iOS: Apple Xcode <lang>.lproj/Localizable.strings with comments.
@@ -181,7 +196,7 @@ A modern, high-performance web application designed for multilingual localizatio
 ---
 
 ### Bidirectional Import and Smart Diff / Merge
-- Supported Formats: .jsonlink, .json, .xlsx, .csv, .yaml, Android .xml, iOS .strings.
+- Supported Formats: `.jsonlink`, `.arb` (Flutter ARB), `.json`, `.xlsx`, `.csv`, `.yaml`, Android `.xml`, iOS `.strings`.
 - Smart Diff Inspection:
   - Compares incoming files against existing spreadsheet contents.
   - Interactive modal displays new keys, modified keys, and unchanged counts.
@@ -195,30 +210,61 @@ A modern, high-performance web application designed for multilingual localizatio
 - Cmd+Z / Ctrl+Z: Undo last action.
 - Cmd+Y / Ctrl+Y (or Cmd+Shift+Z): Redo last action.
 - Cmd+S / Ctrl+S: Save .jsonlink project file.
-- Esc: Close open modal dialogs.
+- Esc: Close open modal dialogs / cancel cell editing.
 - Enter / Double Click: Edit active cell.
+
+---
+
+### Interactive User Guide and Visual Documentation
+- Header Access: Dedicated "Docs" button in the top navigation bar and searchable via the Command Palette (`Cmd+K`).
+- Visual Annotations: Annotated diagrams with numbered step pins (`1`, `2`, `3`), high-contrast focus rings, and directional callout arrows pointing to key UI controls.
+- Bilingual Instructions: Clear step-by-step guidance in both English and Myanmar for maximum clarity.
+- Interactive Topic Guides:
+  - Getting Started: Multi-file drag-and-drop, format badges, and project restoration.
+  - Spreadsheet & Formula Bar: Inline double-click editing, Formula Bar (`fx`) inspector, and keyboard navigation.
+  - Right-Click Context Menu: Fast cell actions, 1-click snapshot revert, and Zawgyi/Unicode conversions.
+  - AI Auto-Translate: Scope selection (Missing Keys vs. All Rows), BYOK security, and termbase rules.
+  - QA Linter & Scorecard: Health completion audits, 1-click "Fix All Whitespace", and high-contrast Missing/All filter toggles.
+  - Keyboard Shortcuts & Pro Tips: Complete shortcuts cheat sheet and column header quick downloads.
 
 ---
 
 ## Automated Testing and CI
 
-Quality and stability are verified with a suite of automated tests:
+Quality, stability, and zero-regression architecture are verified with an extensive automated test suite:
 
-- Testing Framework: Vitest (Vite-native test runner).
-- Test Coverage: 107 Unit Tests across 12 test suites:
-  - linter.test.ts: Whitespace detection, variable mismatch, length expansion, auto-fixer.
-  - findReplace.test.ts: Search, scope filtering, whole-word matching, regex replacement.
-  - myanmarFont.test.ts: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
-  - glossary.test.ts: Termbase storage, serialization, and prompt formatting.
-  - pseudoloc.test.ts: Homoglyph mapping, expansion padding, variable preservation.
-  - exporter.test.ts: Multi-platform bundle ZIP, JSON, YAML, Android strings.xml, iOS Localizable.strings, CSV BOM, TypeScript d.ts.
-  - parser.test.ts: Object flattening and unflattening, JSON, Android XML, iOS strings, YAML, Excel, CSV with descriptions.
-  - openrouter.test.ts: BYOK translation, glossary prompt injection, response recovery, JSON repair.
-  - crypto.test.ts: AES-GCM 256-bit encryption, decryption, and key derivation.
-  - variables.test.ts: ICU, Mustache, Printf tokenization and validation.
-  - languages.test.ts: ISO definitions, labels, and RTL language detection.
-  - project.test.ts: .jsonlink serialization and workspace restoration.
-- Continuous Integration: GitHub Actions workflow running on every push and pull request.
+- Testing Framework: Vitest (Vite-native runner) with `@testing-library/react`.
+- Test Coverage: 267 Automated Tests across 32 test files:
+  - 12 Core Library Test Suites (173 unit tests):
+    - `linter.test.ts`: Whitespace detection, variable mismatch, length expansion, auto-fixer.
+    - `findReplace.test.ts`: Search, scope filtering, whole-word matching, regex replacement.
+    - `myanmarFont.test.ts`: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
+    - `glossary.test.ts`: Termbase storage, serialization, and prompt formatting.
+    - `pseudoloc.test.ts`: Homoglyph mapping, expansion padding, variable preservation.
+    - `exporter.test.ts`: Flutter ARB (`app_<lang>.arb` & bundle ZIP), JSON, YAML, Android strings.xml, iOS Localizable.strings, CSV BOM, TypeScript d.ts.
+    - `parser.test.ts`: Object flattening/unflattening, Flutter ARB, JSON, Android XML, iOS strings, YAML, Excel, CSV with descriptions.
+    - `openrouter.test.ts`: BYOK translation, glossary prompt injection, response recovery, JSON repair.
+    - `crypto.test.ts`: AES-GCM 256-bit encryption, decryption, and key derivation.
+    - `variables.test.ts`: ICU, Mustache, Printf tokenization and validation.
+    - `languages.test.ts`: ISO definitions, labels, and RTL language detection.
+    - `project.test.ts`: .jsonlink serialization and workspace restoration.
+  - 20 UI Component Test Suites (94 component integration tests):
+    - `DocumentationModal.test.tsx`: User guide modal, visual annotations, tab navigation, search filtering.
+    - `SpreadsheetTable.test.tsx`: Grid headers, row keys, empty state, and column actions.
+    - `Toolbar.test.tsx`: Search, namespace, status, and high-contrast All/Missing filter segmented buttons.
+    - `LinterModal.test.tsx`: QA issue categories, 1-click whitespace cleanup, jump-to-cell navigation.
+    - `ScorecardModal.test.tsx`: Language health breakdown, completion progress, variable mismatch audit.
+    - `AiTranslateModal.test.tsx`: OpenRouter BYOK validation, missing keys batch translation.
+    - `GlossaryModal.test.tsx`: Termbase rule creation, editing, and persistence.
+    - `ExportModal.test.tsx`: Flutter ARB, Excel, CSV, JSON, and full project bundle generation.
+    - `ImportModal.test.tsx`: File dropzone, format pills, and multi-file ingestion.
+    - `FindReplaceModal.test.tsx`: Search & replace execution across languages and keys.
+    - `CommandPalette.test.tsx`: Quick command navigation, keyboard shortcuts, and filtering.
+    - `DiffMergeModal.test.tsx`: Smart import diff calculation and collision resolution.
+    - `AddKeyDialog.test.tsx` & `AddLanguageDialog.test.tsx`: Modal key and language addition workflows.
+    - `ConfirmDialog.test.tsx` & `ExitConfirmDialog.test.tsx`: Destructive action guards.
+    - `SaveProjectModal.test.tsx`, `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`.
+- Continuous Integration: GitHub Actions workflow running typecheck and tests on every push and pull request.
 
 ---
 

@@ -10,11 +10,38 @@
 // Regex pattern covering common i18n interpolation variables including ICU number/date formatters
 const VARIABLE_REGEX = /(?:\{\{[a-zA-Z0-9_.-]+\}\}|\{[a-zA-Z0-9_.-]+(?:,\s*(?:number|date|time)(?:,\s*[^}]+)?)?\}|%[0-9]*\$?[a-zA-Z]|%\([a-zA-Z0-9_.-]+\)[a-zA-Z]|\$[0-9]+)/g;
 
+// Fast bounded caches (max 2,000 items) to prevent high CPU usage on large spreadsheets.
+// NOTE: eviction is FIFO (oldest inserted first), not true LRU — Map iteration order never
+// updates on .get(). Good enough for this workload; documented honestly on purpose.
+const MAX_CACHE_SIZE = 2000;
+const extractVarsCache = new Map<string, string[]>();
+const tokenizeVarsCache = new Map<string, TokenPart[]>();
+// validateVarsCache is nested (source → target → result) so a target containing the same
+// "…::…" characters as the source cannot collide with a different (source, target) pair.
+const validateVarsCache = new Map<string, Map<string, VariableValidationResult>>();
+
+function setBoundedCache<K, V>(map: Map<K, V>, key: K, value: V) {
+  if (map.size >= MAX_CACHE_SIZE) {
+    // Evict oldest 20% entries (FIFO)
+    const toDelete = Math.floor(MAX_CACHE_SIZE * 0.2);
+    let count = 0;
+    for (const k of map.keys()) {
+      map.delete(k);
+      count++;
+      if (count >= toDelete) break;
+    }
+  }
+  map.set(key, value);
+}
+
 /**
  * Extracts all unique interpolation variables from a string.
  */
 export function extractVariables(text: string): string[] {
   if (!text || typeof text !== 'string') return [];
+  const cached = extractVarsCache.get(text);
+  if (cached !== undefined) return cached;
+
   const results = new Set<string>();
 
   // Extract ICU plural / select selector variables: e.g. {count, plural, ...} => {count}
@@ -40,7 +67,9 @@ export function extractVariables(text: string): string[] {
     results.add(token);
   }
 
-  return Array.from(results);
+  const res = Array.from(results);
+  setBoundedCache(extractVarsCache, text, res);
+  return res;
 }
 
 export interface TokenPart {
@@ -53,6 +82,8 @@ export interface TokenPart {
  */
 export function tokenizeVariables(text: string): TokenPart[] {
   if (!text || typeof text !== 'string') return [{ text: '', isVariable: false }];
+  const cached = tokenizeVarsCache.get(text);
+  if (cached !== undefined) return cached;
 
   const tokens: TokenPart[] = [];
   let lastIndex = 0;
@@ -96,7 +127,9 @@ export function tokenizeVariables(text: string): TokenPart[] {
     });
   }
 
-  return tokens.length > 0 ? tokens : [{ text, isVariable: false }];
+  const res = tokens.length > 0 ? tokens : [{ text, isVariable: false }];
+  setBoundedCache(tokenizeVarsCache, text, res);
+  return res;
 }
 
 export interface VariableValidationResult {
@@ -117,9 +150,24 @@ export function validateVariables(
     return { isValid: true, missingVariables: [], extraVariables: [] };
   }
 
+  let targetCache = validateVarsCache.get(sourceText);
+  if (targetCache === undefined) {
+    targetCache = new Map<string, VariableValidationResult>();
+    setBoundedCache(validateVarsCache, sourceText, targetCache);
+  }
+  if (targetCache.size >= 500) {
+    // Evict the whole source bucket if it is saturated (keeps nesting bounded too)
+    targetCache.clear();
+  }
+
+  const cached = targetCache.get(targetText);
+  if (cached !== undefined) return cached;
+
   const sourceVars = extractVariables(sourceText);
   if (sourceVars.length === 0) {
-    return { isValid: true, missingVariables: [], extraVariables: [] };
+    const passResult = { isValid: true, missingVariables: [], extraVariables: [] };
+    targetCache.set(targetText, passResult);
+    return passResult;
   }
 
   const targetVars = new Set(extractVariables(targetText));
@@ -131,9 +179,11 @@ export function validateVariables(
     }
   }
 
-  return {
+  const result: VariableValidationResult = {
     isValid: missingVariables.length === 0,
     missingVariables,
     extraVariables: [],
   };
+  targetCache.set(targetText, result);
+  return result;
 }

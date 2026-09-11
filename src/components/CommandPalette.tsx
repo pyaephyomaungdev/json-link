@@ -29,11 +29,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
+      itemRefs.current = [];
+      if (listRef.current) {
+        listRef.current.scrollTop = 0;
+      }
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -50,7 +57,35 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   useEffect(() => {
     setSelectedIndex(0);
+    itemRefs.current = [];
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
   }, [query]);
+
+  // Auto-scroll selected item into view on keyboard navigation
+  useEffect(() => {
+    const container = listRef.current;
+    const item = itemRefs.current[selectedIndex];
+    if (!container || !item) return;
+
+    if (typeof item.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' });
+    }
+
+    if (container.clientHeight > 0) {
+      const itemTop = item.offsetTop;
+      const itemBottom = itemTop + item.offsetHeight;
+      const containerTop = container.scrollTop;
+      const containerBottom = containerTop + container.clientHeight;
+
+      if (itemTop < containerTop) {
+        container.scrollTop = Math.max(0, itemTop - 4);
+      } else if (itemBottom > containerBottom) {
+        container.scrollTop = itemBottom - container.clientHeight + 4;
+      }
+    }
+  }, [selectedIndex]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -64,6 +99,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       if (filtered[selectedIndex]) {
         filtered[selectedIndex].action();
         onClose();
+      }
+    }
+  };
+
+  const handleItemMouseMove = (idx: number, e: React.MouseEvent) => {
+    if (e.clientX !== lastMousePos.current.x || e.clientY !== lastMousePos.current.y) {
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+      if (selectedIndex !== idx) {
+        setSelectedIndex(idx);
       }
     }
   };
@@ -99,7 +143,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-1.5 divide-y divide-border/40">
+        <div ref={listRef} className="relative max-h-80 overflow-y-auto p-1.5 space-y-0.5">
           {filtered.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
               No matching commands found.
@@ -111,23 +155,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               return (
                 <div
                   key={cmd.id}
+                  ref={el => {
+                    itemRefs.current[idx] = el;
+                  }}
                   onClick={() => {
                     cmd.action();
                     onClose();
                   }}
-                  onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors text-xs ${
+                  onMouseMove={e => handleItemMouseMove(idx, e)}
+                  className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs select-none ${
                     isSelected
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'hover:bg-muted/60 text-foreground'
+                      ? 'bg-primary/10 dark:bg-primary/15 text-foreground font-medium ring-1 ring-primary/25'
+                      : 'text-foreground/90 hover:bg-muted/60'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`size-6 rounded flex items-center justify-center shrink-0 ${
+                      className={`size-6.5 rounded-md flex items-center justify-center shrink-0 transition-colors [&>svg]:size-3.5 ${
                         isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary-foreground shadow-2xs'
+                          : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                       }`}
                     >
                       {cmd.icon}
@@ -137,7 +184,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       {cmd.description && (
                         <div
                           className={`text-[10px] truncate ${
-                            isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                            isSelected ? 'text-muted-foreground font-normal' : 'text-muted-foreground'
                           }`}
                         >
                           {cmd.description}
@@ -148,9 +195,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <span
-                      className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded ${
+                      className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded transition-colors ${
                         isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          ? 'bg-primary/15 text-primary font-semibold'
                           : 'bg-muted/70 text-muted-foreground'
                       }`}
                     >
@@ -158,9 +205,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </span>
                     {cmd.shortcut && (
                       <kbd
-                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
                           isSelected
-                            ? 'border-primary-foreground/30 text-primary-foreground bg-primary-foreground/10'
+                            ? 'border-primary/30 text-foreground bg-background font-medium shadow-2xs'
                             : 'border-border text-muted-foreground bg-muted'
                         }`}
                       >
