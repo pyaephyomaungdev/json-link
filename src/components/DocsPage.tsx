@@ -167,18 +167,18 @@ function AppleStepFooter({
   if (!prevSection && !nextSection) return null;
 
   return (
-    <div className="pt-6 mt-8 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 select-none">
+    <div className="pt-6 mt-8 border-t border-border flex items-center justify-between gap-2.5 sm:gap-3 select-none">
       {prevSection ? (
         <button
           onClick={() => onSelect(prevSection.id)}
-          className="flex-1 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-left flex items-center gap-3 cursor-pointer group shadow-xs"
+          className="flex-1 min-w-0 p-2.5 sm:p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-left flex items-center gap-2 sm:gap-3 cursor-pointer group shadow-xs"
         >
-          <span className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary shrink-0 transition-colors">
-            <ArrowLeft className="size-4" />
+          <span className="size-7 sm:size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary shrink-0 transition-colors">
+            <ArrowLeft className="size-3.5 sm:size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider">
-              Previous • {prevSection.badge}
+            <div className="text-[9px] sm:text-[10px] uppercase font-mono text-muted-foreground tracking-wider truncate">
+              Prev • {prevSection.badge}
             </div>
             <div className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
               Go to {prevSection.title}
@@ -186,26 +186,28 @@ function AppleStepFooter({
           </div>
         </button>
       ) : (
-        <div className="hidden sm:block flex-1" />
+        <div className="flex-1" />
       )}
 
-      {nextSection && (
+      {nextSection ? (
         <button
           onClick={() => onSelect(nextSection.id)}
-          className="flex-1 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-right flex items-center justify-end gap-3 cursor-pointer group shadow-xs"
+          className="flex-1 min-w-0 p-2.5 sm:p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-right flex items-center justify-end gap-2 sm:gap-3 cursor-pointer group shadow-xs"
         >
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider">
+            <div className="text-[9px] sm:text-[10px] uppercase font-mono text-muted-foreground tracking-wider truncate">
               Next • {nextSection.badge}
             </div>
             <div className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
               Continue to {nextSection.title}
             </div>
           </div>
-          <span className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            <ArrowRight className="size-4" />
+          <span className="size-7 sm:size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <ArrowRight className="size-3.5 sm:size-4" />
           </span>
         </button>
+      ) : (
+        <div className="flex-1" />
       )}
     </div>
   );
@@ -296,7 +298,7 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
 
           <div className="flex items-center gap-2 min-w-0">
             <Logo size="sm" showText={false} />
-            <span className="text-xs font-bold text-foreground truncate">
+            <span className="text-xs font-bold text-foreground hidden sm:inline">
               Documentation & User Guide
             </span>
           </div>
@@ -485,26 +487,30 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
 function GettingStartedSection() {
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
             Step 1
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Quick Start & Supported File Formats
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          Quick Start & Supported File Formats
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           JSON Link is a 100% client-side multilingual localization workspace. You can drag and drop multiple language files simultaneously to open an authentic Excel-style spreadsheet.
         </p>
       </div>
 
       {/* Visual Annotation Callout Card */}
       <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-          <span>Supported File Formats & Roundtrip Ingestion</span>
-          <span className="text-[10px] text-primary font-normal">All 8 formats share two-way support</span>
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+          <span className="font-bold uppercase tracking-wider text-muted-foreground">
+            Supported File Formats & Roundtrip Ingestion
+          </span>
+          <span className="text-[10px] text-primary font-medium">
+            All 8 formats share two-way support
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {FORMAT_LIST.map(fmt => (
@@ -593,16 +599,16 @@ function SpreadsheetEditingSection({
 }: SpreadsheetEditingSectionProps) {
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
             Step 2
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            The Spreadsheet Grid & Live Formula Bar
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          The Spreadsheet Grid & Live Formula Bar
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           The centerpiece of JSON Link is an authentic, edge-to-edge spreadsheet interface with freeze panes, drag column resizing, multiline editing, and live Formula Bar. Below is a live instance of the actual spreadsheet component.
         </p>
       </div>
@@ -714,16 +720,16 @@ function ContextMenuSection({
 }: ContextMenuSectionProps) {
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/20 text-xs">
             Step 3
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Cell Right-Click Context Menu & Font Tools
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          Cell Right-Click Context Menu & Font Tools
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Right-click any translation cell to trigger instant actions without leaving your typing flow. The menu has clean, unified styling with zero visual clutter.
         </p>
       </div>
@@ -836,16 +842,16 @@ function ContextMenuSection({
 function AiTranslationSection() {
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
             Step 4
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            AI Auto-Translate, BYOK & Termbase Glossary
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          AI Auto-Translate, BYOK & Termbase Glossary
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Translate untranslated keys across any language using any AI model available on OpenRouter (Google Gemini 2.5 Flash, DeepSeek V3, Claude 3.5 Sonnet, GPT-4o).
         </p>
       </div>
@@ -897,16 +903,16 @@ function AiTranslationSection() {
 function LinterScorecardSection() {
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-rose-500/10 text-rose-600 border-rose-500/20 text-xs">
             Step 5
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Localization QA Consistency Linter & Scorecard
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          Localization QA Consistency Linter & Scorecard
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Automated scans audit your entire translation dataset to prevent common bugs, whitespace discrepancies, and variable mismatches before shipping to production.
         </p>
       </div>
@@ -958,16 +964,16 @@ function LinterScorecardSection() {
 function ExportersSection() {
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/20 text-xs">
             Step 6
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Universal Exporters & Flutter ARB Integration
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          Universal Exporters & Flutter ARB Integration
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Export your translation project into ready-to-ship files across every major frontend and mobile development framework.
         </p>
       </div>
@@ -1023,16 +1029,16 @@ function ShortcutsSection() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-1.5">
+        <div>
           <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/20 text-xs">
             Step 7
           </Badge>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Keyboard Shortcuts & Power User Tips
-          </h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          Keyboard Shortcuts & Power User Tips
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Master these keyboard shortcuts to navigate and translate datasets with maximum speed.
         </p>
       </div>

@@ -19,6 +19,7 @@ import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { AboutPage } from '@/components/AboutPage';
+import { NotFoundPage } from '@/components/NotFoundPage';
 import { Logo } from '@/components/Logo';
 import { runLocalizationLinter } from '@/lib/linter';
 import {
@@ -198,11 +199,13 @@ export function App() {
   };
 
   // Simple path-based routing: /about, /docs render dedicated pages (SPA fallback served by host)
-  const [route, setRoute] = useState<'app' | 'about' | 'docs'>(() => {
+  const [route, setRoute] = useState<'app' | 'about' | 'docs' | 'not-found'>(() => {
     const path = window.location.pathname.replace(/\/+$/, '');
     if (path === '/about') return 'about';
     if (path === '/docs') return 'docs';
-    return 'app';
+    if (path === '' || path === '/') return 'app';
+    // Any unrecognised path → 404
+    return 'not-found';
   });
 
   useEffect(() => {
@@ -210,7 +213,8 @@ export function App() {
       const path = window.location.pathname.replace(/\/+$/, '');
       if (path === '/about') setRoute('about');
       else if (path === '/docs') setRoute('docs');
-      else setRoute('app');
+      else if (path === '' || path === '/') setRoute('app');
+      else setRoute('not-found');
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -241,6 +245,11 @@ export function App() {
     if (window.location.pathname === '/docs') {
       window.history.pushState({}, '', '/');
     }
+    setRoute('app');
+  };
+
+  const closeNotFound = () => {
+    window.history.pushState({}, '', '/');
     setRoute('app');
   };
 
@@ -477,7 +486,7 @@ export function App() {
                 continue;
               }
             }
-          } catch {}
+          } catch { }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
@@ -510,7 +519,7 @@ export function App() {
                   continue;
                 }
               }
-            } catch {}
+            } catch { }
           }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
@@ -611,7 +620,7 @@ export function App() {
         variant: 'destructive',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
     }
   };
@@ -700,7 +709,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -738,7 +747,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'Understood',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -778,7 +787,7 @@ export function App() {
         variant: 'warning',
         isAlert: true,
         confirmLabel: 'OK',
-        onConfirm: () => {},
+        onConfirm: () => { },
       });
       return;
     }
@@ -1048,6 +1057,19 @@ export function App() {
     return <DocsPage onBack={closeDocs} isDark={isDark} onToggleTheme={toggleTheme} />;
   }
 
+  // 404 Not Found for any unrecognised URL path
+  if (route === 'not-found') {
+    return (
+      <NotFoundPage
+        onBack={closeNotFound}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onOpenDocs={openDocs}
+        onOpenAbout={openAbout}
+      />
+    );
+  }
+
   return (
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
       {/* Top MS Excel Ribbon Header: Edge-to-edge */}
@@ -1120,11 +1142,10 @@ export function App() {
                   <span>•</span>
                   <button
                     onClick={() => setActiveFilter(activeFilter === 'missing' ? 'all' : 'missing')}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors ${
-                      activeFilter === 'missing'
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30'
-                        : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
-                    }`}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors ${activeFilter === 'missing'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30'
+                      : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+                      }`}
                     title={activeFilter === 'missing' ? 'Showing missing keys only. Click to show all.' : 'Click to filter missing translations'}
                   >
                     <AlertCircle className="size-3 shrink-0" />
@@ -1240,11 +1261,10 @@ export function App() {
                 }
               }}
               onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${
-                isHeroDragOver
-                  ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-                  : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
-              }`}
+              className={`border-2 border-dashed rounded-xl p-5 sm:p-8 md:p-10 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3.5 sm:gap-4 bg-card/60 ${isHeroDragOver
+                ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
+                : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
+                }`}
             >
               <input
                 type="file"
