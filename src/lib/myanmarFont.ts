@@ -16,7 +16,10 @@ const ZG_REGEX = new RegExp(
     '(?:^|[\s\u104a\u104b\u103a\u1037\u1038\u102c\u102b\u102d\u102e\u102f\u1030\u1032\u1036])\u103b[\u1000-\u1021]', // Pre-posed ya-yit
     '\u1039[^\u1000-\u1021]', // Stacking virama not followed by consonant
     '\u104e\u1004\u103a\u1038', // Zawgyi ၎င်္း
-    '\u103c\u1031', // ya-yit before e-vowel
+    // NOTE: \u103c\u1031 (ြ + ေ) was intentionally removed — it is the VALID Unicode
+    // order for common words like ဖြေ / ကြောင်း (medial before e-vowel:
+    // consonant+medial+ေ). In Zawgyi the e-vowel is pre-posed BEFORE the
+    // consonant, which the \u1031[\u1000-\u1021] rule already catches.
     '\u102d\u103a|\u103a\u102d', // Zawgyi stacked tone marks
   ].join('|')
 );

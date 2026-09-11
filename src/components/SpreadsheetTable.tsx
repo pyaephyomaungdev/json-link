@@ -29,6 +29,8 @@ import {
   CheckCircle2,
   SearchX,
   RotateCcw,
+  ClipboardPaste,
+  ClipboardCopy,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -74,6 +76,15 @@ interface SelectedCell {
   field: string;
   colIndex: number;
   rowIndex: number;
+}
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+  key: string;
+  field: string;
+  rowIndex: number;
+  colIndex: number;
 }
 
 // Convert column index to Excel column letters (0 -> A, 1 -> B, etc.)
@@ -137,6 +148,27 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   }, [items]);
 
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+
+  const handleCellContextMenu = (
+    e: React.MouseEvent,
+    key: string,
+    field: string,
+    rowIndex: number,
+    colIndex: number
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedCell({ key, field, rowIndex, colIndex });
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      key,
+      field,
+      rowIndex,
+      colIndex,
+    });
+  };
 
   // Column widths state persisted to localStorage
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -496,6 +528,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedNotification(label);
     setTimeout(() => setCopiedNotification(null), 1500);
+  };
+
+  const handlePasteFromClipboard = async (targetKey: string, targetField: string) => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text) return;
+      if (targetField === 'key') {
+        const trimmed = text.trim();
+        if (trimmed && trimmed !== targetKey) {
+          onUpdateKey(targetKey, trimmed);
+          if (selectedCell?.key === targetKey) {
+            setSelectedCell(prev => prev ? { ...prev, key: trimmed } : null);
+          }
+        }
+      } else {
+        handleInternalUpdateCell(targetKey, targetField, text);
+      }
+      setCopiedNotification('Pasted from clipboard');
+      setTimeout(() => setCopiedNotification(null), 1200);
+    } catch {
+      setCopiedNotification('Clipboard access denied');
+      setTimeout(() => setCopiedNotification(null), 1500);
+    }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -1156,6 +1211,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
+                    onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                     className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
                     <div className="flex flex-col items-center justify-center">
@@ -1222,6 +1278,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         rowIndex: rowIdx,
                       })
                     }
+                    onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                     className={`py-1.5 px-3 font-mono text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
                       isKeyFrozen ? 'sticky z-15' : 'relative z-0'
                     } border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${
@@ -1269,6 +1326,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           rowIndex: rowIdx,
                         })
                       }
+                      onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
                       className={`py-1.5 px-3 text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] border-b border-r border-border transition-colors cursor-pointer ${
                         selectedCell?.key === item.key && selectedCell.field === 'description'
                           ? '!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] z-10'
@@ -1354,6 +1412,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             colIndex: colIdx + (showDescription ? 2 : 1),
                             rowIndex: rowIdx,
                           })
+                        }
+                        onContextMenu={(e) =>
+                          handleCellContextMenu(
+                            e,
+                            item.key,
+                            lang,
+                            rowIdx,
+                            colIdx + (showDescription ? 2 : 1)
+                          )
                         }
                         className={`py-2 px-3 border-b border-border transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${
                           isLangFrozen ? 'sticky z-15' : 'relative z-0'
@@ -1603,6 +1670,223 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Cell Right-Click Context Menu (Custom DropdownMenu Component) */}
+      {contextMenu && (
+        <DropdownMenu
+          open={!!contextMenu}
+          onOpenChange={(open) => {
+            if (!open) setContextMenu(null);
+          }}
+        >
+          <DropdownMenuTrigger asChild>
+            <div
+              style={{
+                position: 'fixed',
+                left: `${contextMenu.x}px`,
+                top: `${contextMenu.y}px`,
+                width: 1,
+                height: 1,
+                pointerEvents: 'none',
+                visibility: 'hidden',
+              }}
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            side="bottom"
+            sideOffset={2}
+            className="w-56 shadow-2xl"
+          >
+            {(() => {
+              const currentItem = items.find(i => i.key === contextMenu.key);
+              if (!currentItem) return null;
+
+              const isKeyField = contextMenu.field === 'key';
+              const isDescField = contextMenu.field === 'description';
+              const isLangField = !isKeyField && !isDescField;
+              const cellValue = isKeyField
+                ? currentItem.key
+                : isDescField
+                ? currentItem.description || ''
+                : currentItem[contextMenu.field] || '';
+              const hasVal = Boolean(cellValue);
+              const isMyanmar = contextMenu.field === 'my';
+              const isZawgyiValue = hasVal && isZawgyi(cellValue);
+              const prevVal = !isKeyField && !isDescField
+                ? previousValues[contextMenu.key]?.[contextMenu.field]
+                : undefined;
+              const hasPrevious = prevVal !== undefined && prevVal !== cellValue;
+
+              return (
+                <>
+                  {/* Context Header */}
+                  <DropdownMenuLabel className="font-mono text-xs flex items-center justify-between gap-2">
+                    <span className="truncate">{currentItem.key}</span>
+                    <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase shrink-0">
+                      {contextMenu.field}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  {/* Edit Cell */}
+                  <DropdownMenuItem
+                    onClick={() => handleStartEdit(currentItem.key, contextMenu.field, cellValue)}
+                    className="gap-2 cursor-pointer text-xs font-medium"
+                  >
+                    <Pencil className="size-3.5 text-primary" />
+                    <span>Edit Cell</span>
+                  </DropdownMenuItem>
+
+                  {/* Copy & Paste */}
+                  <DropdownMenuItem
+                    onClick={() => handleCopyText(cellValue, isKeyField ? 'key name' : `${contextMenu.field} value`)}
+                    className="gap-2 cursor-pointer text-xs"
+                    disabled={!cellValue}
+                  >
+                    <Copy className="size-3.5" />
+                    <span>Copy Cell Value</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handlePasteFromClipboard(currentItem.key, contextMenu.field)}
+                    className="gap-2 cursor-pointer text-xs"
+                  >
+                    <ClipboardPaste className="size-3.5" />
+                    <span>Paste into Cell</span>
+                  </DropdownMenuItem>
+
+                  {/* Clear Cell (if language or description) */}
+                  {!isKeyField && (
+                    <DropdownMenuItem
+                      onClick={() => handleInternalUpdateCell(currentItem.key, contextMenu.field, '')}
+                      className="gap-2 cursor-pointer text-xs"
+                      disabled={!cellValue}
+                    >
+                      <Eraser className="size-3.5" />
+                      <span>Clear Cell</span>
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* 1-Click Revert (if previous value exists) */}
+                  {hasPrevious && (
+                    <DropdownMenuItem
+                      onClick={() => handleRevertCell(currentItem.key, contextMenu.field)}
+                      className="gap-2 cursor-pointer text-xs text-blue-600 dark:text-blue-400 font-medium"
+                    >
+                      <Undo2 className="size-3.5" />
+                      <span>Revert to Previous</span>
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* AI Translation & Myanmar Font actions for language cells */}
+                  {isLangField && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {onOpenAiTranslate && (
+                        <DropdownMenuItem
+                          onClick={() => onOpenAiTranslate(contextMenu.field, currentItem.key)}
+                          className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
+                        >
+                          <Sparkles className="size-3.5" />
+                          <span>Translate with AI ({contextMenu.field.toUpperCase()})</span>
+                        </DropdownMenuItem>
+                      )}
+
+                      {(isMyanmar || isZawgyiValue) && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => handleConvertCellZawgyiToUnicode(currentItem.key, contextMenu.field)}
+                            className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400 font-medium"
+                            disabled={!cellValue}
+                          >
+                            <AlertTriangle className="size-3.5" />
+                            <span>Convert Zawgyi → Unicode</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (cellValue) {
+                                handleInternalUpdateCell(
+                                  currentItem.key,
+                                  contextMenu.field,
+                                  unicodeToZawgyi(cellValue)
+                                );
+                                setCopiedNotification('Converted cell to Zawgyi');
+                                setTimeout(() => setCopiedNotification(null), 1500);
+                              }
+                            }}
+                            className="gap-2 cursor-pointer text-xs text-muted-foreground"
+                            disabled={!cellValue}
+                          >
+                            <Type className="size-3.5" />
+                            <span>Convert Unicode → Zawgyi</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* Row Management Separator */}
+                  <DropdownMenuSeparator />
+
+                  {/* Row Review Status */}
+                  {onUpdateRowStatus && (
+                    <>
+                      {currentItem.status !== 'approved' && (
+                        <DropdownMenuItem
+                          onClick={() => onUpdateRowStatus(currentItem.key, 'approved')}
+                          className="gap-2 cursor-pointer text-xs text-emerald-600 dark:text-emerald-400"
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          <span>Mark Row as Approved</span>
+                        </DropdownMenuItem>
+                      )}
+                      {currentItem.status !== 'needs-review' && (
+                        <DropdownMenuItem
+                          onClick={() => onUpdateRowStatus(currentItem.key, 'needs-review')}
+                          className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400"
+                        >
+                          <AlertCircle className="size-3.5" />
+                          <span>Mark Row for Review</span>
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
+
+                  {/* Row duplication and key copy */}
+                  <DropdownMenuItem
+                    onClick={() => handleCopyText(currentItem.key, 'key name')}
+                    className="gap-2 cursor-pointer text-xs"
+                  >
+                    <ClipboardCopy className="size-3.5" />
+                    <span>Copy Key Name</span>
+                  </DropdownMenuItem>
+                  {onDuplicateRow && (
+                    <DropdownMenuItem
+                      onClick={() => onDuplicateRow(currentItem)}
+                      className="gap-2 cursor-pointer text-xs"
+                    >
+                      <Layers className="size-3.5" />
+                      <span>Duplicate Row</span>
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* Delete Row */}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDeleteRow(currentItem.key)}
+                    className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs font-medium"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete Row</span>
+                  </DropdownMenuItem>
+                </>
+              );
+            })()}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* Excel Bottom Status Bar with Reset Widths option */}
       <HorizontalScrollContainer

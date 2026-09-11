@@ -97,5 +97,18 @@ describe('myanmarFont.ts', () => {
       const zawgyi = '\u1031\u1019\u102c\u1004\u103a\u1031\u1019\u102c\u1004\u103a'; // repeated zawgyi
       expect(isZawgyi(zawgyi)).toBe(true);
     });
+
+    it('does NOT flag valid Unicode medial-before-e words (ြ + ေ)', () => {
+      // ဖြေ (answer), ကြောင်း — valid Unicode stores medial \u103c BEFORE e-vowel \u1031.
+      // Zawgyi pre-poses the e-vowel (\u1031 before consonant), caught by another rule.
+      expect(isZawgyi('\u1015\u103c\u1031')).toBe(false); // ဖြေ
+      expect(isZawgyi('\u1000\u103c\u1031\u102c\u1004\u103a\u1038')).toBe(false); // ကြောင်း
+      expect(isZawgyi('\u1000\u103B\u1031')).toBe(false); // ကျေ
+    });
+
+    it('still detects Zawgyi pre-posed e-vowel with medials', () => {
+      expect(isZawgyi('\u1031\u1000\u103C')).toBe(true); // ေကြ — Zawgyi order
+      expect(isZawgyi('\u1031\u1000\u103B')).toBe(true); // ေကျ — Zawgyi order
+    });
   });
 });
