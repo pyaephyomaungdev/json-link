@@ -171,7 +171,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         const res = mergeTranslations(
           baseItems,
           baseLanguages,
-          // convert spreadsheet items to lang dict
           spreadsheetData.languages.reduce((acc, lang) => {
             acc[lang] = {};
             for (const item of spreadsheetData.items) {
@@ -182,6 +181,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         );
         baseItems = res.items;
         baseLanguages = res.languages;
+        // Preserve developer context / descriptions from spreadsheet items
+        const baseMap = new Map(baseItems.map(b => [b.key, b]));
+        for (const item of spreadsheetData.items) {
+          if (item.description && baseMap.has(item.key)) {
+            const target = baseMap.get(item.key)!;
+            if (!target.description) {
+              target.description = item.description;
+            }
+          }
+        }
       }
     }
 

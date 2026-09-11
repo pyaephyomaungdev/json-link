@@ -292,6 +292,18 @@ subtitle: Easy localization
       expect(res.my['title']).toBe('App Name');
       expect(res.my['subtitle']).toBe('Easy localization');
     });
+
+    it('parses multiline block scalar |- without dropping lines', () => {
+      const yaml = `
+en:
+  long_text: |-
+    First paragraph of text.
+    Second paragraph of text.
+`;
+      const res = parseYamlFile(yaml, 'en.yaml');
+      expect(res.en).toBeDefined();
+      expect(res.en['long_text']).toBe('First paragraph of text.\nSecond paragraph of text.');
+    });
   });
 
   describe('parseSpreadsheet', () => {

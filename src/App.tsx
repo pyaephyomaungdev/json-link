@@ -302,6 +302,12 @@ export function App() {
             }
           }
 
+          const incDesc = (incItem.description || '').trim();
+          const oldDesc = (oldItem.description || '').trim();
+          if (incDesc !== '' && incDesc !== oldDesc) {
+            changedLangs.push('description');
+          }
+
           if (changedLangs.length > 0) {
             modifiedKeys.push({
               key: incItem.key,
@@ -351,6 +357,12 @@ export function App() {
             if (incoming[l] !== undefined && incoming[l] !== '') {
               current[l] = incoming[l];
             }
+          }
+          if (incoming.description && incoming.description.trim()) {
+            current.description = incoming.description;
+          }
+          if (incoming.status) {
+            current.status = incoming.status;
           }
         }
       });
@@ -450,19 +462,31 @@ export function App() {
         } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
           const buffer = await file.arrayBuffer();
           const parsed = parseSpreadsheet(buffer);
-          const res = mergeTranslations(
-            incomingItems,
-            incomingLanguages,
-            parsed.languages.reduce((acc, lang) => {
-              acc[lang] = {};
-              for (const it of parsed.items) {
-                acc[lang][it.key] = it[lang] || '';
+          if (incomingItems.length === 0) {
+            incomingItems = parsed.items;
+            incomingLanguages = parsed.languages;
+          } else {
+            for (const l of parsed.languages) {
+              if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+            }
+            const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+            for (const item of parsed.items) {
+              if (!existingMap.has(item.key)) {
+                incomingItems.push({ ...item });
+                existingMap.set(item.key, item);
+              } else {
+                const target = existingMap.get(item.key)!;
+                for (const l of parsed.languages) {
+                  if (item[l] !== undefined && item[l] !== '') {
+                    target[l] = item[l];
+                  }
+                }
+                if (item.description && !target.description) {
+                  target.description = item.description;
+                }
               }
-              return acc;
-            }, {} as Record<string, Record<string, string>>)
-          );
-          incomingItems = res.items;
-          incomingLanguages = res.languages;
+            }
+          }
         } else if (ext === 'xml') {
           const text = await file.text();
           const parsed = parseAndroidXml(text, file.name);

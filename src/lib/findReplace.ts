@@ -126,8 +126,17 @@ export function executeFindReplace(
             count += matchInstances.length;
           }
           regex.lastIndex = 0;
-          newItem[field] = val.replace(regex, options.replacement);
-          itemChanged = true;
+          const replacedVal = val.replace(regex, options.replacement);
+          if (field === 'key') {
+            const cleanKey = replacedVal.trim();
+            if (cleanKey) {
+              newItem.key = cleanKey;
+              itemChanged = true;
+            }
+          } else {
+            newItem[field] = replacedVal;
+            itemChanged = true;
+          }
         }
       }
     }

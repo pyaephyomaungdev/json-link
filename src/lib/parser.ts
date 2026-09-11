@@ -335,8 +335,27 @@ export function parseYamlFile(
   const lines = content.split('\n');
   const flat: Record<string, string> = {};
   const stack: { indent: number; key: string }[] = [];
+  let multilineKey: string | null = null;
+  let multilineIndent = 0;
+  const multilineLines: string[] = [];
 
   for (const rawLine of lines) {
+    // Check if we are collecting multiline scalar
+    if (multilineKey !== null) {
+      const lineIndent = rawLine.search(/\S/);
+      if (lineIndent > multilineIndent) {
+        multilineLines.push(rawLine.trim());
+        continue;
+      } else if (!rawLine.trim()) {
+        multilineLines.push('');
+        continue;
+      } else {
+        flat[multilineKey] = multilineLines.join('\n').trimEnd();
+        multilineKey = null;
+        multilineLines.length = 0;
+      }
+    }
+
     // skip comments and empty lines
     if (/^\s*#/.test(rawLine) || !rawLine.trim()) continue;
 
@@ -354,7 +373,13 @@ export function parseYamlFile(
       stack.pop();
     }
 
-    if (valPart === '' || valPart === '|' || valPart === '>') {
+    if (/^(\||>)[-+]?$/.test(valPart)) {
+      // It's a multiline block scalar (e.g. |- or >)
+      const fullKey = [...stack.map(s => s.key), keyPart].join('.');
+      multilineKey = fullKey;
+      multilineIndent = indent;
+      multilineLines.length = 0;
+    } else if (valPart === '') {
       // It's a parent key
       stack.push({ indent, key: keyPart });
     } else {
@@ -368,6 +393,10 @@ export function parseYamlFile(
       const fullKey = [...stack.map(s => s.key), keyPart].join('.');
       flat[fullKey] = valPart;
     }
+  }
+
+  if (multilineKey !== null) {
+    flat[multilineKey] = multilineLines.join('\n').trimEnd();
   }
 
   const inferred = inferLanguageFromFilename(filename);

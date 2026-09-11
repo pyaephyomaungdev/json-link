@@ -183,14 +183,20 @@ export function fixAllWhitespaceIssues(
   languages: string[]
 ): { updatedItems: TranslationItem[]; fixedCount: number } {
   let fixedCount = 0;
+  const existingKeys = new Set(items.map(i => i.key));
 
   const updatedItems = items.map(item => {
     let changed = false;
     const cleanItem: TranslationItem = { ...item };
 
-    if (cleanItem.key !== cleanItem.key.trim()) {
-      cleanItem.key = cleanItem.key.trim();
-      changed = true;
+    const trimmedKey = cleanItem.key.trim();
+    if (cleanItem.key !== trimmedKey) {
+      if (!existingKeys.has(trimmedKey) || trimmedKey === cleanItem.key) {
+        existingKeys.delete(cleanItem.key);
+        existingKeys.add(trimmedKey);
+        cleanItem.key = trimmedKey;
+        changed = true;
+      }
     }
 
     for (const lang of languages) {
