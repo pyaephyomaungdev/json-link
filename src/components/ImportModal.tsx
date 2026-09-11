@@ -327,7 +327,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             size="sm"
             onClick={handleApply}
             disabled={loadedFiles.length === 0 || isProcessing}
-            className="flex-1 sm:flex-none gap-1.5 text-xs h-8 font-semibold shadow-xs"
+            variant={loadedFiles.length === 0 || isProcessing ? 'outline' : 'default'}
+            className={`flex-1 sm:flex-none gap-1.5 text-xs h-8 ${
+              loadedFiles.length === 0 || isProcessing
+                ? 'font-medium text-muted-foreground border-dashed'
+                : 'font-semibold shadow-xs'
+            }`}
           >
             <CheckCircle2 className="size-3.5" />
             <span>Apply Import</span>

@@ -649,6 +649,15 @@ export function App() {
     setIsAiTranslateOpen(true);
   };
 
+  // Clear every search / namespace / status / missing-column filter at once
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedNamespace('all');
+    setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
+  };
+
   const handleGeneratePseudoLocale = () => {
     const sourceLang = languages.includes('en') ? 'en' : languages[0];
     const pseudoRecords = generatePseudoLocaleRecords(items, sourceLang);
@@ -863,18 +872,21 @@ export function App() {
 
           {/* Header Stats Badges */}
           {totalKeys > 0 && (
-            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 font-medium text-foreground">
+            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground min-w-0">
+              <span className="flex items-center gap-1 font-medium text-foreground whitespace-nowrap shrink-0">
                 <Key className="size-3 text-primary shrink-0" /> {totalKeys.toLocaleString()} keys
               </span>
-              <span>•</span>
+              <span className="shrink-0">•</span>
               <button
                 onClick={() => setIsAddLanguageOpen(true)}
-                className="flex items-center gap-1 hover:text-foreground hover:bg-muted/70 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                title="Click to add or manage languages"
+                className="flex items-center gap-1 min-w-0 hover:text-foreground hover:bg-muted/70 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                title={`Languages: ${languages.join(', ')} — click to add or manage`}
               >
                 <Globe className="size-3 text-emerald-600 shrink-0" />
-                <span>{languages.map(l => l.toUpperCase()).join(', ')}</span>
+                <span className="whitespace-nowrap truncate max-w-[140px] lg:max-w-[220px]">
+                  {languages.slice(0, 3).map(l => l.toUpperCase()).join(', ')}
+                  {languages.length > 3 ? ` +${languages.length - 3}` : ''}
+                </span>
                 <Plus className="size-2.5 ml-0.5 text-muted-foreground shrink-0" />
               </button>
               {totalMissing > 0 ? (
@@ -1121,6 +1133,9 @@ export function App() {
             canRedo={canRedo}
             onOpenAiTranslate={() => handleOpenAiTranslate()}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onOpenFindReplace={() => setIsFindReplaceOpen(true)}
+            onOpenScorecard={() => setIsScorecardOpen(true)}
+            onOpenLinter={() => setIsLinterOpen(true)}
           />
 
           {/* Full-bleed Edge-to-Edge Spreadsheet */}
@@ -1139,6 +1154,8 @@ export function App() {
             onOpenAiTranslate={handleOpenAiTranslate}
             onUpdateRowStatus={handleUpdateRowStatus}
             filterMissingLang={filterMissingLang}
+            totalItemCount={items.length}
+            onClearFilters={handleClearFilters}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}

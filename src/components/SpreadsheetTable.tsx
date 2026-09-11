@@ -27,6 +27,8 @@ import {
   X,
   Undo2,
   CheckCircle2,
+  SearchX,
+  RotateCcw,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -57,6 +59,8 @@ interface SpreadsheetTableProps {
   onUpdateRowStatus?: (key: string, status: RowStatus) => void;
   filterMissingLang?: string | null;
   onToggleFilterMissingLang?: (lang: string) => void;
+  totalItemCount?: number;
+  onClearFilters?: () => void;
 }
 
 interface EditingCell {
@@ -103,6 +107,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onUpdateRowStatus,
   filterMissingLang,
   onToggleFilterMissingLang,
+  totalItemCount,
+  onClearFilters,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -546,6 +552,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // If no items in table, display empty-state CTA
   if (items.length === 0) {
+    // Project is loaded but current search/filters matched nothing
+    if ((totalItemCount ?? 0) > 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
+          <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 shadow-xs">
+            <SearchX className="size-8 stroke-[1.5]" />
+          </div>
+          <h3 className="text-xl font-bold tracking-tight text-foreground">
+            No keys match this filter or search
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
+            {totalItemCount} key{totalItemCount === 1 ? ' is' : 's are'} loaded in the spreadsheet, but none match the current search, namespace, status, or missing-translation filters.
+          </p>
+          {onClearFilters && (
+            <Button onClick={onClearFilters} size="lg" className="gap-2 shadow-sm font-semibold">
+              <RotateCcw className="size-4" />
+              Clear Filters &amp; Search
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
         <div className="size-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-xs">

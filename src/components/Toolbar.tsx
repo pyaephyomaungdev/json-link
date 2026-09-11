@@ -19,6 +19,8 @@ import {
   Undo2,
   Redo2,
   Command,
+  Replace,
+  Activity,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -55,6 +57,9 @@ interface ToolbarProps {
   canRedo?: boolean;
   onOpenAiTranslate?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenFindReplace?: () => void;
+  onOpenScorecard?: () => void;
+  onOpenLinter?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -81,6 +86,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   canRedo,
   onOpenAiTranslate,
   onOpenCommandPalette,
+  onOpenFindReplace,
+  onOpenScorecard,
+  onOpenLinter,
 }) => {
   return (
     <HorizontalScrollContainer
@@ -118,6 +126,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 variant="outline"
                 size="sm"
                 className="h-7 px-1.5 sm:px-2 gap-1 text-[11px] font-normal shrink-0"
+                title={`Filter by namespace — showing ${selectedNamespace === 'all' ? 'All Namespaces' : selectedNamespace}`}
               >
                 <Filter className="size-3 text-muted-foreground" />
                 <span className="max-w-[65px] sm:max-w-[85px] truncate">
@@ -183,9 +192,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 px-1.5 sm:px-2 gap-1 text-[11px] font-normal shrink-0 hidden sm:flex"
+                className="h-7 px-1.5 sm:px-2 gap-1 text-[11px] font-normal shrink-0"
+                title="Filter by review status"
               >
-                <span className="text-muted-foreground">Status:</span>
+                <span className="hidden sm:inline text-muted-foreground">Status:</span>
                 <span className="font-semibold text-foreground capitalize">
                   {statusFilter === 'needs-review' ? 'Review' : statusFilter || 'All'}
                 </span>
@@ -349,6 +359,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <Command className="size-3.5 text-muted-foreground" />
                 <span>Command Palette</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
+              </DropdownMenuItem>
+            )}
+            {onOpenFindReplace && hasItems && (
+              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs sm:hidden">
+                <Replace className="size-3.5 text-blue-500" />
+                <span>Find &amp; Replace</span>
+                <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘H</kbd>
+              </DropdownMenuItem>
+            )}
+            {onOpenScorecard && hasItems && (
+              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs sm:hidden">
+                <Activity className="size-3.5 text-emerald-500" />
+                <span>Localization Scorecard</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenLinter && hasItems && (
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs sm:hidden">
+                <Sparkles className="size-3.5 text-amber-500" />
+                <span>QA Linter</span>
               </DropdownMenuItem>
             )}
             {onOpenSaveProject && (
