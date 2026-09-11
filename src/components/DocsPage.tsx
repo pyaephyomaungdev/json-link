@@ -8,6 +8,9 @@ import { Toolbar } from '@/components/Toolbar';
 import { TranslationItem, RowStatus } from '@/types';
 import {
   ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  Check,
   Sun,
   Moon,
   Search,
@@ -28,6 +31,14 @@ import {
   Layers,
   Globe,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 interface DocsPageProps {
   onBack: () => void;
@@ -144,9 +155,77 @@ const FORMAT_LIST = [
   { name: 'iOS (.strings)', ext: '.strings', desc: 'Apple Xcode Localizable.strings with block comments', color: 'text-pink-600 dark:text-pink-400' },
 ];
 
+function AppleStepFooter({
+  prevSection,
+  nextSection,
+  onSelect,
+}: {
+  prevSection: DocSection | null;
+  nextSection: DocSection | null;
+  onSelect: (id: DocSectionId) => void;
+}) {
+  if (!prevSection && !nextSection) return null;
+
+  return (
+    <div className="pt-6 mt-8 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 select-none">
+      {prevSection ? (
+        <button
+          onClick={() => onSelect(prevSection.id)}
+          className="flex-1 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-left flex items-center gap-3 cursor-pointer group shadow-xs"
+        >
+          <span className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary shrink-0 transition-colors">
+            <ArrowLeft className="size-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider">
+              Previous • {prevSection.badge}
+            </div>
+            <div className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+              Go to {prevSection.title}
+            </div>
+          </div>
+        </button>
+      ) : (
+        <div className="hidden sm:block flex-1" />
+      )}
+
+      {nextSection && (
+        <button
+          onClick={() => onSelect(nextSection.id)}
+          className="flex-1 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-right flex items-center justify-end gap-3 cursor-pointer group shadow-xs"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider">
+              Next • {nextSection.badge}
+            </div>
+            <div className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+              Continue to {nextSection.title}
+            </div>
+          </div>
+          <span className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+            <ArrowRight className="size-4" />
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
   const [activeSection, setActiveSection] = useState<DocSectionId>('getting-started');
   const [searchQuery, setSearchQuery] = useState('');
+  const mainRef = React.useRef<HTMLElement>(null);
+
+  // Scroll to top when active section changes
+  useEffect(() => {
+    if (mainRef.current) {
+      if (typeof mainRef.current.scrollTo === 'function') {
+        mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        mainRef.current.scrollTop = 0;
+      }
+    }
+  }, [activeSection]);
 
   // Interactive Live Spreadsheet instance for the docs
   const [demoItems, setDemoItems] = useState<TranslationItem[]>(INITIAL_DEMO_ITEMS);
@@ -191,16 +270,21 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
       s.badge.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const currentIndex = SECTIONS.findIndex(s => s.id === activeSection);
+  const currentSection = SECTIONS[currentIndex] || SECTIONS[0];
+  const prevSection = currentIndex > 0 ? SECTIONS[currentIndex - 1] : null;
+  const nextSection = currentIndex < SECTIONS.length - 1 ? SECTIONS[currentIndex + 1] : null;
+
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground">
-      {/* Top Header */}
+      {/* Top Header — matches app header (h-12, bg-card, border-b) */}
       <header className="border-b border-border bg-card px-3 sm:px-4 h-12 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="gap-1.5 text-xs font-semibold cursor-pointer"
+            className="gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
             title="Back to Workspace (Esc)"
           >
             <ArrowLeft className="size-3.5" />
@@ -208,24 +292,24 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
             <span className="sm:hidden">Back</span>
           </Button>
 
-          <div className="h-4 w-px bg-border/80 hidden sm:block" />
+          <div className="h-4 w-px bg-border/80 hidden sm:block shrink-0" />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Logo size="sm" showText={false} />
-            <span className="text-xs font-bold text-foreground hidden md:inline">
+            <span className="text-xs font-bold text-foreground truncate">
               Documentation & User Guide
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative w-40 sm:w-60 hidden sm:block">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-56">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <Input
               placeholder="Search documentation..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="h-7.5 pl-8 pr-2.5 text-xs rounded-lg bg-background"
+              className="h-7.5 pl-8 pr-2.5 text-xs rounded-lg bg-background border-border"
             />
           </div>
 
@@ -247,39 +331,113 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
 
       {/* Main Workspace Layout: Sidebar Navigation + Content Area */}
       <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
-        {/* Left Table of Contents */}
-        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-muted/20 p-2 md:p-3 shrink-0 flex md:flex-col gap-1 overflow-x-auto md:overflow-y-auto">
-          <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hidden md:block">
-            Topics
+        {/* Navigation: Segmented Bar on Mobile, Sidebar on Desktop */}
+        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-border bg-card md:bg-muted/20 p-3 shrink-0 flex flex-col gap-2 md:gap-1.5 md:overflow-y-auto">
+          {/* Mobile Stepper Header with Dropdown */}
+          <div className="md:hidden flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="size-6 rounded-lg bg-primary/10 text-primary text-[11px] font-mono font-bold flex items-center justify-center shrink-0">
+                {currentIndex + 1}
+              </span>
+              <div className="min-w-0">
+                <div className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                  Step {currentIndex + 1} of {SECTIONS.length}
+                </div>
+                <div className="text-xs font-bold text-foreground truncate">
+                  {currentSection.badge}: {currentSection.title}
+                </div>
+              </div>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 px-2.5 rounded-lg font-medium border-border cursor-pointer">
+                  <span>All Steps</span>
+                  <ChevronDown className="size-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-1 rounded-xl border border-border bg-popover shadow-lg">
+                <DropdownMenuLabel className="text-[10px] uppercase font-mono text-muted-foreground px-2 py-1">
+                  Documentation Steps
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {SECTIONS.map((sec, idx) => {
+                  const isAct = sec.id === activeSection;
+                  return (
+                    <DropdownMenuItem
+                      key={sec.id}
+                      onClick={() => setActiveSection(sec.id)}
+                      className={`gap-2.5 p-2 rounded-lg text-xs cursor-pointer ${
+                        isAct ? 'bg-primary text-primary-foreground font-semibold' : 'text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <span className={`size-5 rounded-md flex items-center justify-center text-[10px] font-mono shrink-0 ${
+                        isAct ? 'bg-primary-foreground/20 text-primary-foreground font-bold' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <span className="truncate flex-1">{sec.badge}: {sec.title}</span>
+                      {isAct && <Check className="size-3.5 text-primary-foreground shrink-0" />}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          {filteredSections.map(sec => {
-            const isActive = activeSection === sec.id;
-            return (
-              <button
-                key={sec.id}
-                onClick={() => setActiveSection(sec.id)}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs transition-all shrink-0 md:w-full cursor-pointer ${isActive
-                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+
+          {/* Desktop Sidebar Header */}
+          <div className="hidden md:flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 py-1">
+            <span>Guide Steps</span>
+            <span className="font-mono text-[10px] text-primary">{currentIndex + 1} / {SECTIONS.length}</span>
+          </div>
+
+          {/* Progress Indicator Bar */}
+          <div className="w-full bg-muted h-1 rounded-full overflow-hidden mb-1">
+            <div
+              className="bg-primary h-full rounded-full transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / SECTIONS.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Steps List */}
+          <div className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible no-scrollbar -mx-1 px-1 md:mx-0 md:px-0 py-0.5">
+            {filteredSections.map(sec => {
+              const isActive = activeSection === sec.id;
+              return (
+                <button
+                  key={sec.id}
+                  onClick={() => setActiveSection(sec.id)}
+                  className={`group flex items-center gap-2 px-3 py-1.5 md:px-3 md:py-2 rounded-lg text-left text-xs whitespace-nowrap md:whitespace-normal transition-all shrink-0 md:w-full cursor-pointer select-none ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'bg-muted/60 md:bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'
                   }`}
-              >
-                <span className={isActive ? 'text-primary-foreground' : 'text-muted-foreground'}>
-                  {sec.icon}
-                </span>
-                <span className="truncate flex-1">{sec.title}</span>
-                <span
-                  className={`text-[9px] uppercase px-1 py-0.2 rounded font-mono hidden lg:inline-block ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
-                    }`}
                 >
-                  {sec.badge}
-                </span>
-              </button>
-            );
-          })}
+                  <span className={`size-5 md:size-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                    isActive
+                      ? 'text-primary-foreground'
+                      : 'text-muted-foreground group-hover:text-foreground'
+                  }`}>
+                    {sec.icon}
+                  </span>
+                  <span className="truncate flex-1">{sec.title}</span>
+                  <span
+                    className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-mono hidden lg:inline-block ${
+                      isActive
+                        ? 'bg-primary-foreground/20 text-primary-foreground font-semibold'
+                        : 'bg-muted/70 text-muted-foreground'
+                    }`}
+                  >
+                    {sec.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </aside>
 
         {/* Right Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8">
           {activeSection === 'getting-started' && <GettingStartedSection />}
           {activeSection === 'spreadsheet-editing' && (
             <SpreadsheetEditingSection
@@ -308,6 +466,13 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
           {activeSection === 'linter-scorecard' && <LinterScorecardSection />}
           {activeSection === 'exporters' && <ExportersSection />}
           {activeSection === 'keyboard-shortcuts' && <ShortcutsSection />}
+
+          {/* Apple-style Step Navigation Footer */}
+          <AppleStepFooter
+            prevSection={prevSection}
+            nextSection={nextSection}
+            onSelect={setActiveSection}
+          />
         </main>
       </div>
     </div>
@@ -482,7 +647,13 @@ function SpreadsheetEditingSection({
       </div>
 
       {/* ACTUAL PRODUCT COMPONENT EMBEDDED: Toolbar & SpreadsheetTable */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm flex flex-col h-[400px]">
+      <div className="rounded-2xl border border-border overflow-hidden bg-card shadow-sm flex flex-col h-[380px] sm:h-[420px]">
+        {/* Mobile Swipe Guide Banner */}
+        <div className="px-3 py-1.5 bg-muted/40 border-b border-border/60 text-[10px] text-muted-foreground flex items-center justify-between sm:hidden select-none">
+          <span className="font-semibold text-foreground">Interactive Demo</span>
+          <span>Swipe grid for all columns →</span>
+        </div>
+
         {/* Actual Toolbar component */}
         <Toolbar
           hasItems={items.length > 0}
@@ -559,62 +730,80 @@ function ContextMenuSection({
 
       {/* Menu Actions Explanation Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
-        <div className="grid grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
+        <div className="hidden sm:grid sm:grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
           <span className="col-span-4 sm:col-span-3">Action</span>
           <span className="col-span-8 sm:col-span-9">Description & Workflow</span>
         </div>
 
         <div className="divide-y divide-border/60 text-xs">
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <MousePointerClick className="size-3.5 text-muted-foreground" /> Edit Cell
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <MousePointerClick className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>Edit Cell</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Immediately activates the inline text input or Formula Bar for the selected cell.
             </span>
           </div>
 
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <Copy className="size-3.5 text-muted-foreground" /> Copy & Paste
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <Copy className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>Copy & Paste</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Copies text to the system clipboard or pastes external content directly into the targeted cell.
             </span>
           </div>
 
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <Undo2 className="size-3.5 text-muted-foreground" /> 1-Click Revert
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <Undo2 className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>1-Click Revert</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               If a cell was accidentally edited or translated, restores the cell back to its original loaded file value.
             </span>
           </div>
 
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <Globe className="size-3.5 text-muted-foreground" /> Zawgyi ⇄ Unicode
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <Globe className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>Zawgyi ⇄ Unicode</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Real-time heuristic detects legacy Zawgyi text and losslessly converts to standard Unicode via the Rabbit engine without altering interpolation variables.
             </span>
           </div>
 
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-muted-foreground" /> AI Translate Row
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <Sparkles className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>AI Translate Row</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Translates just the active row across missing target languages using your configured OpenRouter model.
             </span>
           </div>
 
-          <div className="grid grid-cols-12 px-4 py-2.5 items-center hover:bg-muted/20">
-            <span className="col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-muted-foreground" /> Review Statuses
+          <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
+            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+              <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
+                <CheckCircle2 className="size-3.5 text-muted-foreground" />
+              </span>
+              <span>Review Statuses</span>
             </span>
-            <span className="col-span-8 sm:col-span-9 text-muted-foreground">
+            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Tag rows as Approved (emerald), Needs Review (amber), or Draft (gray) for human QA signoff.
             </span>
           </div>
@@ -849,24 +1038,30 @@ function ShortcutsSection() {
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
-        <div className="grid grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
+        <div className="hidden sm:grid sm:grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
           <span className="col-span-4 sm:col-span-3">Shortcut</span>
           <span className="col-span-6 sm:col-span-7">Action</span>
-          <span className="col-span-2 hidden sm:block text-right">Category</span>
+          <span className="col-span-2 text-right">Category</span>
         </div>
 
         <div className="divide-y divide-border/60">
           {shortcuts.map(s => (
-            <div key={s.key} className="grid grid-cols-12 px-4 py-2.5 text-xs items-center hover:bg-muted/20">
-              <div className="col-span-4 sm:col-span-3">
+            <div
+              key={s.key}
+              className="p-3 sm:px-4 sm:py-2.5 text-xs flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors"
+            >
+              <div className="sm:col-span-4 sm:col-span-3 flex items-center justify-between sm:justify-start">
                 <kbd className="px-2 py-1 rounded bg-muted border border-border font-mono text-[11px] font-semibold text-foreground shadow-2xs">
                   {s.key}
                 </kbd>
+                <span className="sm:hidden text-[10px] uppercase font-mono text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                  {s.category}
+                </span>
               </div>
-              <span className="col-span-6 sm:col-span-7 text-foreground font-medium">
+              <span className="sm:col-span-6 sm:col-span-7 text-foreground font-medium text-[11px] sm:text-xs">
                 {s.action}
               </span>
-              <span className="col-span-2 hidden sm:block text-right text-[11px] text-muted-foreground">
+              <span className="hidden sm:block sm:col-span-2 text-right text-[11px] text-muted-foreground">
                 {s.category}
               </span>
             </div>
