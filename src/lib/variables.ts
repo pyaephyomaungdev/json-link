@@ -7,17 +7,40 @@
  * - Positional parameters: $1, $name
  */
 
-// Regex pattern covering common i18n interpolation variables
-const VARIABLE_REGEX = /(?:\{\{[a-zA-Z0-9_.-]+\}\}|\{[a-zA-Z0-9_.-]+\}|%[0-9]*\$?[a-zA-Z]|%\([a-zA-Z0-9_.-]+\)[a-zA-Z]|\$[0-9]+)/g;
+// Regex pattern covering common i18n interpolation variables including ICU number/date formatters
+const VARIABLE_REGEX = /(?:\{\{[a-zA-Z0-9_.-]+\}\}|\{[a-zA-Z0-9_.-]+(?:,\s*(?:number|date|time)(?:,\s*[^}]+)?)?\}|%[0-9]*\$?[a-zA-Z]|%\([a-zA-Z0-9_.-]+\)[a-zA-Z]|\$[0-9]+)/g;
 
 /**
  * Extracts all unique interpolation variables from a string.
  */
 export function extractVariables(text: string): string[] {
   if (!text || typeof text !== 'string') return [];
-  const matches = text.match(VARIABLE_REGEX);
-  if (!matches) return [];
-  return Array.from(new Set(matches));
+  const results = new Set<string>();
+
+  // Extract ICU plural / select selector variables: e.g. {count, plural, ...} => {count}
+  const icuSelectorRegex = /\{([a-zA-Z0-9_.-]+)\s*,\s*(?:plural|select|selectordinal)\b/g;
+  let icuMatch: RegExpExecArray | null;
+  while ((icuMatch = icuSelectorRegex.exec(text)) !== null) {
+    results.add(`{${icuMatch[1]}}`);
+  }
+
+  // Extract general interpolation variables
+  const regex = new RegExp(VARIABLE_REGEX.source, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    const token = match[0];
+    const idx = match.index;
+    // If it's a single-brace variable like {He}, ensure it is not an ICU branch body (e.g. male{He}, other{text}, =1{one})
+    if (token.startsWith('{') && !token.startsWith('{{') && idx > 0) {
+      const prevChar = text[idx - 1];
+      if (/[a-zA-Z0-9_=-]/.test(prevChar)) {
+        continue; // Skip ICU clause content like male{He} or =1{item}
+      }
+    }
+    results.add(token);
+  }
+
+  return Array.from(results);
 }
 
 export interface TokenPart {
@@ -37,6 +60,17 @@ export function tokenizeVariables(text: string): TokenPart[] {
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(text)) !== null) {
+    const token = match[0];
+    const idx = match.index;
+
+    // Check if it's an ICU branch body like male{He}
+    if (token.startsWith('{') && !token.startsWith('{{') && idx > 0) {
+      const prevChar = text[idx - 1];
+      if (/[a-zA-Z0-9_=-]/.test(prevChar)) {
+        continue;
+      }
+    }
+
     // Leading plain text
     if (match.index > lastIndex) {
       tokens.push({

@@ -342,6 +342,49 @@ export async function exportToIosStringsZip(
 }
 
 /**
+ * Generates Flutter ARB JSON object for a specific language
+ */
+export function generateArbData(
+  items: TranslationItem[],
+  lang: string
+): Record<string, any> {
+  const result: Record<string, any> = {
+    '@@locale': lang,
+  };
+
+  for (const item of items) {
+    result[item.key] = item[lang] || '';
+    if (item.description && item.description.trim()) {
+      result[`@${item.key}`] = {
+        description: item.description.trim(),
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Export Flutter ARB files bundled in a ZIP archive
+ */
+export async function exportToArbZip(
+  items: TranslationItem[],
+  languages: string[],
+  zipFilename = 'flutter_arb.zip'
+) {
+  const zip = new JSZip();
+
+  for (const lang of languages) {
+    const data = generateArbData(items, lang);
+    const cleanLang = lang.replace('-', '_');
+    zip.file(`app_${cleanLang}.arb`, JSON.stringify(data, null, 2));
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(blob, zipFilename.endsWith('.zip') ? zipFilename : `${zipFilename}.zip`);
+}
+
+/**
  * Export TypeScript Type Definitions (translations.d.ts)
  */
 export function exportToTypeScriptDts(

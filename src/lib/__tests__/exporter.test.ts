@@ -11,6 +11,7 @@ import {
   exportToIosStringsZip,
   generateAndroidXml,
   generateIosStrings,
+  generateArbData,
   exportAllAsProjectBundle,
 } from '../exporter';
 import { TranslationItem } from '@/types';
@@ -222,6 +223,21 @@ describe('exporter.ts', () => {
     it('handles empty object without crashing', () => {
       const yaml = objectToYaml({});
       expect(typeof yaml).toBe('string');
+    });
+  });
+
+  describe('generateArbData', () => {
+    it('generates Flutter ARB JSON object with @@locale and @key descriptions', () => {
+      const items: TranslationItem[] = [
+        { key: 'appTitle', en: 'JSON Link', description: 'Application Title' },
+        { key: 'btnSubmit', en: 'Submit' },
+      ];
+      const arb = generateArbData(items, 'en');
+      expect(arb['@@locale']).toBe('en');
+      expect(arb['appTitle']).toBe('JSON Link');
+      expect(arb['@appTitle']).toEqual({ description: 'Application Title' });
+      expect(arb['btnSubmit']).toBe('Submit');
+      expect(arb['@btnSubmit']).toBeUndefined();
     });
   });
 });

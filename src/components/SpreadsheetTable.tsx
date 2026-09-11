@@ -702,6 +702,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               if (e.key === 'Enter') {
                 e.preventDefault();
                 handleSaveEdit();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setEditingCell(null);
               }
             }}
             placeholder={

@@ -44,6 +44,21 @@ describe('variables.ts', () => {
       // @ts-expect-error test non-string input
       expect(extractVariables(null)).toEqual([]);
     });
+
+    it('extracts ICU formatted variables like {amount, number, currency} and {date, date}', () => {
+      expect(extractVariables('Total: {amount, number, currency} on {date, date}')).toEqual([
+        '{amount, number, currency}',
+        '{date, date}',
+      ]);
+    });
+
+    it('extracts selector variable from ICU plural and select expressions', () => {
+      const pluralStr = '{count, plural, =0{no items} =1{one item} other{{count} items}}';
+      expect(extractVariables(pluralStr)).toEqual(['{count}']);
+
+      const selectStr = '{gender, select, male{He} female{She} other{They}} said hello';
+      expect(extractVariables(selectStr)).toEqual(['{gender}']);
+    });
   });
 
   describe('tokenizeVariables', () => {

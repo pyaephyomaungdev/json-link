@@ -23,6 +23,7 @@ export type ExportFormat =
   | 'yaml-zip'
   | 'android-xml'
   | 'ios-strings'
+  | 'arb-zip'
   | 'typescript-dts'
   | 'project-bundle';
 

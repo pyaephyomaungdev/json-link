@@ -37,9 +37,11 @@ import {
   exportToYamlZip,
   exportToAndroidXmlZip,
   exportToIosStringsZip,
+  exportToArbZip,
   exportToTypeScriptDts,
   exportAllAsProjectBundle,
   generateLanguageJsonData,
+  generateArbData,
   objectToYaml,
 } from '@/lib/exporter';
 
@@ -106,6 +108,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       return `/* Localizable.strings (${previewLang}) */\n"${k}" = "${v}";\n/* ... */`;
     }
 
+    if (activeTab === 'arb-zip') {
+      const arbData = generateArbData(sampleItems, previewLang);
+      return JSON.stringify(arbData, null, indent);
+    }
+
     if (activeTab === 'typescript-dts') {
       const keysUnion = sampleItems.map(i => `  | ${JSON.stringify(i.key)}`).join('\n');
       return `export type TranslationKey =\n${keysUnion}\n  | ...;\n\nexport type SupportedLanguage = ${languages.map(l => JSON.stringify(l)).join(' | ')};`;
@@ -148,6 +155,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       await exportToAndroidXmlZip(items, languages, `${filename}_android.zip`);
     } else if (activeTab === 'ios-strings') {
       await exportToIosStringsZip(items, languages, `${filename}_ios.zip`);
+    } else if (activeTab === 'arb-zip') {
+      await exportToArbZip(items, languages, `${filename}_flutter_arb.zip`);
     } else if (activeTab === 'typescript-dts') {
       exportToTypeScriptDts(items, languages, `${filename}.d.ts`);
     }
@@ -170,6 +179,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     { id: 'yaml-zip' as ExportFormat, label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
     { id: 'android-xml' as ExportFormat, label: 'Android (strings.xml)', shortLabel: 'Android XML', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
     { id: 'ios-strings' as ExportFormat, label: 'iOS (.strings)', shortLabel: 'iOS Strings', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
+    { id: 'arb-zip' as ExportFormat, label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
     { id: 'typescript-dts' as ExportFormat, label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
   ];
 
@@ -246,6 +256,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               Creates Apple Xcode localization folders (<code className="font-mono">en.lproj/Localizable.strings</code>, <code className="font-mono">my.lproj/Localizable.strings</code>).
             </p>
           )}
+          {activeTab === 'arb-zip' && (
+            <p className="text-muted-foreground">
+              Flutter Application Resource Bundle (<code className="font-mono">app_en.arb</code>, <code className="font-mono">app_my.arb</code>) with <code className="font-mono">@@locale</code> and <code className="font-mono">@key</code> descriptions.
+            </p>
+          )}
           {activeTab === 'typescript-dts' && (
             <p className="text-muted-foreground">
               Generates strongly-typed TypeScript definitions (<code className="font-mono">translations.d.ts</code>) for full compile-time autocomplete of all translation keys.
@@ -265,7 +280,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             />
           </div>
 
-          {(activeTab === 'json-zip' || activeTab === 'json-combined' || activeTab === 'yaml-zip') && (
+          {(activeTab === 'json-zip' || activeTab === 'json-combined' || activeTab === 'yaml-zip' || activeTab === 'arb-zip') && (
             <div className="flex flex-col gap-1">
               <label className="font-semibold text-foreground">Structure & Indent:</label>
               <div className="flex items-center gap-2">
@@ -316,7 +331,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-muted-foreground">Preview</span>
-                {(activeTab === 'json-zip' || activeTab === 'yaml-zip' || activeTab === 'android-xml' || activeTab === 'ios-strings') && (
+                {(activeTab === 'json-zip' || activeTab === 'yaml-zip' || activeTab === 'android-xml' || activeTab === 'ios-strings' || activeTab === 'arb-zip') && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="bg-muted border border-border rounded px-2 py-0.5 text-xs font-mono uppercase cursor-pointer flex items-center gap-1 hover:bg-accent">
