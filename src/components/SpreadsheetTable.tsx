@@ -27,6 +27,8 @@ import {
   X,
   Undo2,
   CheckCircle2,
+  SearchX,
+  RotateCcw,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -57,6 +59,8 @@ interface SpreadsheetTableProps {
   onUpdateRowStatus?: (key: string, status: RowStatus) => void;
   filterMissingLang?: string | null;
   onToggleFilterMissingLang?: (lang: string) => void;
+  totalItemCount?: number;
+  onClearFilters?: () => void;
 }
 
 interface EditingCell {
@@ -103,6 +107,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onUpdateRowStatus,
   filterMissingLang,
   onToggleFilterMissingLang,
+  totalItemCount,
+  onClearFilters,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -111,6 +117,25 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     return null;
   });
+
+  // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
+  useEffect(() => {
+    if (!selectedCell) return;
+    const actualRowIdx = items.findIndex(i => i.key === selectedCell.key);
+    if (actualRowIdx !== -1 && actualRowIdx !== selectedCell.rowIndex) {
+      setSelectedCell(prev => prev ? { ...prev, rowIndex: actualRowIdx } : null);
+    } else if (actualRowIdx === -1 && items.length > 0) {
+      const clampedRow = Math.min(Math.max(0, selectedCell.rowIndex), items.length - 1);
+      setSelectedCell(prev => prev ? {
+        ...prev,
+        key: items[clampedRow].key,
+        rowIndex: clampedRow,
+      } : null);
+    } else if (items.length === 0) {
+      setSelectedCell(null);
+    }
+  }, [items]);
+
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
 
   // Column widths state persisted to localStorage
@@ -146,6 +171,22 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return items.some(i => i.description && i.description.trim() !== '');
   });
 
+  // Clamp selectedCell column index when columns change (e.g. description toggled off)
+  useEffect(() => {
+    if (!selectedCell) return;
+    const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
+    if (selectedCell.colIndex >= totalCols) {
+      const newCol = Math.max(0, totalCols - 1);
+      let newField = 'key';
+      if (showDescription && newCol === 1) newField = 'description';
+      else if (newCol > 0) {
+        const langIdx = showDescription ? newCol - 2 : newCol - 1;
+        newField = languages[langIdx] || 'key';
+      }
+      setSelectedCell(prev => prev ? { ...prev, colIndex: newCol, field: newField } : null);
+    }
+  }, [showDescription, languages]);
+
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
 
@@ -163,13 +204,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (!resize) return;
       const delta = ev.clientX - resize.startX;
       const newW = Math.max(120, Math.min(900, resize.startWidth + delta));
+      const targetColId = resize.colId;
       setColumnWidths(prev => ({
         ...prev,
-        [resize.colId]: newW,
+        [targetColId]: newW,
       }));
     };
 
     const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
       if (resizingColRef.current) {
         setColumnWidths(latest => {
           try {
@@ -179,8 +223,6 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         });
         resizingColRef.current = null;
       }
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -359,7 +401,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Keyboard navigation across cells when NOT editing
   const handleTableKeyDown = (e: React.KeyboardEvent) => {
-    if (editingCell || !selectedCell) return;
+    if (editingCell || !selectedCell || items.length === 0) return;
 
     const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
     const totalRows = items.length;
@@ -442,7 +484,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       }
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const currItem = items[selectedCell.rowIndex];
+      const currItem = items.find(i => i.key === selectedCell.key) || items[selectedCell.rowIndex];
       if (currItem) {
         const val = selectedCell.field === 'key' ? currItem.key : currItem[selectedCell.field] || '';
         handleStartEdit(currItem.key, selectedCell.field, val);
@@ -457,7 +499,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    if (editingCell || !selectedCell) return;
+    if (editingCell || !selectedCell || items.length === 0) return;
 
     const clipText = e.clipboardData.getData('text/plain');
     if (!clipText) return;
@@ -498,15 +540,30 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (targetRowIdx < updatedItems.length) {
         rowCells.forEach((cellVal, cOffset) => {
           const targetColIdx = startCol + cOffset;
+          // Determine the target field accounting for showDescription
+          let targetField: string | null = null;
           if (targetColIdx === 0) {
+            targetField = 'key';
+          } else if (showDescription && targetColIdx === 1) {
+            targetField = 'description';
+          } else {
+            const langIdx = targetColIdx - (showDescription ? 2 : 1);
+            if (langIdx >= 0 && langIdx < languages.length) {
+              targetField = languages[langIdx];
+            }
+          }
+
+          if (targetField === 'key') {
             const cleanKey = cellVal.trim();
             if (cleanKey) {
               updatedItems[targetRowIdx].key = cleanKey;
               updatedCount++;
             }
-          } else if (targetColIdx >= 1 && targetColIdx <= languages.length) {
-            const lang = languages[targetColIdx - 1];
-            updatedItems[targetRowIdx][lang] = cellVal;
+          } else if (targetField === 'description') {
+            updatedItems[targetRowIdx].description = cellVal;
+            updatedCount++;
+          } else if (targetField) {
+            updatedItems[targetRowIdx][targetField] = cellVal;
             updatedCount++;
           }
         });
@@ -546,6 +603,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // If no items in table, display empty-state CTA
   if (items.length === 0) {
+    // Project is loaded but current search/filters matched nothing
+    if ((totalItemCount ?? 0) > 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
+          <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 shadow-xs">
+            <SearchX className="size-8 stroke-[1.5]" />
+          </div>
+          <h3 className="text-xl font-bold tracking-tight text-foreground">
+            No keys match this filter or search
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
+            {totalItemCount} key{totalItemCount === 1 ? ' is' : 's are'} loaded in the spreadsheet, but none match the current search, namespace, status, or missing-translation filters.
+          </p>
+          {onClearFilters && (
+            <Button onClick={onClearFilters} size="lg" className="gap-2 shadow-sm font-semibold">
+              <RotateCcw className="size-4" />
+              Clear Filters &amp; Search
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
         <div className="size-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-xs">
@@ -622,6 +702,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               if (e.key === 'Enter') {
                 e.preventDefault();
                 handleSaveEdit();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setEditingCell(null);
               }
             }}
             placeholder={

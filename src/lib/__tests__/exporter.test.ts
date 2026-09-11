@@ -11,6 +11,7 @@ import {
   exportToIosStringsZip,
   generateAndroidXml,
   generateIosStrings,
+  generateArbData,
   exportAllAsProjectBundle,
 } from '../exporter';
 import { TranslationItem } from '@/types';
@@ -140,6 +141,17 @@ describe('exporter.ts', () => {
       expect(xml).toContain('<string name="button_cancel">Cancel</string>');
     });
 
+    it('escapes literal backslashes in Android XML and iOS strings', () => {
+      const itemWithBackslash: TranslationItem[] = [
+        { key: 'path.win', en: 'C:\\new\\folder' },
+      ];
+      const xml = generateAndroidXml(itemWithBackslash, 'en');
+      expect(xml).toContain('C:\\\\new\\\\folder');
+
+      const strings = generateIosStrings(itemWithBackslash, 'en');
+      expect(strings).toContain('C:\\\\new\\\\folder');
+    });
+
     it('generates iOS strings with comment above key if description exists', () => {
       const strings = generateIosStrings(itemsWithDesc, 'en');
       expect(strings).toContain('/* Button in user profile to save profile edits */');
@@ -211,6 +223,21 @@ describe('exporter.ts', () => {
     it('handles empty object without crashing', () => {
       const yaml = objectToYaml({});
       expect(typeof yaml).toBe('string');
+    });
+  });
+
+  describe('generateArbData', () => {
+    it('generates Flutter ARB JSON object with @@locale and @key descriptions', () => {
+      const items: TranslationItem[] = [
+        { key: 'appTitle', en: 'JSON Link', description: 'Application Title' },
+        { key: 'btnSubmit', en: 'Submit' },
+      ];
+      const arb = generateArbData(items, 'en');
+      expect(arb['@@locale']).toBe('en');
+      expect(arb['appTitle']).toBe('JSON Link');
+      expect(arb['@appTitle']).toEqual({ description: 'Application Title' });
+      expect(arb['btnSubmit']).toBe('Submit');
+      expect(arb['@btnSubmit']).toBeUndefined();
     });
   });
 });

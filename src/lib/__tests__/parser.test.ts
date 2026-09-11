@@ -10,6 +10,7 @@ import {
   parseIosStrings,
   parseYamlFile,
   parseSpreadsheet,
+  parseArbFile,
 } from '../parser';
 import { TranslationItem } from '@/types';
 
@@ -163,6 +164,21 @@ describe('parser.ts', () => {
         'Invalid JSON structure: Root must be an object.'
       );
     });
+
+    it('parses single language root JSON without prepending language prefix to keys', () => {
+      const singleRootJson = {
+        en: {
+          auth: {
+            login: 'Log In',
+          },
+        },
+      };
+      const res = parseJsonFile(JSON.stringify(singleRootJson), 'messages.json');
+      expect(res.en).toBeDefined();
+      expect(res.en['auth.login']).toBe('Log In');
+      // Should NOT have 'en.auth.login'
+      expect(res.en['en.auth.login']).toBeUndefined();
+    });
   });
 
   describe('mergeTranslations', () => {
@@ -208,6 +224,19 @@ describe('parser.ts', () => {
       expect(res.en['welcome_msg']).toBe('Hello <b>User</b>!\nWelcome back.');
       expect(res.en['quote_test']).toBe("It's a \"great\" day");
     });
+
+    it('matches string tags with extra attributes and reversed attribute order', () => {
+      const xml = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="static_label" translatable="false">Copyright</string>
+    <string formatted="false" name="version_info">Version 1.0</string>
+</resources>`;
+
+      const res = parseAndroidXml(xml, 'values-en.xml');
+      expect(res.en).toBeDefined();
+      expect(res.en['static_label']).toBe('Copyright');
+      expect(res.en['version_info']).toBe('Version 1.0');
+    });
   });
 
   describe('parseIosStrings', () => {
@@ -221,6 +250,18 @@ describe('parser.ts', () => {
       expect(res.en).toBeDefined();
       expect(res.en['welcome.title']).toBe('Welcome to App');
       expect(res.en['welcome.desc']).toBe('Enjoy your "stay"!\nLine 2');
+    });
+
+    it('preserves URLs containing // inside quoted string values', () => {
+      const stringsWithUrls = `
+// Documentation link
+"help.website" = "https://example.com/docs";
+"api.endpoint" = "http://api.service.io/v1";
+`;
+      const res = parseIosStrings(stringsWithUrls, 'en.lproj');
+      expect(res.en).toBeDefined();
+      expect(res.en['help.website']).toBe('https://example.com/docs');
+      expect(res.en['api.endpoint']).toBe('http://api.service.io/v1');
     });
   });
 
@@ -251,6 +292,18 @@ subtitle: Easy localization
       expect(res.my).toBeDefined();
       expect(res.my['title']).toBe('App Name');
       expect(res.my['subtitle']).toBe('Easy localization');
+    });
+
+    it('parses multiline block scalar |- without dropping lines', () => {
+      const yaml = `
+en:
+  long_text: |-
+    First paragraph of text.
+    Second paragraph of text.
+`;
+      const res = parseYamlFile(yaml, 'en.yaml');
+      expect(res.en).toBeDefined();
+      expect(res.en['long_text']).toBe('First paragraph of text.\nSecond paragraph of text.');
     });
   });
 
@@ -293,4 +346,77 @@ subtitle: Easy localization
       );
     });
   });
+
+  describe('parseArbFile', () => {
+    it('parses standard Flutter ARB file with @@locale and descriptions', () => {
+      const arbContent = JSON.stringify({
+        '@@locale': 'en',
+        '@@last_modified': '2026-09-11T12:00:00Z',
+        'appTitle': 'JSON Link',
+        '@appTitle': {
+          'description': 'Main title of the application shown on navbar',
+        },
+        'btnSubmit': 'Submit Form',
+        '@btnSubmit': {
+          'description': 'Label for the submit button',
+        },
+        'welcomeUser': 'Welcome, {name}!',
+      }, null, 2);
+
+      const result = parseArbFile(arbContent, 'app_en.arb');
+      expect(result.languages).toEqual(['en']);
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]).toEqual({
+        key: 'appTitle',
+        en: 'JSON Link',
+        description: 'Main title of the application shown on navbar',
+      });
+      expect(result.items[1]).toEqual({
+        key: 'btnSubmit',
+        en: 'Submit Form',
+        description: 'Label for the submit button',
+      });
+      expect(result.items[2]).toEqual({
+        key: 'welcomeUser',
+        en: 'Welcome, {name}!',
+      });
+    });
+
+    it('infers language from filename if @@locale is absent', () => {
+      const arbContent = JSON.stringify({
+        'greeting': 'မင်္ဂလာပါ',
+        '@greeting': {
+          'description': 'Burmese standard greeting',
+        },
+      });
+
+      const result = parseArbFile(arbContent, 'intl_my.arb');
+      expect(result.languages).toEqual(['my']);
+      expect(result.items[0]).toEqual({
+        key: 'greeting',
+        my: 'မင်္ဂလာပါ',
+        description: 'Burmese standard greeting',
+      });
+    });
+
+    it('supports @locale attribute as fallback for language code', () => {
+      const arbContent = JSON.stringify({
+        '@locale': 'th',
+        'save': 'บันทึก',
+      });
+
+      const result = parseArbFile(arbContent, 'messages.arb');
+      expect(result.languages).toEqual(['th']);
+      expect(result.items[0].key).toBe('save');
+      expect(result.items[0].th).toBe('บันทึก');
+    });
+
+    it('throws error for invalid JSON or non-object root', () => {
+      expect(() => parseArbFile('invalid json', 'app.arb')).toThrow();
+      expect(() => parseArbFile('["not", "an", "object"]', 'app.arb')).toThrow(
+        'Invalid ARB structure: Root must be a JSON object.'
+      );
+    });
+  });
 });
+

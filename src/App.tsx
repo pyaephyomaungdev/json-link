@@ -26,10 +26,11 @@ import {
   parseAndroidXml,
   parseIosStrings,
   parseYamlFile,
+  parseArbFile,
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
-import { loadLocalDraft, saveLocalDraft, clearLocalDraft } from '@/lib/project';
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft, parseProjectFile } from '@/lib/project';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -90,6 +91,18 @@ export function App() {
       clearLocalDraft();
     }
   }, [items, languages, projectName]);
+
+  // Warn before accidental page reload or tab close when translation data exists
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (items.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [items.length]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -187,9 +200,28 @@ export function App() {
     setRoute('app');
   };
 
+  const isAnyModalOpen =
+    isAddKeyOpen ||
+    isAddLanguageOpen ||
+    isImportOpen ||
+    isExportOpen ||
+    isExitConfirmOpen ||
+    isSaveProjectOpen ||
+    isAiTranslateOpen ||
+    isCommandPaletteOpen ||
+    isDiffMergeOpen ||
+    Boolean(confirmDialog?.isOpen) ||
+    isFindReplaceOpen ||
+    isScorecardOpen ||
+    isGlossaryOpen ||
+    isLinterOpen;
+
   // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // If any modal or dialog is open, do not execute global grid shortcuts
+      if (isAnyModalOpen) return;
+
       // Command Palette: Ctrl+K or Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -229,7 +261,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, isAnyModalOpen]);
 
   // When clicking logo, if user has data in table, prompt to save as .jsonlink
   const handleLogoClick = () => {
@@ -283,6 +315,12 @@ export function App() {
             }
           }
 
+          const incDesc = (incItem.description || '').trim();
+          const oldDesc = (oldItem.description || '').trim();
+          if (incDesc !== '' && incDesc !== oldDesc) {
+            changedLangs.push('description');
+          }
+
           if (changedLangs.length > 0) {
             modifiedKeys.push({
               key: incItem.key,
@@ -333,6 +371,12 @@ export function App() {
               current[l] = incoming[l];
             }
           }
+          if (incoming.description && incoming.description.trim()) {
+            current.description = incoming.description;
+          }
+          if (incoming.status) {
+            current.status = incoming.status;
+          }
         }
       });
 
@@ -362,8 +406,68 @@ export function App() {
         const file = fileList[i];
         const ext = file.name.split('.').pop()?.toLowerCase();
 
-        if (ext === 'json' || ext === 'jsonlink') {
+        if (ext === 'jsonlink') {
           const text = await file.text();
+          try {
+            const project = parseProjectFile(text);
+            if (project.items && project.items.length > 0) {
+              if (incomingItems.length === 0) {
+                incomingItems = project.items;
+                incomingLanguages = project.languages || ['en', 'my'];
+                if (project.name) setProjectName(project.name);
+                continue;
+              } else {
+                for (const l of (project.languages || [])) {
+                  if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+                }
+                const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+                for (const projItem of project.items) {
+                  if (existingMap.has(projItem.key)) {
+                    const existing = existingMap.get(projItem.key)!;
+                    Object.assign(existing, projItem);
+                  } else {
+                    incomingItems.push({ ...projItem });
+                    existingMap.set(projItem.key, projItem);
+                  }
+                }
+                continue;
+              }
+            }
+          } catch {}
+          const parsed = parseJsonFile(text, file.name);
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
+        } else if (ext === 'json') {
+          const text = await file.text();
+          if (text.includes('"format"') && text.includes('"jsonlink"')) {
+            try {
+              const project = parseProjectFile(text);
+              if (project.items && project.items.length > 0) {
+                if (incomingItems.length === 0) {
+                  incomingItems = project.items;
+                  incomingLanguages = project.languages || ['en', 'my'];
+                  if (project.name) setProjectName(project.name);
+                  continue;
+                } else {
+                  for (const l of (project.languages || [])) {
+                    if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+                  }
+                  const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+                  for (const projItem of project.items) {
+                    if (existingMap.has(projItem.key)) {
+                      const existing = existingMap.get(projItem.key)!;
+                      Object.assign(existing, projItem);
+                    } else {
+                      incomingItems.push({ ...projItem });
+                      existingMap.set(projItem.key, projItem);
+                    }
+                  }
+                  continue;
+                }
+              }
+            } catch {}
+          }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
@@ -371,19 +475,31 @@ export function App() {
         } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
           const buffer = await file.arrayBuffer();
           const parsed = parseSpreadsheet(buffer);
-          const res = mergeTranslations(
-            incomingItems,
-            incomingLanguages,
-            parsed.languages.reduce((acc, lang) => {
-              acc[lang] = {};
-              for (const it of parsed.items) {
-                acc[lang][it.key] = it[lang] || '';
+          if (incomingItems.length === 0) {
+            incomingItems = parsed.items;
+            incomingLanguages = parsed.languages;
+          } else {
+            for (const l of parsed.languages) {
+              if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+            }
+            const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+            for (const item of parsed.items) {
+              if (!existingMap.has(item.key)) {
+                incomingItems.push({ ...item });
+                existingMap.set(item.key, item);
+              } else {
+                const target = existingMap.get(item.key)!;
+                for (const l of parsed.languages) {
+                  if (item[l] !== undefined && item[l] !== '') {
+                    target[l] = item[l];
+                  }
+                }
+                if (item.description && !target.description) {
+                  target.description = item.description;
+                }
               }
-              return acc;
-            }, {} as Record<string, Record<string, string>>)
-          );
-          incomingItems = res.items;
-          incomingLanguages = res.languages;
+            }
+          }
         } else if (ext === 'xml') {
           const text = await file.text();
           const parsed = parseAndroidXml(text, file.name);
@@ -402,6 +518,34 @@ export function App() {
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
           incomingLanguages = res.languages;
+        } else if (ext === 'arb') {
+          const text = await file.text();
+          const parsed = parseArbFile(text, file.name);
+          if (incomingItems.length === 0) {
+            incomingItems = parsed.items;
+            incomingLanguages = parsed.languages;
+          } else {
+            for (const l of parsed.languages) {
+              if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+            }
+            const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+            for (const item of parsed.items) {
+              if (!existingMap.has(item.key)) {
+                incomingItems.push({ ...item });
+                existingMap.set(item.key, item);
+              } else {
+                const target = existingMap.get(item.key)!;
+                for (const l of parsed.languages) {
+                  if (item[l] !== undefined && item[l] !== '') {
+                    target[l] = item[l];
+                  }
+                }
+                if (item.description && !target.description) {
+                  target.description = item.description;
+                }
+              }
+            }
+          }
         }
       }
 
@@ -502,8 +646,22 @@ export function App() {
   };
 
   const handleUpdateKey = (oldKey: string, newKey: string) => {
+    const trimmed = newKey.trim();
+    if (!trimmed || trimmed === oldKey) return;
+    if (items.some(item => item.key === trimmed)) {
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Duplicate Key',
+        description: `A translation key named "${trimmed}" already exists. Please use a unique key.`,
+        variant: 'warning',
+        isAlert: true,
+        confirmLabel: 'OK',
+        onConfirm: () => {},
+      });
+      return;
+    }
     setItems(
-      items.map(item => (item.key === oldKey ? { ...item, key: newKey } : item))
+      items.map(item => (item.key === oldKey ? { ...item, key: trimmed } : item))
     );
   };
 
@@ -512,7 +670,12 @@ export function App() {
   };
 
   const handleDuplicateRow = (item: TranslationItem) => {
-    const newKey = `${item.key}_copy`;
+    let copyIndex = 1;
+    let newKey = `${item.key}_copy`;
+    while (items.some(i => i.key === newKey)) {
+      copyIndex++;
+      newKey = `${item.key}_copy_${copyIndex}`;
+    }
     const duplicated: TranslationItem = { ...item, key: newKey };
     setItems([duplicated, ...items]);
   };
@@ -627,6 +790,8 @@ export function App() {
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
   };
 
   const handleClearAll = () => {
@@ -647,6 +812,15 @@ export function App() {
     setAiTargetLang(targetLang);
     setAiTargetKey(targetKey);
     setIsAiTranslateOpen(true);
+  };
+
+  // Clear every search / namespace / status / missing-column filter at once
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedNamespace('all');
+    setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
   };
 
   const handleGeneratePseudoLocale = () => {
@@ -863,18 +1037,21 @@ export function App() {
 
           {/* Header Stats Badges */}
           {totalKeys > 0 && (
-            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground">
-              <span className="flex items-center gap-1 font-medium text-foreground">
+            <div className="hidden md:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground min-w-0">
+              <span className="flex items-center gap-1 font-medium text-foreground whitespace-nowrap shrink-0">
                 <Key className="size-3 text-primary shrink-0" /> {totalKeys.toLocaleString()} keys
               </span>
-              <span>•</span>
+              <span className="shrink-0">•</span>
               <button
                 onClick={() => setIsAddLanguageOpen(true)}
-                className="flex items-center gap-1 hover:text-foreground hover:bg-muted/70 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                title="Click to add or manage languages"
+                className="flex items-center gap-1 min-w-0 hover:text-foreground hover:bg-muted/70 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                title={`Languages: ${languages.join(', ')} — click to add or manage`}
               >
                 <Globe className="size-3 text-emerald-600 shrink-0" />
-                <span>{languages.map(l => l.toUpperCase()).join(', ')}</span>
+                <span className="whitespace-nowrap truncate max-w-[140px] lg:max-w-[220px]">
+                  {languages.slice(0, 3).map(l => l.toUpperCase()).join(', ')}
+                  {languages.length > 3 ? ` +${languages.length - 3}` : ''}
+                </span>
                 <Plus className="size-2.5 ml-0.5 text-muted-foreground shrink-0" />
               </button>
               {totalMissing > 0 ? (
@@ -1005,7 +1182,7 @@ export function App() {
                   }
                 }}
                 multiple
-                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings"
+                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
                 className="hidden"
               />
 
@@ -1121,6 +1298,9 @@ export function App() {
             canRedo={canRedo}
             onOpenAiTranslate={() => handleOpenAiTranslate()}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onOpenFindReplace={() => setIsFindReplaceOpen(true)}
+            onOpenScorecard={() => setIsScorecardOpen(true)}
+            onOpenLinter={() => setIsLinterOpen(true)}
           />
 
           {/* Full-bleed Edge-to-Edge Spreadsheet */}
@@ -1139,6 +1319,8 @@ export function App() {
             onOpenAiTranslate={handleOpenAiTranslate}
             onUpdateRowStatus={handleUpdateRowStatus}
             filterMissingLang={filterMissingLang}
+            totalItemCount={items.length}
+            onClearFilters={handleClearFilters}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}

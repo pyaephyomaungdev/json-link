@@ -117,6 +117,16 @@ export function parseJsonFile(
         result[lang.toLowerCase()] = flattenObject(parsed[lang]);
       }
     }
+  } else if (
+    keys.length === 1 &&
+    /^[a-z]{2}(-[A-Z]{2})?$/i.test(keys[0]) &&
+    typeof parsed[keys[0]] === 'object' &&
+    parsed[keys[0]] !== null &&
+    !Array.isArray(parsed[keys[0]])
+  ) {
+    // Single language root (e.g. { "en": { "hello": "world" } })
+    const singleLang = keys[0].toLowerCase();
+    result[singleLang] = flattenObject(parsed[keys[0]]);
   } else {
     // Single language file
     const inferredLang = inferLanguageFromFilename(filename);
@@ -267,7 +277,8 @@ export function parseAndroidXml(
   filename: string
 ): { [langCode: string]: Record<string, string> } {
   const result: Record<string, string> = {};
-  const regex = /<string\s+name="([^"]+)">([\s\S]*?)<\/string>/gi;
+  // Match <string ... name="key" ...>value</string> supporting any attribute ordering and extra attributes
+  const regex = /<string\s+[^>]*?name="([^"]+)"[^>]*>([\s\S]*?)<\/string>/gi;
   let match;
   while ((match = regex.exec(content)) !== null) {
     const key = match[1].trim();
@@ -279,7 +290,8 @@ export function parseAndroidXml(
       .replace(/&apos;/g, "'")
       .replace(/\\'/g, "'")
       .replace(/\\"/g, '"')
-      .replace(/\\n/g, '\n');
+      .replace(/\\n/g, '\n')
+      .replace(/\\\\/g, '\\');
     result[key] = val;
   }
 
@@ -296,16 +308,16 @@ export function parseIosStrings(
   filename: string
 ): { [langCode: string]: Record<string, string> } {
   const result: Record<string, string> = {};
-  // Strip block comments /* ... */ and line comments // ...
+  // Strip block comments /* ... */ and full-line comments // ... without stripping // from URLs inside strings
   const cleanContent = content
     .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*/g, '');
+    .replace(/^\s*\/\/.*$/gm, '');
 
   const regex = /"([^"\\]*(?:\\.[^"\\]*)*)"\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*;/g;
   let match;
   while ((match = regex.exec(cleanContent)) !== null) {
-    const key = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-    const val = match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+    const key = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+    const val = match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
     result[key] = val;
   }
 
@@ -323,8 +335,27 @@ export function parseYamlFile(
   const lines = content.split('\n');
   const flat: Record<string, string> = {};
   const stack: { indent: number; key: string }[] = [];
+  let multilineKey: string | null = null;
+  let multilineIndent = 0;
+  const multilineLines: string[] = [];
 
   for (const rawLine of lines) {
+    // Check if we are collecting multiline scalar
+    if (multilineKey !== null) {
+      const lineIndent = rawLine.search(/\S/);
+      if (lineIndent > multilineIndent) {
+        multilineLines.push(rawLine.trim());
+        continue;
+      } else if (!rawLine.trim()) {
+        multilineLines.push('');
+        continue;
+      } else {
+        flat[multilineKey] = multilineLines.join('\n').trimEnd();
+        multilineKey = null;
+        multilineLines.length = 0;
+      }
+    }
+
     // skip comments and empty lines
     if (/^\s*#/.test(rawLine) || !rawLine.trim()) continue;
 
@@ -342,7 +373,13 @@ export function parseYamlFile(
       stack.pop();
     }
 
-    if (valPart === '' || valPart === '|' || valPart === '>') {
+    if (/^(\||>)[-+]?$/.test(valPart)) {
+      // It's a multiline block scalar (e.g. |- or >)
+      const fullKey = [...stack.map(s => s.key), keyPart].join('.');
+      multilineKey = fullKey;
+      multilineIndent = indent;
+      multilineLines.length = 0;
+    } else if (valPart === '') {
       // It's a parent key
       stack.push({ indent, key: keyPart });
     } else {
@@ -356,6 +393,10 @@ export function parseYamlFile(
       const fullKey = [...stack.map(s => s.key), keyPart].join('.');
       flat[fullKey] = valPart;
     }
+  }
+
+  if (multilineKey !== null) {
+    flat[multilineKey] = multilineLines.join('\n').trimEnd();
   }
 
   const inferred = inferLanguageFromFilename(filename);
@@ -378,3 +419,73 @@ export function parseYamlFile(
 
   return { [inferred]: flat };
 }
+
+/**
+ * Parses Flutter ARB (.arb) content into { items: TranslationItem[]; languages: string[] }
+ * ARB files have format:
+ * {
+ *   "@@locale": "en",
+ *   "appName": "App Title",
+ *   "@appName": {
+ *     "description": "The title of the application"
+ *   }
+ * }
+ */
+export function parseArbFile(
+  content: string,
+  filename: string
+): { items: TranslationItem[]; languages: string[] } {
+  const parsed = JSON.parse(content);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('Invalid ARB structure: Root must be a JSON object.');
+  }
+
+  // 1. Determine language
+  let lang = '';
+  if (typeof parsed['@@locale'] === 'string' && parsed['@@locale'].trim()) {
+    lang = parsed['@@locale'].trim();
+  } else if (typeof parsed['@locale'] === 'string' && parsed['@locale'].trim()) {
+    lang = parsed['@locale'].trim();
+  } else {
+    lang = inferLanguageFromFilename(filename);
+  }
+
+  // Normalize language (e.g. en_US -> en-US)
+  lang = lang.replace('_', '-');
+
+  const descriptions: Record<string, string> = {};
+
+  // First pass: collect descriptions and metadata
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.startsWith('@@')) {
+      continue; // Global ARB attribute
+    }
+    if (key.startsWith('@')) {
+      const targetKey = key.slice(1);
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        if (typeof (value as any).description === 'string') {
+          descriptions[targetKey] = (value as any).description.trim();
+        }
+      }
+    }
+  }
+
+  // Second pass: collect translation keys
+  const items: TranslationItem[] = [];
+  for (const [key, value] of Object.entries(parsed)) {
+    if (key.startsWith('@')) {
+      continue; // Skip metadata keys
+    }
+    const item: TranslationItem = {
+      key,
+      [lang]: typeof value === 'string' ? value : String(value ?? ''),
+    };
+    if (descriptions[key]) {
+      item.description = descriptions[key];
+    }
+    items.push(item);
+  }
+
+  return { items, languages: [lang] };
+}
+

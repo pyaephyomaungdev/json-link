@@ -1,0 +1,17 @@
+{
+  "name": "JSON Link — i18n Localization Spreadsheet",
+  "short_name": "JSON Link",
+  "description": "Free open-source client-side localization spreadsheet & i18n workspace.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "og-image.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

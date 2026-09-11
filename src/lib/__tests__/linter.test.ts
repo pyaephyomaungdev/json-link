@@ -170,4 +170,16 @@ describe('linter.ts', () => {
     const { fixedCount } = fixAllWhitespaceIssues(items, ['en', 'my']);
     expect(fixedCount).toBe(0);
   });
+
+  it('does not trim a key if the trimmed key would collide with another existing key', () => {
+    const items: TranslationItem[] = [
+      { key: 'save', en: 'Save' },
+      { key: ' save ', en: 'Save padded' },
+    ];
+    const { updatedItems } = fixAllWhitespaceIssues(items, ['en']);
+    // ' save ' should not be renamed to 'save' because 'save' already exists
+    const keys = updatedItems.map(i => i.key);
+    expect(keys).toContain('save');
+    expect(keys).toContain(' save ');
+  });
 });

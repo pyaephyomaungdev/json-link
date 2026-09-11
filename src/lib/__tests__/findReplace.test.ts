@@ -228,5 +228,19 @@ describe('findReplace.ts', () => {
       expect(count).toBe(1);
       expect(updatedItems[2].en).toBe('Account');
     });
+
+    it('does not allow key to be replaced with empty string', () => {
+      const { updatedItems } = executeFindReplace(sampleItems, {
+        query: 'settings.account',
+        replacement: '',
+        scope: 'key',
+        matchCase: true,
+        wholeWord: false,
+        isRegex: false,
+        languages,
+      });
+      // The key should not be wiped to empty string
+      expect(updatedItems[2].key).toBe('settings.account');
+    });
   });
 });
