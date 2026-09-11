@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { exportSingleLanguageJson } from '@/lib/exporter';
+import { exportSingleLanguageJson, exportSingleLanguageArb } from '@/lib/exporter';
 import { tokenizeVariables, validateVariables } from '@/lib/variables';
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
@@ -701,7 +701,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           No translation spreadsheet loaded
         </h3>
         <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
-          Drag and drop your JSON files (<code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">en.json</code>, <code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">my.json</code>) or an Excel (.xlsx) file to open the spreadsheet table.
+          Drag and drop your translation files (<code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">en.json</code>, <code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">app_en.arb</code>, Excel, or CSV) to open the spreadsheet table.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -1147,17 +1147,24 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 includeMissing: true,
                               });
                             }}
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer text-xs"
                           >
                             <Download className="size-3.5" />
                             Download {lang}.json
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => exportSingleLanguageArb(items, lang)}
+                            className="gap-2 cursor-pointer text-xs font-medium text-cyan-600 dark:text-cyan-400 focus:text-cyan-500"
+                          >
+                            <Download className="size-3.5" />
+                            Download app_{lang.replace('-', '_')}.arb
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
                               const allVals = items.map(i => i[lang] || '').join('\n');
                               handleCopyText(allVals, `all ${lang.toUpperCase()} values`);
                             }}
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer text-xs"
                           >
                             <CopyCheck className="size-3.5" />
                             Copy all {lang.toUpperCase()} text

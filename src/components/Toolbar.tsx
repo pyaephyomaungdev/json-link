@@ -197,23 +197,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Compact Filter Segmented Group */}
         {hasItems && (
-          <div className="flex items-center rounded border border-border p-0.5 bg-muted/40 h-7 shrink-0">
+          <div className="flex items-center rounded-md border border-border/80 p-0.5 bg-muted/60 h-7 shrink-0 shadow-2xs">
             <button
               onClick={() => onFilterChange('all')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-background text-foreground shadow-2xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               All
             </button>
             <button
               onClick={() => onFilterChange('missing')}
-              className={`px-1.5 sm:px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                 activeFilter === 'missing'
-                  ? 'bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50 font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
             >
               Missing

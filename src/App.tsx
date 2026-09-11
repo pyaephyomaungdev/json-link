@@ -14,6 +14,7 @@ import { FindReplaceModal } from '@/components/FindReplaceModal';
 import { ScorecardModal } from '@/components/ScorecardModal';
 import { GlossaryModal } from '@/components/GlossaryModal';
 import { LinterModal } from '@/components/LinterModal';
+import { DocumentationModal } from '@/components/DocumentationModal';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
@@ -131,6 +132,7 @@ export function App() {
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
+  const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
 
   // Debounced linter issue count (300ms) to avoid CPU spikes during fast typing.
   // After the debounce elapses the scan is pushed into idle time when available,
@@ -990,6 +992,15 @@ export function App() {
         action: () => setIsExportOpen(true),
       },
       {
+        id: 'user-guide',
+        category: 'Help',
+        title: 'User Guide & Documentation',
+        description: 'Interactive visual walkthroughs, shortcuts, and format guides (လမ်းညွှန်)',
+        shortcut: 'Docs',
+        icon: <BookOpen className="size-3.5 text-primary" />,
+        action: () => setIsDocumentationOpen(true),
+      },
+      {
         id: 'about',
         category: 'Help',
         title: 'About JSON Link',
@@ -1010,7 +1021,20 @@ export function App() {
 
   // Dedicated About page route (/about)
   if (route === 'about') {
-    return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} />;
+    return (
+      <>
+        <AboutPage
+          onBack={closeAbout}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          onOpenDocs={() => setIsDocumentationOpen(true)}
+        />
+        <DocumentationModal
+          isOpen={isDocumentationOpen}
+          onClose={() => setIsDocumentationOpen(false)}
+        />
+      </>
+    );
   }
 
   return (
@@ -1165,6 +1189,17 @@ export function App() {
 
           <Button
             variant="ghost"
+            size="sm"
+            onClick={() => setIsDocumentationOpen(true)}
+            className="h-7 px-2 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            title="User Guide & Documentation (အသုံးပြုနည်း လမ်းညွှန်)"
+          >
+            <BookOpen className="size-3.5 text-primary" />
+            <span className="hidden sm:inline font-medium">Docs</span>
+          </Button>
+
+          <Button
+            variant="ghost"
             size="icon"
             onClick={toggleTheme}
             className="size-7 rounded cursor-pointer"
@@ -1260,6 +1295,9 @@ export function App() {
                 </span>
                 <span className="flex items-center gap-1 whitespace-nowrap">
                   <FileCode className="size-3.5 text-amber-500" /> YAML (.yaml)
+                </span>
+                <span className="flex items-center gap-1 font-medium text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                  <FileCode className="size-3.5" /> Flutter ARB (.arb)
                 </span>
                 <span className="flex items-center gap-1 whitespace-nowrap">
                   <FileCode className="size-3.5 text-purple-500" /> Android (.xml)
@@ -1482,6 +1520,15 @@ export function App() {
         onJumpToCell={(key) => {
           setSearchQuery(key);
         }}
+      />
+
+      {/* Interactive User Guide & Documentation Modal */}
+      <DocumentationModal
+        isOpen={isDocumentationOpen}
+        onClose={() => setIsDocumentationOpen(false)}
+        onOpenAiTranslate={() => handleOpenAiTranslate()}
+        onOpenLinter={() => setIsLinterOpen(true)}
+        onOpenScorecard={() => setIsScorecardOpen(true)}
       />
     </div>
   );
