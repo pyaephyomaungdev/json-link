@@ -259,6 +259,37 @@ function handleToolCall(name: string, args: any): any {
         }
       }
 
+      // 1. Android strings.xml
+      if (raw.includes('<resources') || raw.includes('<string name=')) {
+        const regex = /<string\s+[^>]*?name="([^"]+)"[^>]*>([\s\S]*?)<\/string>/gi;
+        const items: Array<{ key: string; value: string }> = [];
+        let match;
+        while ((match = regex.exec(raw)) !== null) {
+          items.push({ key: match[1].trim(), value: match[2].trim() });
+        }
+        return {
+          type: 'android-xml',
+          totalKeys: items.length,
+          items,
+        };
+      }
+
+      // 2. iOS Localizable.strings
+      if (/"([^"\\]*(?:\\.[^"\\]*)*)"\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*;/.test(raw)) {
+        const regex = /"([^"\\]*(?:\\.[^"\\]*)*)"\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*;/g;
+        const items: Array<{ key: string; value: string }> = [];
+        let match;
+        while ((match = regex.exec(raw)) !== null) {
+          items.push({ key: match[1], value: match[2] });
+        }
+        return {
+          type: 'ios-strings',
+          totalKeys: items.length,
+          items,
+        };
+      }
+
+      // 3. JSON, JSONLink, and Flutter ARB
       try {
         const parsed = JSON.parse(raw);
         if (parsed.format === 'jsonlink') {
@@ -268,6 +299,28 @@ function handleToolCall(name: string, args: any): any {
             languages: parsed.languages,
             totalKeys: parsed.items.length,
             items: parsed.items,
+          };
+        } else if (parsed['@@locale'] || Object.keys(parsed).some(k => k.startsWith('@'))) {
+          const lang = parsed['@@locale'] || 'en';
+          const descriptions: Record<string, string> = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            if (k.startsWith('@') && !k.startsWith('@@') && typeof v === 'object' && v !== null) {
+              if ((v as any).description) descriptions[k.slice(1)] = (v as any).description;
+            }
+          }
+          const items: TranslationItem[] = [];
+          for (const [k, v] of Object.entries(parsed)) {
+            if (!k.startsWith('@')) {
+              const it: TranslationItem = { key: k, [lang]: String(v ?? '') };
+              if (descriptions[k]) it.description = descriptions[k];
+              items.push(it);
+            }
+          }
+          return {
+            type: 'flutter-arb',
+            locale: lang,
+            totalKeys: items.length,
+            items,
           };
         } else {
           return {
