@@ -79,4 +79,29 @@ describe('CommandPalette', () => {
 
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('scrolls selected item into view when navigating with arrow keys', () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    render(<CommandPalette {...defaultProps} />);
+    const searchInput = screen.getByPlaceholderText('Type a command or search action...');
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'nearest' });
+
+    // Arrow up wraps around to previous item
+    fireEvent.keyDown(searchInput, { key: 'ArrowUp' });
+    expect(scrollIntoViewMock).toHaveBeenCalledTimes(2); // down + up
+  });
+
+  it('updates selection on mouse move', () => {
+    render(<CommandPalette {...defaultProps} />);
+    const secondItem = screen.getByText('Export Multi-language JSON').closest('div[class*="group"]');
+    expect(secondItem).not.toBeNull();
+
+    fireEvent.mouseMove(secondItem!, { clientX: 100, clientY: 200 });
+    // Verify it gained selected styles
+    expect(secondItem?.className).toContain('ring-primary/25');
+  });
 });
