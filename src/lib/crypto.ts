@@ -69,8 +69,8 @@ export async function encryptSecret(plainText: string): Promise<string> {
     };
     return JSON.stringify(payload);
   } catch (err) {
-    console.warn('Crypto subtle encryption fallback triggered:', err);
-    return 'b64:' + btoa(plainText);
+    console.error('Web Crypto subtle encryption failed:', err);
+    return '';
   }
 }
 
@@ -78,11 +78,8 @@ export async function encryptSecret(plainText: string): Promise<string> {
  * Decrypts an AES-GCM encrypted payload back to plain-text string.
  */
 export async function decryptSecret(cipherPayload: string): Promise<string> {
-  if (!cipherPayload) return '';
+  if (!cipherPayload || cipherPayload.startsWith('b64:')) return '';
   try {
-    if (cipherPayload.startsWith('b64:')) {
-      return atob(cipherPayload.slice(4));
-    }
     const parsed = JSON.parse(cipherPayload);
     if (!parsed?.s || !parsed?.iv || !parsed?.c) {
       return '';

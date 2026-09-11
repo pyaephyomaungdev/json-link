@@ -163,6 +163,21 @@ describe('parser.ts', () => {
         'Invalid JSON structure: Root must be an object.'
       );
     });
+
+    it('parses single language root JSON without prepending language prefix to keys', () => {
+      const singleRootJson = {
+        en: {
+          auth: {
+            login: 'Log In',
+          },
+        },
+      };
+      const res = parseJsonFile(JSON.stringify(singleRootJson), 'messages.json');
+      expect(res.en).toBeDefined();
+      expect(res.en['auth.login']).toBe('Log In');
+      // Should NOT have 'en.auth.login'
+      expect(res.en['en.auth.login']).toBeUndefined();
+    });
   });
 
   describe('mergeTranslations', () => {
@@ -208,6 +223,19 @@ describe('parser.ts', () => {
       expect(res.en['welcome_msg']).toBe('Hello <b>User</b>!\nWelcome back.');
       expect(res.en['quote_test']).toBe("It's a \"great\" day");
     });
+
+    it('matches string tags with extra attributes and reversed attribute order', () => {
+      const xml = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="static_label" translatable="false">Copyright</string>
+    <string formatted="false" name="version_info">Version 1.0</string>
+</resources>`;
+
+      const res = parseAndroidXml(xml, 'values-en.xml');
+      expect(res.en).toBeDefined();
+      expect(res.en['static_label']).toBe('Copyright');
+      expect(res.en['version_info']).toBe('Version 1.0');
+    });
   });
 
   describe('parseIosStrings', () => {
@@ -221,6 +249,18 @@ describe('parser.ts', () => {
       expect(res.en).toBeDefined();
       expect(res.en['welcome.title']).toBe('Welcome to App');
       expect(res.en['welcome.desc']).toBe('Enjoy your "stay"!\nLine 2');
+    });
+
+    it('preserves URLs containing // inside quoted string values', () => {
+      const stringsWithUrls = `
+// Documentation link
+"help.website" = "https://example.com/docs";
+"api.endpoint" = "http://api.service.io/v1";
+`;
+      const res = parseIosStrings(stringsWithUrls, 'en.lproj');
+      expect(res.en).toBeDefined();
+      expect(res.en['help.website']).toBe('https://example.com/docs');
+      expect(res.en['api.endpoint']).toBe('http://api.service.io/v1');
     });
   });
 

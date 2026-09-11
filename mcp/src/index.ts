@@ -31,6 +31,16 @@ interface JsonRpcResponse {
   };
 }
 
+const ALLOWED_FILE_EXTENSIONS = ['.json', '.jsonlink', '.arb', '.xml', '.strings', '.yaml', '.yml', '.csv'];
+
+function isSafeFilePath(filePath: string): boolean {
+  const p = path.resolve(filePath);
+  const base = path.basename(p);
+  if (base.startsWith('.')) return false;
+  const ext = path.extname(p).toLowerCase();
+  return ALLOWED_FILE_EXTENSIONS.includes(ext);
+}
+
 const TOOLS_MANIFEST = [
   {
     name: 'read_translations',
@@ -175,6 +185,9 @@ function handleToolCall(name: string, args: any): any {
       let languages: string[] = args.languages || [];
 
       if (args.filePath) {
+        if (!isSafeFilePath(args.filePath)) {
+          return { error: `Access denied: only translation files (${ALLOWED_FILE_EXTENSIONS.join(', ')}) can be accessed.` };
+        }
         const p = path.resolve(args.filePath);
         if (fs.existsSync(p)) {
           const content = fs.readFileSync(p, 'utf8');
@@ -235,6 +248,9 @@ function handleToolCall(name: string, args: any): any {
     case 'read_translations': {
       let raw = args.content || '';
       if (args.filePath) {
+        if (!isSafeFilePath(args.filePath)) {
+          return { error: `Access denied: only translation files (${ALLOWED_FILE_EXTENSIONS.join(', ')}) can be accessed.` };
+        }
         const p = path.resolve(args.filePath);
         if (fs.existsSync(p)) {
           raw = fs.readFileSync(p, 'utf8');

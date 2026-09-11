@@ -29,7 +29,7 @@ import {
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
-import { loadLocalDraft, saveLocalDraft, clearLocalDraft } from '@/lib/project';
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft, parseProjectFile } from '@/lib/project';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -187,9 +187,28 @@ export function App() {
     setRoute('app');
   };
 
+  const isAnyModalOpen =
+    isAddKeyOpen ||
+    isAddLanguageOpen ||
+    isImportOpen ||
+    isExportOpen ||
+    isExitConfirmOpen ||
+    isSaveProjectOpen ||
+    isAiTranslateOpen ||
+    isCommandPaletteOpen ||
+    isDiffMergeOpen ||
+    Boolean(confirmDialog?.isOpen) ||
+    isFindReplaceOpen ||
+    isScorecardOpen ||
+    isGlossaryOpen ||
+    isLinterOpen;
+
   // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // If any modal or dialog is open, do not execute global grid shortcuts
+      if (isAnyModalOpen) return;
+
       // Command Palette: Ctrl+K or Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -229,7 +248,7 @@ export function App() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, isAnyModalOpen]);
 
   // When clicking logo, if user has data in table, prompt to save as .jsonlink
   const handleLogoClick = () => {
@@ -362,8 +381,68 @@ export function App() {
         const file = fileList[i];
         const ext = file.name.split('.').pop()?.toLowerCase();
 
-        if (ext === 'json' || ext === 'jsonlink') {
+        if (ext === 'jsonlink') {
           const text = await file.text();
+          try {
+            const project = parseProjectFile(text);
+            if (project.items && project.items.length > 0) {
+              if (incomingItems.length === 0) {
+                incomingItems = project.items;
+                incomingLanguages = project.languages || ['en', 'my'];
+                if (project.name) setProjectName(project.name);
+                continue;
+              } else {
+                for (const l of (project.languages || [])) {
+                  if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+                }
+                const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+                for (const projItem of project.items) {
+                  if (existingMap.has(projItem.key)) {
+                    const existing = existingMap.get(projItem.key)!;
+                    Object.assign(existing, projItem);
+                  } else {
+                    incomingItems.push({ ...projItem });
+                    existingMap.set(projItem.key, projItem);
+                  }
+                }
+                continue;
+              }
+            }
+          } catch {}
+          const parsed = parseJsonFile(text, file.name);
+          const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
+          incomingItems = res.items;
+          incomingLanguages = res.languages;
+        } else if (ext === 'json') {
+          const text = await file.text();
+          if (text.includes('"format"') && text.includes('"jsonlink"')) {
+            try {
+              const project = parseProjectFile(text);
+              if (project.items && project.items.length > 0) {
+                if (incomingItems.length === 0) {
+                  incomingItems = project.items;
+                  incomingLanguages = project.languages || ['en', 'my'];
+                  if (project.name) setProjectName(project.name);
+                  continue;
+                } else {
+                  for (const l of (project.languages || [])) {
+                    if (!incomingLanguages.includes(l)) incomingLanguages.push(l);
+                  }
+                  const existingMap = new Map(incomingItems.map(it => [it.key, it]));
+                  for (const projItem of project.items) {
+                    if (existingMap.has(projItem.key)) {
+                      const existing = existingMap.get(projItem.key)!;
+                      Object.assign(existing, projItem);
+                    } else {
+                      incomingItems.push({ ...projItem });
+                      existingMap.set(projItem.key, projItem);
+                    }
+                  }
+                  continue;
+                }
+              }
+            } catch {}
+          }
           const parsed = parseJsonFile(text, file.name);
           const res = mergeTranslations(incomingItems, incomingLanguages, parsed);
           incomingItems = res.items;
@@ -502,8 +581,22 @@ export function App() {
   };
 
   const handleUpdateKey = (oldKey: string, newKey: string) => {
+    const trimmed = newKey.trim();
+    if (!trimmed || trimmed === oldKey) return;
+    if (items.some(item => item.key === trimmed)) {
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Duplicate Key',
+        description: `A translation key named "${trimmed}" already exists. Please use a unique key.`,
+        variant: 'warning',
+        isAlert: true,
+        confirmLabel: 'OK',
+        onConfirm: () => {},
+      });
+      return;
+    }
     setItems(
-      items.map(item => (item.key === oldKey ? { ...item, key: newKey } : item))
+      items.map(item => (item.key === oldKey ? { ...item, key: trimmed } : item))
     );
   };
 
@@ -512,7 +605,12 @@ export function App() {
   };
 
   const handleDuplicateRow = (item: TranslationItem) => {
-    const newKey = `${item.key}_copy`;
+    let copyIndex = 1;
+    let newKey = `${item.key}_copy`;
+    while (items.some(i => i.key === newKey)) {
+      copyIndex++;
+      newKey = `${item.key}_copy_${copyIndex}`;
+    }
     const duplicated: TranslationItem = { ...item, key: newKey };
     setItems([duplicated, ...items]);
   };
@@ -627,6 +725,8 @@ export function App() {
     setSearchQuery('');
     setSelectedNamespace('all');
     setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
   };
 
   const handleClearAll = () => {

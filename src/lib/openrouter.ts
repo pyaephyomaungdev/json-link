@@ -96,10 +96,13 @@ export async function getStoredApiKey(): Promise<string> {
         }
       }
 
-      // 3. Migrate legacy plain-text key if found
+      // 3. Migrate legacy plain-text key to session only and remove from localStorage
       const legacyKey = localStorage.getItem(LEGACY_STORAGE_KEY_API_KEY);
       if (legacyKey) {
-        await setStoredApiKey(legacyKey, true);
+        try {
+          sessionStorage.setItem(SESSION_KEY_API_KEY, legacyKey);
+          localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
+        } catch {}
         return legacyKey;
       }
     }

@@ -117,6 +117,16 @@ export function parseJsonFile(
         result[lang.toLowerCase()] = flattenObject(parsed[lang]);
       }
     }
+  } else if (
+    keys.length === 1 &&
+    /^[a-z]{2}(-[A-Z]{2})?$/i.test(keys[0]) &&
+    typeof parsed[keys[0]] === 'object' &&
+    parsed[keys[0]] !== null &&
+    !Array.isArray(parsed[keys[0]])
+  ) {
+    // Single language root (e.g. { "en": { "hello": "world" } })
+    const singleLang = keys[0].toLowerCase();
+    result[singleLang] = flattenObject(parsed[keys[0]]);
   } else {
     // Single language file
     const inferredLang = inferLanguageFromFilename(filename);
@@ -267,7 +277,8 @@ export function parseAndroidXml(
   filename: string
 ): { [langCode: string]: Record<string, string> } {
   const result: Record<string, string> = {};
-  const regex = /<string\s+name="([^"]+)">([\s\S]*?)<\/string>/gi;
+  // Match <string ... name="key" ...>value</string> supporting any attribute ordering and extra attributes
+  const regex = /<string\s+[^>]*?name="([^"]+)"[^>]*>([\s\S]*?)<\/string>/gi;
   let match;
   while ((match = regex.exec(content)) !== null) {
     const key = match[1].trim();
@@ -279,7 +290,8 @@ export function parseAndroidXml(
       .replace(/&apos;/g, "'")
       .replace(/\\'/g, "'")
       .replace(/\\"/g, '"')
-      .replace(/\\n/g, '\n');
+      .replace(/\\n/g, '\n')
+      .replace(/\\\\/g, '\\');
     result[key] = val;
   }
 
@@ -296,16 +308,16 @@ export function parseIosStrings(
   filename: string
 ): { [langCode: string]: Record<string, string> } {
   const result: Record<string, string> = {};
-  // Strip block comments /* ... */ and line comments // ...
+  // Strip block comments /* ... */ and full-line comments // ... without stripping // from URLs inside strings
   const cleanContent = content
     .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*/g, '');
+    .replace(/^\s*\/\/.*$/gm, '');
 
   const regex = /"([^"\\]*(?:\\.[^"\\]*)*)"\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*;/g;
   let match;
   while ((match = regex.exec(cleanContent)) !== null) {
-    const key = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
-    const val = match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+    const key = match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+    const val = match[2].replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
     result[key] = val;
   }
 

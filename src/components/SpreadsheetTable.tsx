@@ -117,6 +117,25 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     return null;
   });
+
+  // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
+  useEffect(() => {
+    if (!selectedCell) return;
+    const actualRowIdx = items.findIndex(i => i.key === selectedCell.key);
+    if (actualRowIdx !== -1 && actualRowIdx !== selectedCell.rowIndex) {
+      setSelectedCell(prev => prev ? { ...prev, rowIndex: actualRowIdx } : null);
+    } else if (actualRowIdx === -1 && items.length > 0) {
+      const clampedRow = Math.min(Math.max(0, selectedCell.rowIndex), items.length - 1);
+      setSelectedCell(prev => prev ? {
+        ...prev,
+        key: items[clampedRow].key,
+        rowIndex: clampedRow,
+      } : null);
+    } else if (items.length === 0) {
+      setSelectedCell(null);
+    }
+  }, [items]);
+
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
 
   // Column widths state persisted to localStorage
@@ -169,13 +188,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (!resize) return;
       const delta = ev.clientX - resize.startX;
       const newW = Math.max(120, Math.min(900, resize.startWidth + delta));
+      const targetColId = resize.colId;
       setColumnWidths(prev => ({
         ...prev,
-        [resize.colId]: newW,
+        [targetColId]: newW,
       }));
     };
 
     const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
       if (resizingColRef.current) {
         setColumnWidths(latest => {
           try {
@@ -185,8 +207,6 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         });
         resizingColRef.current = null;
       }
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -448,7 +468,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       }
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const currItem = items[selectedCell.rowIndex];
+      const currItem = items.find(i => i.key === selectedCell.key) || items[selectedCell.rowIndex];
       if (currItem) {
         const val = selectedCell.field === 'key' ? currItem.key : currItem[selectedCell.field] || '';
         handleStartEdit(currItem.key, selectedCell.field, val);
@@ -504,15 +524,30 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (targetRowIdx < updatedItems.length) {
         rowCells.forEach((cellVal, cOffset) => {
           const targetColIdx = startCol + cOffset;
+          // Determine the target field accounting for showDescription
+          let targetField: string | null = null;
           if (targetColIdx === 0) {
+            targetField = 'key';
+          } else if (showDescription && targetColIdx === 1) {
+            targetField = 'description';
+          } else {
+            const langIdx = targetColIdx - (showDescription ? 2 : 1);
+            if (langIdx >= 0 && langIdx < languages.length) {
+              targetField = languages[langIdx];
+            }
+          }
+
+          if (targetField === 'key') {
             const cleanKey = cellVal.trim();
             if (cleanKey) {
               updatedItems[targetRowIdx].key = cleanKey;
               updatedCount++;
             }
-          } else if (targetColIdx >= 1 && targetColIdx <= languages.length) {
-            const lang = languages[targetColIdx - 1];
-            updatedItems[targetRowIdx][lang] = cellVal;
+          } else if (targetField === 'description') {
+            updatedItems[targetRowIdx].description = cellVal;
+            updatedCount++;
+          } else if (targetField) {
+            updatedItems[targetRowIdx][targetField] = cellVal;
             updatedCount++;
           }
         });

@@ -140,6 +140,17 @@ describe('exporter.ts', () => {
       expect(xml).toContain('<string name="button_cancel">Cancel</string>');
     });
 
+    it('escapes literal backslashes in Android XML and iOS strings', () => {
+      const itemWithBackslash: TranslationItem[] = [
+        { key: 'path.win', en: 'C:\\new\\folder' },
+      ];
+      const xml = generateAndroidXml(itemWithBackslash, 'en');
+      expect(xml).toContain('C:\\\\new\\\\folder');
+
+      const strings = generateIosStrings(itemWithBackslash, 'en');
+      expect(strings).toContain('C:\\\\new\\\\folder');
+    });
+
     it('generates iOS strings with comment above key if description exists', () => {
       const strings = generateIosStrings(itemsWithDesc, 'en');
       expect(strings).toContain('/* Button in user profile to save profile edits */');
