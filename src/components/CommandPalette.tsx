@@ -116,17 +116,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onClose();
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors text-xs ${
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors text-xs select-none ${
                     isSelected
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'hover:bg-muted/60 text-foreground'
+                      ? 'bg-accent text-accent-foreground font-medium shadow-2xs'
+                      : 'hover:bg-muted/50 text-foreground'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`size-6 rounded flex items-center justify-center shrink-0 ${
+                      className={`size-6 rounded-md flex items-center justify-center shrink-0 transition-colors [&>svg]:size-3.5 [&_svg]:!text-current ${
                         isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-2xs'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
@@ -137,7 +137,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       {cmd.description && (
                         <div
                           className={`text-[10px] truncate ${
-                            isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                            isSelected ? 'text-muted-foreground font-normal' : 'text-muted-foreground'
                           }`}
                         >
                           {cmd.description}
@@ -148,9 +148,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
                   <div className="flex items-center gap-2 shrink-0 ml-3">
                     <span
-                      className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded ${
+                      className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded transition-colors ${
                         isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          ? 'bg-primary/10 text-primary font-semibold'
                           : 'bg-muted/70 text-muted-foreground'
                       }`}
                     >
@@ -158,9 +158,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </span>
                     {cmd.shortcut && (
                       <kbd
-                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                        className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors ${
                           isSelected
-                            ? 'border-primary-foreground/30 text-primary-foreground bg-primary-foreground/10'
+                            ? 'border-border text-foreground bg-background font-medium shadow-2xs'
                             : 'border-border text-muted-foreground bg-muted'
                         }`}
                       >

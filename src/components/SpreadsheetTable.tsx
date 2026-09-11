@@ -1154,7 +1154,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => exportSingleLanguageArb(items, lang)}
-                            className="gap-2 cursor-pointer text-xs font-medium text-cyan-600 dark:text-cyan-400 focus:text-cyan-500"
+                            className="gap-2 cursor-pointer text-xs"
                           >
                             <Download className="size-3.5" />
                             Download app_{lang.replace('-', '_')}.arb
@@ -1608,14 +1608,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           <>
                             <DropdownMenuItem
                               onClick={() => onUpdateRowStatus(item.key, 'approved')}
-                              className="gap-2 cursor-pointer text-xs text-emerald-600 dark:text-emerald-400"
+                              className="gap-2 cursor-pointer text-xs"
                             >
                               <CheckCircle2 className="size-3.5" />
                               Mark as Approved
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
-                              className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400"
+                              className="gap-2 cursor-pointer text-xs"
                             >
                               <AlertCircle className="size-3.5" />
                               Mark for Review
@@ -1626,7 +1626,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         {onOpenAiTranslate && (
                           <DropdownMenuItem
                             onClick={() => onOpenAiTranslate(undefined, item.key)}
-                            className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
+                            className="gap-2 cursor-pointer text-xs"
                           >
                             <Sparkles className="size-3.5" />
                             Translate with AI
@@ -1752,9 +1752,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   {/* Edit Cell */}
                   <DropdownMenuItem
                     onClick={() => handleStartEdit(currentItem.key, contextMenu.field, cellValue)}
-                    className="gap-2 cursor-pointer text-xs font-medium"
+                    className="gap-2 cursor-pointer text-xs"
                   >
-                    <Pencil className="size-3.5 text-primary" />
+                    <Pencil className="size-3.5" />
                     <span>Edit Cell</span>
                   </DropdownMenuItem>
 
@@ -1791,7 +1791,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   {hasPrevious && (
                     <DropdownMenuItem
                       onClick={() => handleRevertCell(currentItem.key, contextMenu.field)}
-                      className="gap-2 cursor-pointer text-xs text-blue-600 dark:text-blue-400 font-medium"
+                      className="gap-2 cursor-pointer text-xs"
                     >
                       <Undo2 className="size-3.5" />
                       <span>Revert to Previous</span>
@@ -1805,7 +1805,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {onOpenAiTranslate && (
                         <DropdownMenuItem
                           onClick={() => onOpenAiTranslate(contextMenu.field, currentItem.key)}
-                          className="gap-2 cursor-pointer text-xs font-medium text-primary focus:text-primary"
+                          className="gap-2 cursor-pointer text-xs"
                         >
                           <Sparkles className="size-3.5" />
                           <span>Translate with AI ({contextMenu.field.toUpperCase()})</span>
@@ -1816,7 +1816,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <>
                           <DropdownMenuItem
                             onClick={() => handleConvertCellZawgyiToUnicode(currentItem.key, contextMenu.field)}
-                            className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400 font-medium"
+                            className="gap-2 cursor-pointer text-xs"
                             disabled={!cellValue}
                           >
                             <AlertTriangle className="size-3.5" />
@@ -1834,7 +1834,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 setTimeout(() => setCopiedNotification(null), 1500);
                               }
                             }}
-                            className="gap-2 cursor-pointer text-xs text-muted-foreground"
+                            className="gap-2 cursor-pointer text-xs"
                             disabled={!cellValue}
                           >
                             <Type className="size-3.5" />
@@ -1854,7 +1854,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {currentItem.status !== 'approved' && (
                         <DropdownMenuItem
                           onClick={() => onUpdateRowStatus(currentItem.key, 'approved')}
-                          className="gap-2 cursor-pointer text-xs text-emerald-600 dark:text-emerald-400"
+                          className="gap-2 cursor-pointer text-xs"
                         >
                           <CheckCircle2 className="size-3.5" />
                           <span>Mark Row as Approved</span>
@@ -1863,7 +1863,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {currentItem.status !== 'needs-review' && (
                         <DropdownMenuItem
                           onClick={() => onUpdateRowStatus(currentItem.key, 'needs-review')}
-                          className="gap-2 cursor-pointer text-xs text-amber-600 dark:text-amber-400"
+                          className="gap-2 cursor-pointer text-xs"
                         >
                           <AlertCircle className="size-3.5" />
                           <span>Mark Row for Review</span>

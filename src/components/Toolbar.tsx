@@ -427,7 +427,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs sm:hidden">
-              <Globe className="size-3.5 text-muted-foreground" />
+              <Globe className="size-3.5" />
               <span>Add Language Column</span>
             </DropdownMenuItem>
             {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
@@ -436,13 +436,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
             <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-              <Sparkles className="size-3.5 text-primary" />
+              <Sparkles className="size-3.5" />
               Load Sample Data (32 keys)
             </DropdownMenuItem>
             {hasItems && (
               <>
                 <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-                  <RotateCcw className="size-3.5 text-muted-foreground" />
+                  <RotateCcw className="size-3.5" />
                   Reset to Sample
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
