@@ -1608,14 +1608,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           <>
                             <DropdownMenuItem
                               onClick={() => onUpdateRowStatus(item.key, 'approved')}
-                              className="gap-2 cursor-pointer text-xs"
+                              className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
                             >
                               <CheckCircle2 className="size-3.5" />
                               Mark as Approved
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
-                              className="gap-2 cursor-pointer text-xs"
+                              className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
                             >
                               <AlertCircle className="size-3.5" />
                               Mark for Review
@@ -1854,7 +1854,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {currentItem.status !== 'approved' && (
                         <DropdownMenuItem
                           onClick={() => onUpdateRowStatus(currentItem.key, 'approved')}
-                          className="gap-2 cursor-pointer text-xs"
+                          className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
                         >
                           <CheckCircle2 className="size-3.5" />
                           <span>Mark Row as Approved</span>
@@ -1863,7 +1863,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {currentItem.status !== 'needs-review' && (
                         <DropdownMenuItem
                           onClick={() => onUpdateRowStatus(currentItem.key, 'needs-review')}
-                          className="gap-2 cursor-pointer text-xs"
+                          className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
                         >
                           <AlertCircle className="size-3.5" />
                           <span>Mark Row for Review</span>
