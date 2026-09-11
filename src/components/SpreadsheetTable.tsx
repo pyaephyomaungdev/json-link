@@ -273,7 +273,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const zawgyiStats = useMemo(() => {
     const stats: Record<string, ReturnType<typeof detectZawgyiInItems>> = {};
     for (const lang of languages) {
-      stats[lang] = detectZawgyiInItems(items, lang);
+      // Pre-check: skip the heavier ZG scan for languages with no Myanmar characters at all.
+      // Must scan ALL items — sampling a subset would miss Zawgyi rows deeper in the data.
+      if (lang === 'my') {
+        stats[lang] = detectZawgyiInItems(items, lang);
+      } else {
+        const mightHaveBurmese = items.some(
+          i => typeof i[lang] === 'string' && /[\u1000-\u109f]/.test(i[lang])
+        );
+        stats[lang] = mightHaveBurmese
+          ? detectZawgyiInItems(items, lang)
+          : { hasZawgyi: false, count: 0 };
+      }
     }
     return stats;
   }, [items, languages]);

@@ -24,12 +24,33 @@ const ZG_REGEX = new RegExp(
   ].join('|')
 );
 
+// Fast bounded cache for Zawgyi detection (prevents running regex thousands of times per render)
+const isZawgyiCache = new Map<string, boolean>();
+const MAX_ZG_CACHE = 2000;
+
 /**
  * Detects whether a string contains Zawgyi encoded text.
  */
 export function isZawgyi(text: string): boolean {
   if (!text || typeof text !== 'string') return false;
-  return ZG_REGEX.test(text);
+  // Quick check: if text contains no Myanmar unicode range chars (U+1000 - U+109F), it can't be Zawgyi
+  if (!/[\u1000-\u109f]/.test(text)) return false;
+
+  const cached = isZawgyiCache.get(text);
+  if (cached !== undefined) return cached;
+
+  const result = ZG_REGEX.test(text);
+  if (isZawgyiCache.size >= MAX_ZG_CACHE) {
+    // Evict oldest entries
+    let count = 0;
+    for (const k of isZawgyiCache.keys()) {
+      isZawgyiCache.delete(k);
+      count++;
+      if (count >= 400) break;
+    }
+  }
+  isZawgyiCache.set(text, result);
+  return result;
 }
 
 /**

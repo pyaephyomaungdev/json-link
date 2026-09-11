@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
@@ -90,6 +90,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenScorecard,
   onOpenLinter,
 }) => {
+  // Local search query for zero-latency keystrokes + 150ms debounce to parent
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Clear any pending debounce on unmount so onSearchChange never fires on a dead component
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSearchInputChange = (val: string) => {
+    setLocalSearch(val);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      onSearchChange(val);
+    }, 150);
+  };
+
+  const handleClearSearch = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    setLocalSearch('');
+    onSearchChange('');
+  };
+
   return (
     <HorizontalScrollContainer
       gradientFrom="from-card"
@@ -98,19 +134,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     >
       {/* Left: Search & Filter Controls */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-        {/* Compact Search Input */}
+        {/* Compact Search Input with Zero-Latency Local State */}
         <div className="relative w-32 sm:w-44 lg:w-56 shrink-0">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
           <Input
-            value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={e => handleSearchInputChange(e.target.value)}
             placeholder="Search keys..."
             className="pl-7 pr-6 h-7 text-xs bg-background"
             disabled={!hasItems}
           />
-          {searchQuery && (
+          {localSearch && (
             <button
-              onClick={() => onSearchChange('')}
+              onClick={handleClearSearch}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
             >
               <X className="size-2.5" />

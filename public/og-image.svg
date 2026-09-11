@@ -5,13 +5,13 @@
       <stop offset="0.5" stop-color="#14b8a6"/>
       <stop offset="1" stop-color="#6366f1"/>
     </linearGradient>
-    <linearGradient id="innerGlow" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#34d399" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#6366f1" stop-opacity="0.14"/>
+    <linearGradient id="innerGlow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#10b981" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0.20"/>
     </linearGradient>
     <linearGradient id="linkGrad" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#10b981"/>
-      <stop offset="1" stop-color="#0d9488"/>
+      <stop offset="1" stop-color="#14b8a6"/>
     </linearGradient>
     <linearGradient id="linkGradScreen" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#34d399"/>
@@ -32,10 +32,10 @@
 
   <!-- ============ LEFT: Brand column ============ -->
   <!-- App icon -->
-  <rect x="80" y="88" width="120" height="120" rx="27" fill="url(#badgeGrad)"/>
-  <rect x="86" y="94" width="108" height="108" rx="22" fill="#0a0f1a"/>
-  <rect x="86" y="94" width="108" height="108" rx="22" fill="url(#innerGlow)"/>
-  <g transform="translate(86,94) scale(3.375)">
+  <rect x="80" y="88" width="120" height="120" rx="45" fill="url(#badgeGrad)"/>
+  <rect x="83.75" y="91.75" width="112.5" height="112.5" rx="40" fill="#090d16"/>
+  <rect x="83.75" y="91.75" width="112.5" height="112.5" rx="40" fill="url(#innerGlow)"/>
+  <g transform="translate(95,103) scale(2.8125)">
     <path d="M11 7C9.34315 7 8 8.34315 8 10V13C8 14.6569 6.65685 16 5 16C6.65685 16 8 17.3431 8 19V22C8 23.6569 9.34315 25 11 25" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     <path d="M21 7C22.6569 7 24 8.34315 24 10V13C24 14.6569 25.3431 16 27 16C25.3431 16 24 17.3431 24 19V22C24 23.6569 22.6569 25 21 25" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     <path d="M12 16H20" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 2.5" fill="none"/>
@@ -45,7 +45,7 @@
 
   <!-- Wordmark -->
   <text x="80" y="320" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="74" font-weight="bold" letter-spacing="-2">
-    <tspan fill="#0f172a">json</tspan><tspan fill="url(#linkGrad)">-link</tspan>
+    <tspan fill="#0f172a">JSON</tspan><tspan dx="10" fill="url(#linkGrad)">Link</tspan>
   </text>
 
   <!-- Description -->

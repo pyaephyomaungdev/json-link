@@ -132,11 +132,34 @@ export function App() {
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
 
-  // Linter report calculations
-  const lintReport = useMemo(() => {
-    return runLocalizationLinter(items, languages);
+  // Debounced linter issue count (300ms) to avoid CPU spikes during fast typing.
+  // After the debounce elapses the scan is pushed into idle time when available,
+  // so typing remains smooth even mid-scan.
+  const [lintIssueCount, setLintIssueCount] = useState<number>(0);
+  useEffect(() => {
+    if (items.length === 0) {
+      setLintIssueCount(0);
+      return;
+    }
+    let idleHandle: number | null = null;
+    const timer = setTimeout(() => {
+      const compute = () => {
+        const report = runLocalizationLinter(items, languages);
+        setLintIssueCount(report.totalIssues);
+      };
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        idleHandle = window.requestIdleCallback(compute, { timeout: 1000 });
+      } else {
+        compute();
+      }
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      if (idleHandle !== null) {
+        window.cancelIdleCallback(idleHandle);
+      }
+    };
   }, [items, languages]);
-  const lintIssueCount = lintReport.totalIssues;
 
   // Drag and drop state on hero empty area
   const [isHeroDragOver, setIsHeroDragOver] = useState(false);

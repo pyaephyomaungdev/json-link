@@ -110,5 +110,39 @@ describe('myanmarFont.ts', () => {
       expect(isZawgyi('\u1031\u1000\u103C')).toBe(true); // ေကြ — Zawgyi order
       expect(isZawgyi('\u1031\u1000\u103B')).toBe(true); // ေကျ — Zawgyi order
     });
+
+    it('early-exits (non-Zawgyi) for text without any Myanmar codepoints', () => {
+      // No U+1000–U+109F characters: the Myanmar-range pre-check must short-circuit,
+      // and results should match the non-optimised expectation.
+      expect(isZawgyi('Hello world')).toBe(false);
+      expect(isZawgyi('Login failed: {attempts, number}')).toBe(false);
+      expect(isZawgyi('123 456-7890')).toBe(false);
+    });
+
+    it('returns stable cached results across repeated identical calls', () => {
+      const zg = '\u1031\u1019\u102c\u1004\u103a'; // မောင် in Zawgyi order
+      const uni = 'မင်္ဂလာပါ';
+      const firstZg = isZawgyi(zg);
+      const firstUni = isZawgyi(uni);
+
+      expect(isZawgyi(zg)).toBe(firstZg);
+      expect(isZawgyi(zg)).toBe(true);
+      expect(isZawgyi(uni)).toBe(firstUni);
+      expect(isZawgyi(uni)).toBe(false);
+      expect(isZawgyi(zg)).toBe(isZawgyi(zg));
+    });
+
+    it('detects Zawgyi in non-"my" language columns, regardless of row position', () => {
+      // A translation column (e.g. 'th' typed with a Zawgyi keyboard) that deep in
+      // the data contains Burmese text — pre-checks must not sample-skip these rows.
+      const items = new Array(50).fill(null).map((_, i) =>
+        i === 40
+          ? { key: `key${i}`, en: 'Hello', th: '\u1031\u1019\u102c\u1004\u103a' }
+          : { key: `key${i}`, en: 'Hello', th: `Thai text ${i}` }
+      );
+      const result = detectZawgyiInItems(items, 'th');
+      expect(result.hasZawgyi).toBe(true);
+      expect(result.count).toBe(1);
+    });
   });
 });
