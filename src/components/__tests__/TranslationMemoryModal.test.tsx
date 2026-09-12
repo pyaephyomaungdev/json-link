@@ -47,4 +47,38 @@ describe('TranslationMemoryModal', () => {
     expect(screen.getByText('“Cancel”')).not.toBeNull();
     expect(screen.getByText('သိမ်းဆည်းပါ')).not.toBeNull();
   });
+
+  it('opens custom ConfirmDialog when Clear button is clicked and clears memory on confirmation', () => {
+    render(
+      <TranslationMemoryModal
+        isOpen={true}
+        onClose={vi.fn()}
+        items={baseItems}
+        languages={['en', 'my']}
+      />
+    );
+
+    // Index first so entries exist
+    fireEvent.click(screen.getByText('Index Active Workspace'));
+    expect(screen.getByText('“Save”')).not.toBeNull();
+
+    // Click trash button
+    const clearBtn = screen.getByTitle('Clear all memory');
+    fireEvent.click(clearBtn);
+
+    // Custom confirm dialog should open with title and description
+    expect(screen.getByText('Clear Translation Memory')).not.toBeNull();
+    expect(
+      screen.getAllByText(
+        'Are you sure you want to clear all stored Translation Memory entries? This action cannot be undone.'
+      ).length
+    ).toBeGreaterThan(0);
+
+    // Confirm the dialog
+    const confirmBtn = screen.getByRole('button', { name: 'Clear All' });
+    fireEvent.click(confirmBtn);
+
+    // Should show empty state
+    expect(screen.getByText('No translation memory entries found.')).not.toBeNull();
+  });
 });

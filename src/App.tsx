@@ -198,7 +198,14 @@ export function App() {
   const handleSelectFolder = async () => {
     try {
       if (typeof window === 'undefined' || !(window as any).showDirectoryPicker) {
-        alert('File System Access API is not supported in this browser. Please use Chrome, Edge, Brave, or Opera.');
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Browser Compatibility Notice',
+          description: 'The File System Access API is not supported in this browser. Please use Google Chrome, Microsoft Edge, Brave, or Opera.',
+          isAlert: true,
+          confirmLabel: 'OK',
+          onConfirm: () => {},
+        });
         return;
       }
       const dirHandle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({
@@ -206,7 +213,15 @@ export function App() {
       });
       const hasPerm = await verifyDirectoryPermission(dirHandle, true);
       if (!hasPerm) {
-        alert('Permission to write to the folder was denied.');
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Permission Denied',
+          description: 'Permission to write to the selected project folder was denied by your browser.',
+          variant: 'destructive',
+          isAlert: true,
+          confirmLabel: 'OK',
+          onConfirm: () => {},
+        });
         return;
       }
 
