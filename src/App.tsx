@@ -1129,12 +1129,17 @@ export function App() {
   };
 
   const handleStartEmptySheet = () => {
-    if (isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
     isExitingRef.current = false;
+    clearLocalDraft();
     try {
       sessionStorage.removeItem('jsonlink_user_discarded');
       sessionStorage.setItem('jsonlink_workspace_active', 'true');
+      localStorage.removeItem('jsonlink_current_project');
+      localStorage.removeItem('json-link-draft');
+      localStorage.removeItem('jsonlink_draft');
     } catch {}
+    // Lock sample data restoration for 1500ms so no delayed click or ghost tap can hydrate sample
+    exitCooldownUntilRef.current = Date.now() + 1500;
     setIsWorkspaceActive(true);
     setItemsWithoutHistory([]);
     setLanguages(['en', 'my']);

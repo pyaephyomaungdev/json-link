@@ -229,20 +229,27 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </DialogHeader>
 
         <DialogBody className="space-y-4 text-xs">
-          {/* Category Filter Tabs */}
-          <div className="flex items-center gap-1 border-b border-border pb-2 overflow-x-auto no-scrollbar">
+          {/* Category Filter Tabs (2x2 grid on mobile so Data & Sheets is never pushed offscreen) */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1 sm:gap-1.5 border-b border-border pb-2.5">
             {categories.map(cat => (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer text-center sm:text-left ${
                   selectedCategory === cat.id
                     ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 bg-muted/30 sm:bg-transparent'
                 }`}
               >
-                {cat.label} ({cat.count})
+                <span>{cat.label}</span>
+                <span className={`text-[10px] px-1 py-0.2 rounded-full font-semibold ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {cat.count}
+                </span>
               </button>
             ))}
           </div>
