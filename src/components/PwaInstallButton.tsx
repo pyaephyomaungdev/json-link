@@ -60,10 +60,10 @@ export function PwaInstallButton() {
       variant="outline"
       size="sm"
       onClick={handleInstall}
-      className="gap-1.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer h-7 px-2.5 shadow-2xs"
+      className="gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer h-7 px-2 shadow-2xs"
       title="Install JSON Link as an offline Desktop application"
     >
-      <Download className="size-3.5" />
+      <Download className="size-3 text-muted-foreground" />
       <span className="hidden sm:inline">Install App</span>
       <span className="sm:hidden">Install</span>
     </Button>

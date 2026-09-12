@@ -73,6 +73,8 @@ interface SpreadsheetTableProps {
   onToggleFilterMissingLang?: (lang: string) => void;
   totalItemCount?: number;
   onClearFilters?: () => void;
+  activeFilter?: 'all' | 'missing';
+  searchQuery?: string;
 }
 
 interface EditingCell {
@@ -130,6 +132,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onToggleFilterMissingLang,
   totalItemCount,
   onClearFilters,
+  activeFilter,
+  searchQuery,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -688,6 +692,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   if (items.length === 0) {
     // Project is loaded but current search/filters matched nothing
     if ((totalItemCount ?? 0) > 0) {
+      const isMissingOnly = (activeFilter === 'missing' || Boolean(filterMissingLang)) && !searchQuery;
+      if (isMissingOnly) {
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
+            <div className="size-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-xs">
+              <CheckCircle2 className="size-8 stroke-[1.5]" />
+            </div>
+            <h3 className="text-xl font-bold tracking-tight text-foreground">
+              All translations complete! 🎉
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
+              No missing translations found across all {totalItemCount} keys. Everything is 100% translated.
+            </p>
+            {onClearFilters && (
+              <Button onClick={onClearFilters} size="sm" className="gap-2 shadow-xs font-semibold h-8 text-xs cursor-pointer">
+                <RotateCcw className="size-3.5" />
+                Show All Keys
+              </Button>
+            )}
+          </div>
+        );
+      }
+
       return (
         <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
           <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 shadow-xs">
@@ -697,11 +724,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             No keys match this filter or search
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
-            {totalItemCount} key{totalItemCount === 1 ? ' is' : 's are'} loaded in the spreadsheet, but none match the current search, namespace, status, or missing-translation filters.
+            {totalItemCount} key{totalItemCount === 1 ? ' is' : 's are'} loaded in the spreadsheet, but none match the current search {searchQuery ? `("${searchQuery}")` : ''} or active filters.
           </p>
           {onClearFilters && (
-            <Button onClick={onClearFilters} size="lg" className="gap-2 shadow-sm font-semibold">
-              <RotateCcw className="size-4" />
+            <Button onClick={onClearFilters} size="sm" className="gap-2 shadow-xs font-semibold h-8 text-xs cursor-pointer">
+              <RotateCcw className="size-3.5" />
               Clear Filters &amp; Search
             </Button>
           )}
@@ -791,7 +818,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               }
             }}
             placeholder={
-              selectedCell ? `Content of ${selectedCell.key} [${selectedCell.field}]` : 'Select a cell...'
+              selectedCell
+                ? `Edit [${selectedCell.field}] for key "${selectedCell.key}" (Press Enter to save)...`
+                : 'Select a cell, double-click or press Enter to edit...'
             }
             className={`w-full px-2.5 py-1 bg-background border border-border rounded text-xs text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors ${
               selectedCell && isRtlLanguage(selectedCell.field) ? 'text-right' : 'text-left'
@@ -1241,24 +1270,24 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                     className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
-                    <div className="flex flex-col items-center justify-center">
+                    <div className="flex items-center justify-center gap-1">
                       <span>{rowNumber}</span>
 
-                      {/* Row Review Status Dropdown Badge */}
+                      {/* Row Review Status Dropdown Indicator */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             onClick={(e) => e.stopPropagation()}
-                            className={`mt-0.5 px-1 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-colors ${
-                              rowStatus === 'approved'
-                                ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40'
-                                : rowStatus === 'needs-review'
-                                ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40'
-                                : 'bg-muted text-muted-foreground border border-border/80'
-                            }`}
-                            title={`Status: ${rowStatus}. Click to change review status.`}
+                            className="p-0.5 rounded hover:bg-muted/80 cursor-pointer transition-colors inline-flex items-center justify-center"
+                            title={`Review Status: ${rowStatus}. Click to change.`}
                           >
-                            {rowStatus === 'approved' ? '✓ Appr' : rowStatus === 'needs-review' ? 'Review' : 'Draft'}
+                            {rowStatus === 'approved' ? (
+                              <span className="size-2 rounded-full bg-emerald-500 inline-block shadow-2xs" />
+                            ) : rowStatus === 'needs-review' ? (
+                              <span className="size-2 rounded-full bg-amber-500 inline-block shadow-2xs" />
+                            ) : (
+                              <span className="size-1.5 rounded-full bg-border group-hover:bg-muted-foreground/50 inline-block transition-colors" />
+                            )}
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-36">
@@ -1330,13 +1359,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       />
                     ) : (
                       <div
-                        className="flex items-center justify-between gap-1.5 cursor-pointer"
+                        className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
                         onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
                         title="Double-click to edit key name"
                       >
                         <span className="font-semibold truncate text-foreground">
                           {item.key}
                         </span>
+                        <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
                       </div>
                     )}
                   </td>
@@ -1510,7 +1540,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         ) : (
                           <div
                             dir={isRtl ? 'rtl' : 'ltr'}
-                            className="min-h-[26px] flex items-start justify-between gap-1"
+                            className="group/valcell min-h-[26px] flex items-start justify-between gap-1.5"
                             onDoubleClick={() => handleStartEdit(item.key, lang, val)}
                             title="Double-click to edit"
                           >
@@ -1591,6 +1621,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 </span>
                               )}
                             </div>
+                            <Pencil className="size-3 text-muted-foreground/35 opacity-0 group-hover/valcell:opacity-100 transition-opacity shrink-0 mt-0.5" />
                           </div>
                         )}
                       </td>

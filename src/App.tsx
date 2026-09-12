@@ -77,6 +77,7 @@ import {
   BookOpen,
   FlaskConical,
   Info,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -1301,18 +1302,32 @@ export function App() {
     <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
       {/* Top MS Excel Ribbon Header: Edge-to-edge */}
       <header className="border-b border-border bg-card px-3 sm:px-4 h-12 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
-            title={items.length > 0 ? "Return to Home (with Save prompt)" : "JSON Link"}
+            title={items.length > 0 ? "Return to Landing (with Save prompt)" : "JSON Link"}
           >
-            <Logo size="md" />
+            <Logo size="md" showText={false} className="sm:hidden" />
+            <Logo size="md" showText={true} className="hidden sm:flex" />
           </button>
+
+          {items.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogoClick}
+              className="gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer h-7 px-1.5 sm:px-2 shrink-0"
+              title="Close current project and return to landing page"
+            >
+              <ArrowLeft className="size-3.5" />
+              <span className="hidden sm:inline font-medium">Home</span>
+            </Button>
+          )}
 
           {/* Editable Project Name or Subtitle */}
           {items.length > 0 ? (
-            <div className="flex items-center gap-1.5 ml-1 pl-2.5 border-l border-border">
+            <div className="flex items-center gap-1 min-w-0 pl-1.5 sm:pl-2.5 border-l border-border">
               {isEditingProjectName ? (
                 <input
                   ref={projectNameInputRef}
@@ -1325,16 +1340,16 @@ export function App() {
                       setIsEditingProjectName(false);
                     }
                   }}
-                  className="h-6 px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-32 sm:w-44 text-foreground shadow-sm"
+                  className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-24 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
                   autoFocus
                 />
               ) : (
                 <button
                   onClick={() => setIsEditingProjectName(true)}
-                  className="group flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer"
+                  className="group flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer min-w-0"
                   title="Click to rename project"
                 >
-                  <span className="truncate max-w-[120px] sm:max-w-[200px]">{projectName}</span>
+                  <span className="truncate max-w-[80px] xs:max-w-[110px] sm:max-w-[150px] md:max-w-[200px]">{projectName}</span>
                   <Pencil className="size-3 text-muted-foreground opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
                 </button>
               )}
@@ -1345,10 +1360,9 @@ export function App() {
             </span>
           )}
 
-          {/* Header Stats Badges — lg+ only on the ribbon; narrower screens get the
-              same numbers from the table footer / StatsBar instead of an overflow */}
+          {/* Header Stats Badges — xl+ only to guarantee breathing room for QA Suite and controls */}
           {totalKeys > 0 && (
-            <div className="hidden lg:flex items-center gap-2 ml-3 pl-3 border-l border-border text-xs text-muted-foreground min-w-0">
+            <div className="hidden xl:flex items-center gap-2 ml-2 pl-2.5 border-l border-border text-xs text-muted-foreground min-w-0">
               <span className="flex items-center gap-1 font-medium text-foreground whitespace-nowrap shrink-0">
                 <Key className="size-3 text-primary shrink-0" /> {totalKeys.toLocaleString()} keys
               </span>
@@ -1359,7 +1373,7 @@ export function App() {
                 title={`Languages: ${languages.join(', ')} — click to add or manage`}
               >
                 <Globe className="size-3 text-emerald-600 shrink-0" />
-                <span className="whitespace-nowrap truncate max-w-[90px] sm:max-w-[110px] lg:max-w-[120px] xl:max-w-[220px]">
+                <span className="whitespace-nowrap truncate max-w-[120px] xl:max-w-[200px]">
                   {languages.slice(0, 3).map(l => l.toUpperCase()).join(', ')}
                   {languages.length > 3 ? ` +${languages.length - 3}` : ''}
                 </span>
@@ -1393,71 +1407,51 @@ export function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {items.length > 0 && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsFindReplaceOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
-                title="Find & Replace Across Languages (Cmd+F / Cmd+H)"
-              >
-                <Replace className="size-3.5 text-blue-500" />
-                <span>Find / Replace</span>
-              </Button>
-
+            <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsScorecardOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden md:flex cursor-pointer"
+                className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer shadow-2xs"
                 title="Localization Health & Scorecard"
               >
                 <Activity className="size-3.5 text-emerald-500" />
-                <span>Scorecard</span>
+                <span className="hidden md:inline font-medium">Scorecard</span>
               </Button>
 
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsLinterOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden lg:flex cursor-pointer"
+                className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer shadow-2xs"
                 title="Localization QA & Consistency Linter"
               >
                 <Sparkles className="size-3.5 text-amber-500" />
-                <span>Linter</span>
+                <span className="hidden md:inline font-medium">Linter</span>
                 {lintIssueCount > 0 && (
-                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-medium leading-tight">
+                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight">
                     {lintIssueCount}
                   </span>
                 )}
               </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsGlossaryOpen(true)}
-                className="h-7 px-2 text-xs gap-1.5 hidden xl:flex cursor-pointer"
-                title="AI Translation Glossary & Termbase"
-              >
-                <BookOpen className="size-3.5 text-purple-500" />
-                <span>Glossary</span>
-              </Button>
-            </>
+            </div>
           )}
 
-          <PwaInstallButton />
+          <div className="hidden md:block">
+            <PwaInstallButton />
+          </div>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={openDocs}
-            className="h-7 px-2 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
             title="User Guide & Documentation"
           >
             <BookOpen className="size-3.5" />
-            <span className="hidden sm:inline font-medium">Docs</span>
+            <span className="hidden md:inline font-medium">Docs</span>
           </Button>
 
           <Button
@@ -1653,6 +1647,8 @@ export function App() {
             onOpenAiTranslate={handleOpenAiTranslate}
             onUpdateRowStatus={handleUpdateRowStatus}
             filterMissingLang={filterMissingLang}
+            activeFilter={activeFilter}
+            searchQuery={searchQuery}
             totalItemCount={items.length}
             onClearFilters={handleClearFilters}
             onToggleFilterMissingLang={(lang) => {

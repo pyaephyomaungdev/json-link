@@ -171,7 +171,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
           <div className="flex flex-col items-center text-center">
             <Logo size="lg" />
             <span className="text-[11px] text-muted-foreground mt-2.5">
-              — i18n Localization Spreadsheet —
+              — Offline-First i18n Localization Spreadsheet Studio —
             </span>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground max-w-xl mt-3">
               The localization workspace for developers & translators
@@ -179,14 +179,14 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mt-2">
               View, edit, validate, and translate your localization files side-by-side in an
               Excel-style spreadsheet. Auto-translate with AI, lint for quality issues, and export
-              to every framework you ship to — without your data ever leaving the browser.
+              to every framework you ship to — 100% offline-first without your data ever leaving the browser.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
               <Badge variant="success">Free & Open Source</Badge>
               <Badge variant="secondary">MIT License</Badge>
-              <Badge variant="warning">266 Automated Tests</Badge>
+              <Badge variant="warning">300+ Automated Tests</Badge>
               <Badge variant="outline" className="gap-1">
-                <Lock className="size-3 text-emerald-500" /> 100% Client-Side
+                <Lock className="size-3 text-emerald-500" /> 100% Client-Side & Offline
               </Badge>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2.5 mt-5">
