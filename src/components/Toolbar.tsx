@@ -372,12 +372,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onClick={onOpenFolderSync}
             className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 ${
               linkedFolderName
-                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
-                : 'text-muted-foreground'
+                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15'
+                : 'text-foreground'
             }`}
             title={linkedFolderName ? `Connected folder: ${linkedFolderName}` : 'Sync with local project folder'}
           >
-            <FolderSync className="size-3" />
+            <FolderSync className={`size-3 ${linkedFolderName ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
             <span className="hidden sm:inline">
               {linkedFolderName ? `📁 ${linkedFolderName}` : 'Folder Sync'}
             </span>
