@@ -90,4 +90,16 @@ describe('AiTranslateModal', () => {
 
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('renders selected scope and translates only targetKeys when provided', () => {
+    render(
+      <AiTranslateModal
+        {...defaultProps}
+        targetKeys={['auth.login']}
+      />
+    );
+
+    expect(screen.getByText(/Translating 1 selected keys into/i)).not.toBeNull();
+    expect(screen.getByText(/1 keys selected/i)).not.toBeNull();
+  });
 });

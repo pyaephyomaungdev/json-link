@@ -69,6 +69,7 @@ interface AiTranslateModalProps {
   onApplyTranslations: (updatedItems: TranslationItem[]) => void;
   preselectedTargetLang?: string;
   targetKey?: string;
+  targetKeys?: string[];
 }
 
 export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
@@ -79,6 +80,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   onApplyTranslations,
   preselectedTargetLang,
   targetKey,
+  targetKeys,
 }) => {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
@@ -87,6 +89,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   const [targetLang, setTargetLang] = useState('my');
   const [scope, setScope] = useState<'missing' | 'all'>('missing');
   const [activeTargetKey, setActiveTargetKey] = useState<string | undefined>(targetKey);
+  const [activeTargetKeys, setActiveTargetKeys] = useState<string[] | undefined>(targetKeys);
 
   const [allModels, setAllModels] = useState<OpenRouterModel[]>(getCachedOpenRouterModels);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -114,6 +117,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setActiveTargetKey(targetKey);
+      setActiveTargetKeys(targetKeys);
       setRememberKey(isKeyRemembered());
       getStoredApiKey().then(storedKey => {
         setApiKey(storedKey);
@@ -152,7 +156,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       isAbortedRef.current = false;
       setModelSearch('');
     }
-  }, [isOpen, languages, preselectedTargetLang, targetKey]);
+  }, [isOpen, languages, preselectedTargetLang, targetKey, targetKeys]);
 
   // Dynamically filter models based on modelSearch query
   const filteredModels = useMemo(() => {
@@ -206,16 +210,19 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       return hasSource ? targetLangsList.length : 0;
     }
 
+    const targetKeySet = activeTargetKeys && activeTargetKeys.length > 0 ? new Set(activeTargetKeys) : null;
+
     let total = 0;
     for (const tL of targetLangsList) {
       for (const item of items) {
+        if (targetKeySet && !targetKeySet.has(item.key)) continue;
         if (!(item[sourceLang] || '').trim()) continue;
         if (scope === 'missing' && (item[tL] || '').trim()) continue;
         total++;
       }
     }
     return total;
-  }, [items, targetLangsList, sourceLang, scope, activeTargetKey, singleTargetItem]);
+  }, [items, targetLangsList, sourceLang, scope, activeTargetKey, singleTargetItem, activeTargetKeys]);
 
   // Keys that qualify for translation
   const eligibleItems = useMemo(() => {
@@ -225,7 +232,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       return hasSource ? [singleTargetItem] : [];
     }
 
+    const targetKeySet = activeTargetKeys && activeTargetKeys.length > 0 ? new Set(activeTargetKeys) : null;
+
     return items.filter(item => {
+      if (targetKeySet && !targetKeySet.has(item.key)) return false;
       const hasSource = !!(item[sourceLang] || '').trim();
       if (!hasSource) return false;
 
@@ -235,7 +245,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
       return true;
     });
-  }, [items, activeTargetKey, singleTargetItem, sourceLang, targetLangsList, scope]);
+  }, [items, activeTargetKey, singleTargetItem, sourceLang, targetLangsList, scope, activeTargetKeys]);
 
   const handleSaveKey = (newKey: string) => {
     setApiKey(newKey);
@@ -313,6 +323,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
         const langItems = items.filter(item => {
           if (activeTargetKey && item.key !== activeTargetKey) return false;
+          if (activeTargetKeys && activeTargetKeys.length > 0 && !activeTargetKeys.includes(item.key)) return false;
           const hasSource = !!(item[sourceLang] || '').trim();
           if (!hasSource) return false;
           if (scope === 'missing') {
@@ -414,7 +425,9 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           <DialogDescription>
             {activeTargetKey
               ? `Translating row "${activeTargetKey}" into ${getLanguageDisplayName(targetLang)}.`
-              : 'Translate missing keys automatically with variable preservation ({name}, %s).'}
+              : activeTargetKeys && activeTargetKeys.length > 0
+                ? `Translating ${activeTargetKeys.length} selected keys into ${getLanguageDisplayName(targetLang)}.`
+                : 'Translate missing keys automatically with variable preservation ({name}, %s).'}
           </DialogDescription>
         </DialogHeader>
 
@@ -481,6 +494,26 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Selected Keys Scope (Bulk Selection Mode) */}
+          {activeTargetKeys && activeTargetKeys.length > 0 && !activeTargetKey && (
+            <div className="space-y-2.5 bg-muted/40 p-3 rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Selected Scope: <code className="font-mono text-primary font-bold">{activeTargetKeys.length} keys selected</code></span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setActiveTargetKeys(undefined)}
+                  className="text-[11px] text-muted-foreground hover:text-foreground underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>Translate all rows instead</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* OpenRouter API Key Input & Security Vault */}
           <div className="space-y-2 bg-muted/40 p-3 rounded-lg border border-border">
             <div className="flex items-center justify-between">

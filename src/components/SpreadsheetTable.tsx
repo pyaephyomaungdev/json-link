@@ -69,8 +69,10 @@ interface SpreadsheetTableProps {
   onOpenAddLanguage?: () => void;
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
-  onOpenAiTranslate?: (targetLang?: string, targetKey?: string) => void;
+  onOpenAiTranslate?: (targetLang?: string, targetKey?: string, targetKeys?: string[]) => void;
   onUpdateRowStatus?: (key: string, status: RowStatus) => void;
+  onBulkUpdateStatus?: (keys: string[], status: RowStatus) => void;
+  onBulkDeleteRows?: (keys: string[]) => void;
   filterMissingLang?: string | null;
   onToggleFilterMissingLang?: (lang: string) => void;
   totalItemCount?: number;
@@ -131,6 +133,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onBatchUpdate,
   onOpenAiTranslate,
   onUpdateRowStatus,
+  onBulkUpdateStatus,
+  onBulkDeleteRows,
   filterMissingLang,
   onToggleFilterMissingLang,
   totalItemCount,
@@ -207,11 +211,112 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return columnWidths[id] ?? fallback;
   };
 
-  const ROW_NUM_WIDTH = 54;
+  const ROW_NUM_WIDTH = 70;
   const KEY_COL_WIDTH = getColWidth('key', 280);
   const DESC_COL_WIDTH = getColWidth('description', 220);
   const getLangColWidth = (lang: string) => getColWidth(lang, 280);
   const MENU_COL_WIDTH = 56;
+
+  // Multi-select row state
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
+  const [lastSelectedRowKey, setLastSelectedRowKey] = useState<string | null>(null);
+
+  // Sync selected keys with current items (prune removed keys)
+  useEffect(() => {
+    if (selectedRowKeys.size > 0) {
+      const existingKeys = new Set(items.map(i => i.key));
+      setSelectedRowKeys(prev => {
+        const next = new Set(Array.from(prev).filter(k => existingKeys.has(k)));
+        return next.size === prev.size ? prev : next;
+      });
+    }
+  }, [items]);
+
+  const handleToggleSelectAll = () => {
+    if (items.length === 0) return;
+    if (selectedRowKeys.size === items.length) {
+      setSelectedRowKeys(new Set());
+      setLastSelectedRowKey(null);
+    } else {
+      setSelectedRowKeys(new Set(items.map(i => i.key)));
+    }
+  };
+
+  const handleToggleRowSelect = (key: string, e: React.MouseEvent | React.ChangeEvent) => {
+    const isShift = (e as any).shiftKey;
+    setSelectedRowKeys(prev => {
+      const next = new Set(prev);
+      if (isShift && lastSelectedRowKey) {
+        const startIdx = items.findIndex(i => i.key === lastSelectedRowKey);
+        const endIdx = items.findIndex(i => i.key === key);
+        if (startIdx !== -1 && endIdx !== -1) {
+          const min = Math.min(startIdx, endIdx);
+          const max = Math.max(startIdx, endIdx);
+          for (let i = min; i <= max; i++) {
+            next.add(items[i].key);
+          }
+          return next;
+        }
+      }
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+    setLastSelectedRowKey(key);
+  };
+
+  const handleBulkApprove = () => {
+    const keys = Array.from(selectedRowKeys);
+    if (keys.length === 0) return;
+    if (onBulkUpdateStatus) {
+      onBulkUpdateStatus(keys, 'approved');
+    } else if (onBatchUpdate) {
+      const keySet = selectedRowKeys;
+      onBatchUpdate(items.map(i => keySet.has(i.key) ? { ...i, status: 'approved' } : i));
+    } else if (onUpdateRowStatus) {
+      keys.forEach(k => onUpdateRowStatus(k, 'approved'));
+    }
+    setSelectedRowKeys(new Set());
+    setLastSelectedRowKey(null);
+  };
+
+  const handleBulkNeedsReview = () => {
+    const keys = Array.from(selectedRowKeys);
+    if (keys.length === 0) return;
+    if (onBulkUpdateStatus) {
+      onBulkUpdateStatus(keys, 'needs-review');
+    } else if (onBatchUpdate) {
+      const keySet = selectedRowKeys;
+      onBatchUpdate(items.map(i => keySet.has(i.key) ? { ...i, status: 'needs-review' } : i));
+    } else if (onUpdateRowStatus) {
+      keys.forEach(k => onUpdateRowStatus(k, 'needs-review'));
+    }
+    setSelectedRowKeys(new Set());
+    setLastSelectedRowKey(null);
+  };
+
+  const handleBulkAiTranslate = () => {
+    const keys = Array.from(selectedRowKeys);
+    if (keys.length === 0) return;
+    onOpenAiTranslate?.(undefined, undefined, keys);
+  };
+
+  const handleBulkDelete = () => {
+    const keys = Array.from(selectedRowKeys);
+    if (keys.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${keys.length} selected translation ${keys.length === 1 ? 'key' : 'keys'}?`)) {
+      if (onBulkDeleteRows) {
+        onBulkDeleteRows(keys);
+      } else {
+        keys.forEach(k => onDeleteRow(k));
+      }
+      setSelectedRowKeys(new Set());
+      setLastSelectedRowKey(null);
+    }
+  };
 
   // Translation history diff/revert state: previousValues[key][lang] = oldVal
   const [previousValues, setPreviousValues] = useState<Record<string, Record<string, string>>>({});
@@ -468,6 +573,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Keyboard navigation across cells when NOT editing
   const handleTableKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && selectedRowKeys.size > 0) {
+      e.preventDefault();
+      setSelectedRowKeys(new Set());
+      setLastSelectedRowKey(null);
+      return;
+    }
+
     if (editingCell || !selectedCell || items.length === 0) return;
 
     const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
@@ -879,12 +991,27 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           {/* Top Column Headers */}
           <thead className="sticky top-0 z-40 shadow-xs">
             <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {/* Row Number Header */}
+              {/* Row Number & Multi-Select Header */}
               <th
                 style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
-                #
+                <div className="flex items-center justify-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={items.length > 0 && selectedRowKeys.size === items.length}
+                    ref={(el) => {
+                      if (el) {
+                        el.indeterminate = selectedRowKeys.size > 0 && selectedRowKeys.size < items.length;
+                      }
+                    }}
+                    onChange={handleToggleSelectAll}
+                    className="size-3.5 rounded border-border text-primary cursor-pointer accent-primary shrink-0"
+                    title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
+                    aria-label="Select all rows"
+                  />
+                  <span className="text-[10px] text-muted-foreground font-mono">#</span>
+                </div>
               </th>
 
               {/* Translation Key Header with Resize Handle */}
@@ -895,7 +1022,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
                 }}
                 className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${
-                  isKeyFrozen ? 'left-[54px] z-45' : 'z-40'
+                  isKeyFrozen ? 'z-45' : 'z-40'
                 } border-b border-border relative group/header ${getFreezeLineClass(isKeyLastFrozen)}`}
               >
                 <div className="flex items-center justify-between gap-1.5">
@@ -961,6 +1088,26 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         <Copy className="size-3.5" />
                         <span>Copy All Key Names</span>
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => setSelectedRowKeys(new Set(items.map(i => i.key)))}
+                        className="gap-2 cursor-pointer text-xs"
+                      >
+                        <CheckCircle2 className="size-3.5 text-primary" />
+                        <span>Select All Rows</span>
+                      </DropdownMenuItem>
+                      {selectedRowKeys.size > 0 && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedRowKeys(new Set());
+                            setLastSelectedRowKey(null);
+                          }}
+                          className="gap-2 cursor-pointer text-xs text-muted-foreground"
+                        >
+                          <X className="size-3.5" />
+                          <span>Deselect All ({selectedRowKeys.size})</span>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -1312,9 +1459,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               return (
                 <tr
                   key={item.key}
-                  className="group transition-colors"
+                  className={`group transition-colors ${
+                    selectedRowKeys.has(item.key) ? 'bg-primary/5 dark:bg-primary/10' : ''
+                  }`}
                 >
-                  {/* Row Number & Review Status Indicator */}
+                  {/* Row Number, Selection Checkbox & Review Status Indicator */}
                   <td
                     style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                     onClick={() =>
@@ -1326,17 +1475,29 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       })
                     }
                     onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                    className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
+                    className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${
+                      selectedRowKeys.has(item.key)
+                        ? 'bg-primary/10 dark:bg-primary/20 text-foreground'
+                        : 'bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground'
+                    } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                   >
-                    <div className="flex items-center justify-center gap-1">
-                      <span>{rowNumber}</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedRowKeys.has(item.key)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleToggleRowSelect(item.key, e)}
+                        className="size-3.5 rounded border-border text-primary cursor-pointer accent-primary shrink-0"
+                        aria-label={`Select row ${rowNumber}`}
+                      />
+                      <span className="text-[11px] font-mono select-none">{rowNumber}</span>
 
                       {/* Row Review Status Dropdown Indicator */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             onClick={(e) => e.stopPropagation()}
-                            className="p-0.5 rounded hover:bg-muted/80 cursor-pointer transition-colors inline-flex items-center justify-center"
+                            className="p-0.5 rounded hover:bg-muted/80 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
                             title={`Review Status: ${rowStatus}. Click to change.`}
                           >
                             {rowStatus === 'approved' ? (
@@ -1707,24 +1868,53 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           {item.key}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {onUpdateRowStatus && (
+                        {selectedRowKeys.size > 1 && selectedRowKeys.has(item.key) ? (
                           <>
                             <DropdownMenuItem
-                              onClick={() => onUpdateRowStatus(item.key, 'approved')}
+                              onClick={handleBulkApprove}
                               className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
                             >
                               <CheckCircle2 className="size-3.5" />
-                              Mark as Approved
+                              Approve Selected ({selectedRowKeys.size})
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
+                              onClick={handleBulkNeedsReview}
                               className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
                             >
                               <AlertCircle className="size-3.5" />
-                              Mark for Review
+                              Mark Needs Review ({selectedRowKeys.size})
                             </DropdownMenuItem>
+                            {onOpenAiTranslate && (
+                              <DropdownMenuItem
+                                onClick={handleBulkAiTranslate}
+                                className="gap-2 cursor-pointer text-xs"
+                              >
+                                <Sparkles className="size-3.5 text-purple-500" />
+                                AI Translate Selected ({selectedRowKeys.size})
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                           </>
+                        ) : (
+                          onUpdateRowStatus && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => onUpdateRowStatus(item.key, 'approved')}
+                                className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
+                              >
+                                <CheckCircle2 className="size-3.5" />
+                                Mark as Approved
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
+                                className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
+                              >
+                                <AlertCircle className="size-3.5" />
+                                Mark for Review
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )
                         )}
                         {onOpenAiTranslate && (
                           <DropdownMenuItem
@@ -2153,6 +2343,83 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Bulk Actions Bar when rows are selected */}
+      {selectedRowKeys.size > 0 && (
+        <div
+          data-testid="bulk-actions-bar"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-md px-3.5 py-2 rounded-full border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200"
+        >
+          <div className="flex items-center gap-1.5 pr-2.5 border-r border-border text-xs font-semibold text-foreground select-none">
+            <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-mono font-bold">
+              {selectedRowKeys.size}
+            </span>{' '}
+            <span>{selectedRowKeys.size === 1 ? 'key selected' : 'keys selected'}</span>
+          </div>
+
+          {/* Bulk Approve */}
+          <Button
+            size="sm"
+            onClick={handleBulkApprove}
+            className="h-7 px-2.5 gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+            title="Approve all selected keys and register to Translation Memory"
+          >
+            <CheckCircle2 className="size-3.5" />
+            <span>Approve</span>
+          </Button>
+
+          {/* Bulk Mark Needs Review */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleBulkNeedsReview}
+            className="h-7 px-2.5 gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
+            title="Mark selected keys as Needs Review"
+          >
+            <AlertCircle className="size-3.5" />
+            <span>Needs Review</span>
+          </Button>
+
+          {/* Bulk AI Translate */}
+          {onOpenAiTranslate && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkAiTranslate}
+              className="h-7 px-2.5 gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/10 cursor-pointer"
+              title="Translate selected keys with AI"
+            >
+              <Sparkles className="size-3.5 text-purple-500" />
+              <span>AI Translate</span>
+            </Button>
+          )}
+
+          {/* Bulk Delete */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleBulkDelete}
+            className="h-7 px-2 gap-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 cursor-pointer"
+            title="Delete selected keys"
+          >
+            <Trash2 className="size-3.5" />
+            <span>Delete</span>
+          </Button>
+
+          {/* Deselect All */}
+          <button
+            onClick={() => {
+              setSelectedRowKeys(new Set());
+              setLastSelectedRowKey(null);
+            }}
+            className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted ml-0.5 cursor-pointer transition-colors"
+            title="Deselect all rows (Esc)"
+            aria-label="Deselect all rows"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

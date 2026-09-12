@@ -95,4 +95,68 @@ describe('SpreadsheetTable', () => {
     fireEvent.click(showAllBtn);
     expect(onToggleFilterMissingLang).toHaveBeenCalledWith('my');
   });
+
+  it('supports row multi-select and triggers bulk approve and bulk review', () => {
+    const onBulkUpdateStatus = vi.fn();
+    const onOpenAiTranslate = vi.fn();
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        onBulkUpdateStatus={onBulkUpdateStatus}
+        onOpenAiTranslate={onOpenAiTranslate}
+      />
+    );
+
+    // Initial state: no bulk actions bar
+    expect(screen.queryByTestId('bulk-actions-bar')).toBeNull();
+
+    // Select first row checkbox
+    const rowCheckboxes = screen.getAllByRole('checkbox');
+    // Index 0 is master checkbox, Index 1 is first row, Index 2 is second row
+    expect(rowCheckboxes.length).toBe(3);
+
+    fireEvent.click(rowCheckboxes[1]);
+    const bulkBar = screen.getByTestId('bulk-actions-bar');
+    expect(bulkBar).not.toBeNull();
+    expect(bulkBar.textContent).toContain('1 key selected');
+
+    // Select second row as well
+    fireEvent.click(rowCheckboxes[2]);
+    expect(bulkBar.textContent).toContain('2 keys selected');
+
+    // Click Approve button in bulk actions bar
+    const approveBtn = screen.getByRole('button', { name: /^Approve$/i });
+    fireEvent.click(approveBtn);
+    expect(onBulkUpdateStatus).toHaveBeenCalledWith(['auth.login', 'auth.logout'], 'approved');
+
+    // Selection should be cleared after bulk action
+    expect(screen.queryByTestId('bulk-actions-bar')).toBeNull();
+  });
+
+  it('supports select-all master checkbox and bulk AI translate', () => {
+    const onOpenAiTranslate = vi.fn();
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        onOpenAiTranslate={onOpenAiTranslate}
+      />
+    );
+
+    const masterCheckbox = screen.getByRole('checkbox', { name: /Select all rows/i });
+    fireEvent.click(masterCheckbox);
+
+    const bulkBar = screen.getByTestId('bulk-actions-bar');
+    expect(bulkBar).not.toBeNull();
+    expect(bulkBar.textContent).toContain('2 keys selected');
+
+    // Click AI Translate button
+    const aiTranslateBtn = screen.getByRole('button', { name: /AI Translate/i });
+    fireEvent.click(aiTranslateBtn);
+    expect(onOpenAiTranslate).toHaveBeenCalledWith(undefined, undefined, ['auth.login', 'auth.logout']);
+
+    // Deselect all
+    const deselectBtn = screen.getByRole('button', { name: /Deselect all rows/i });
+    fireEvent.click(deselectBtn);
+    expect(screen.queryByTestId('bulk-actions-bar')).toBeNull();
+  });
 });

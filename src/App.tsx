@@ -189,6 +189,7 @@ export function App() {
   const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
   const [aiTargetLang, setAiTargetLang] = useState<string | undefined>(undefined);
   const [aiTargetKey, setAiTargetKey] = useState<string | undefined>(undefined);
+  const [aiTargetKeys, setAiTargetKeys] = useState<string[] | undefined>(undefined);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isDiffMergeOpen, setIsDiffMergeOpen] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
@@ -1074,6 +1075,35 @@ export function App() {
     );
   };
 
+  const handleBulkUpdateStatus = (keys: string[], status: RowStatus) => {
+    const keySet = new Set(keys);
+    const sourceLang = languages[0] || 'en';
+
+    setItems(
+      items.map(item => {
+        if (!keySet.has(item.key)) return item;
+        if (status === 'approved') {
+          const srcText = item[sourceLang];
+          if (srcText) {
+            for (const lang of languages) {
+              if (lang !== sourceLang && item[lang]) {
+                try {
+                  upsertMemoryEntry(srcText, sourceLang, lang, item[lang]!);
+                } catch {}
+              }
+            }
+          }
+        }
+        return { ...item, status };
+      })
+    );
+  };
+
+  const handleBulkDeleteRows = (keys: string[]) => {
+    const keySet = new Set(keys);
+    setItems(items.filter(item => !keySet.has(item.key)));
+  };
+
   const handleUpdateKey = (oldKey: string, newKey: string) => {
     const trimmed = newKey.trim();
     if (!trimmed || trimmed === oldKey) return;
@@ -1291,9 +1321,10 @@ export function App() {
     });
   };
 
-  const handleOpenAiTranslate = (targetLang?: string, targetKey?: string) => {
+  const handleOpenAiTranslate = (targetLang?: string, targetKey?: string, targetKeys?: string[]) => {
     setAiTargetLang(targetLang);
     setAiTargetKey(targetKey);
+    setAiTargetKeys(targetKeys);
     setIsAiTranslateOpen(true);
   };
 
@@ -1926,6 +1957,8 @@ export function App() {
             onBatchUpdate={handleBatchUpdate}
             onOpenAiTranslate={handleOpenAiTranslate}
             onUpdateRowStatus={handleUpdateRowStatus}
+            onBulkUpdateStatus={handleBulkUpdateStatus}
+            onBulkDeleteRows={handleBulkDeleteRows}
             filterMissingLang={filterMissingLang}
             activeFilter={activeFilter}
             searchQuery={searchQuery}
@@ -2043,12 +2076,14 @@ export function App() {
           setIsAiTranslateOpen(false);
           setAiTargetLang(undefined);
           setAiTargetKey(undefined);
+          setAiTargetKeys(undefined);
         }}
         items={items}
         languages={languages}
         onApplyTranslations={setItems}
         preselectedTargetLang={aiTargetLang}
         targetKey={aiTargetKey}
+        targetKeys={aiTargetKeys}
       />
 
       {/* Command Palette (Ctrl+K / Cmd+K) */}
