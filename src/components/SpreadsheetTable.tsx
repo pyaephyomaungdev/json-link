@@ -998,23 +998,34 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
-                <div className="flex items-left justify-left gap-1.5">
-                  <Checkbox
-                    checked={
-                      items.length === 0
-                        ? false
-                        : selectedRowKeys.size === items.length
-                          ? true
-                          : selectedRowKeys.size > 0
-                            ? 'indeterminate'
-                            : false
-                    }
-                    onCheckedChange={handleToggleSelectAll}
-                    className="size-3.5 shrink-0"
+                <div className="flex items-center justify-between px-0.5">
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (e.target === e.currentTarget) {
+                        handleToggleSelectAll();
+                      }
+                    }}
+                    className="p-1 -m-1 flex items-center justify-center cursor-pointer"
                     title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
-                    aria-label="Select all rows"
-                  />
-                  <span className="text-[10px] text-muted-foreground font-mono">#</span>
+                  >
+                    <Checkbox
+                      checked={
+                        items.length === 0
+                          ? false
+                          : selectedRowKeys.size === items.length
+                            ? true
+                            : selectedRowKeys.size > 0
+                              ? 'indeterminate'
+                              : false
+                      }
+                      onCheckedChange={handleToggleSelectAll}
+                      className="size-4 rounded-[3px] border-2 border-muted-foreground/60 shadow-xs cursor-pointer"
+                      aria-label="Select all rows"
+                    />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground font-mono font-semibold">#</span>
+                  <span className="w-2.5" />
                 </div>
               </th>
 
@@ -1456,12 +1467,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 const isKeySelected =
                   selectedCell?.key === item.key && selectedCell.field === 'key';
                 const rowStatus: RowStatus = item.status || 'draft';
+                const isRowSelected = selectedRowKeys.has(item.key);
 
                 return (
                   <tr
                     key={item.key}
-                    className={`group transition-colors ${selectedRowKeys.has(item.key) ? 'bg-primary/5 dark:bg-primary/10' : ''
-                      }`}
+                    className="group transition-colors"
                   >
                     {/* Row Number, Selection Checkbox & Review Status Indicator */}
                     <td
@@ -1475,23 +1486,31 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         })
                       }
                       onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                      className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${selectedRowKeys.has(item.key)
-                          ? 'bg-primary/10 dark:bg-primary/20 text-foreground'
+                      className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${isRowSelected
+                          ? 'bg-primary/15 dark:bg-primary/25 text-foreground font-medium'
                           : 'bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground'
                         } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                     >
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between px-0.5">
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                             isShiftHeldRef.current = e.shiftKey;
+                            if (e.target === e.currentTarget) {
+                              handleToggleRowSelect(item.key);
+                            }
                           }}
-                          className="flex items-center"
+                          className="p-1 -m-1 flex items-center justify-center cursor-pointer"
+                          title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
                         >
                           <Checkbox
-                            checked={selectedRowKeys.has(item.key)}
+                            checked={isRowSelected}
                             onCheckedChange={() => handleToggleRowSelect(item.key)}
-                            className="size-3.5 shrink-0"
+                            className={`size-4 rounded-[3px] border-2 shrink-0 transition-opacity cursor-pointer ${
+                              isRowSelected
+                                ? 'opacity-100 border-primary'
+                                : 'opacity-35 group-hover:opacity-100 hover:opacity-100 border-muted-foreground/50'
+                            }`}
                             aria-label={`Select row ${rowNumber}`}
                           />
                         </div>
@@ -1559,10 +1578,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         })
                       }
                       onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                      className={`py-1.5 px-3 font-mono text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'
-                        } border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
-                          ? `!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'
-                          }`
+                      className={`py-1.5 px-3 font-mono text-xs ${
+                        isRowSelected
+                          ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                          : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                      } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
+                          ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
                           : ''
                         }`}
                     >
@@ -1605,8 +1626,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           })
                         }
                         onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
-                        className={`py-1.5 px-3 text-xs bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
-                            ? '!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                        className={`py-1.5 px-3 text-xs ${
+                          isRowSelected
+                            ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                            : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                        } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
+                            ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
                             : ''
                           }`}
                       >
@@ -1698,13 +1723,14 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               colIdx + (showDescription ? 2 : 1)
                             )
                           }
-                          className={`py-2 px-3 border-b border-border transition-colors cursor-pointer bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44] ${isLangFrozen ? 'sticky z-15' : 'relative z-0'
-                            } ${getFreezeLineClass(isLangLastFrozen)} ${!val
-                              ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
-                              : ''
-                            } ${isCellSelected
-                              ? `!bg-[#edf4fc] dark:!bg-[#1a263d] outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-18' : 'z-10'
-                              }`
+                          className={`py-2 px-3 border-b border-border transition-colors cursor-pointer ${
+                            isRowSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                              : !val
+                                ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
+                                : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                          } ${isLangFrozen ? 'sticky z-15' : 'relative z-0'} ${getFreezeLineClass(isLangLastFrozen)} ${isCellSelected
+                              ? `outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-18' : 'z-10'}`
                               : ''
                             }`}
                         >
@@ -1843,7 +1869,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
                     <td
                       style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
-                      className="py-1 px-1 text-center border-b border-l border-border bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors"
+                      className={`py-1 px-1 text-center border-b border-l border-border ${
+                        isRowSelected
+                          ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                          : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234]'
+                      } sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors`}
                     >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
