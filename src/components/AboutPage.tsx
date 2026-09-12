@@ -138,9 +138,9 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
   }, [onBack]);
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground selection:bg-primary/20">
+    <div className="h-screen w-full max-w-full flex flex-col overflow-hidden bg-background text-foreground selection:bg-primary/20">
       {/* Top Header — matches app header */}
-      <header className="border-b border-border/70 bg-card/80 backdrop-blur-md px-3 sm:px-6 h-12 flex items-center justify-between shrink-0 select-none z-10">
+      <header className="border-b border-border/70 bg-card/80 backdrop-blur-md px-3 sm:px-6 h-12 flex items-center justify-between shrink-0 select-none z-10 w-full max-w-full">
         <Button
           variant="ghost"
           size="sm"
@@ -171,9 +171,9 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
       </header>
 
       {/* Scrollable Content */}
-      <main className="flex-1 overflow-y-auto relative scroll-smooth">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth w-full max-w-full">
         {/* Subtle Ambient Aura */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[300px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-[650px] h-[300px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-12 relative z-0">
           {/* Hero Section */}
