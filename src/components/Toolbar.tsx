@@ -360,9 +360,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <DropdownMenuItem
                 onClick={onOpenAiTranslate}
                 disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs"
+                className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Sparkles className="size-3.5 text-primary" />
+                <Sparkles className="size-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">AI Auto-Translate</span>
                   <span className="text-[10px] text-muted-foreground">Translate missing keys (OpenRouter)</span>
@@ -372,9 +372,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {onOpenTranslationMemory && (
               <DropdownMenuItem
                 onClick={onOpenTranslationMemory}
-                className="gap-2 cursor-pointer text-xs"
+                className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Brain className="size-3.5 text-purple-500" />
+                <Brain className="size-3.5 text-purple-500 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Translation Memory</span>
                   <span className="text-[10px] text-muted-foreground">Reuse cached phrases &amp; save tokens</span>
@@ -384,9 +384,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {onOpenGlossary && hasItems && (
               <DropdownMenuItem
                 onClick={onOpenGlossary}
-                className="gap-2 cursor-pointer text-xs"
+                className="items-start gap-2 cursor-pointer text-xs"
               >
-                <BookOpen className="size-3.5 text-blue-500" />
+                <BookOpen className="size-3.5 text-blue-500 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Glossary &amp; Termbase</span>
                   <span className="text-[10px] text-muted-foreground">Enforce brand terminology rules</span>
@@ -416,16 +416,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="text-[11px]">File Operations</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onOpenImport} className="gap-2 cursor-pointer text-xs">
-              <Upload className="size-3.5 text-primary" />
+            <DropdownMenuItem onClick={onOpenImport} className="items-start gap-2 cursor-pointer text-xs">
+              <Upload className="size-3.5 text-primary mt-0.5 shrink-0" />
               <div className="flex flex-col">
                 <span className="font-semibold">Import Files</span>
                 <span className="text-[10px] text-muted-foreground">JSON, Excel, CSV, YAML, ARB, XML...</span>
               </div>
             </DropdownMenuItem>
             {onOpenFolderSync && (
-              <DropdownMenuItem onClick={onOpenFolderSync} className="gap-2 cursor-pointer text-xs">
-                <FolderSync className="size-3.5 text-emerald-500" />
+              <DropdownMenuItem onClick={onOpenFolderSync} className="items-start gap-2 cursor-pointer text-xs">
+                <FolderSync className="size-3.5 text-emerald-500 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Local Folder Sync</span>
                   <span className="text-[10px] text-muted-foreground">
@@ -438,9 +438,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <DropdownMenuItem
                 onClick={onOpenSaveProject}
                 disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs"
+                className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Save className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <Save className="size-3.5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Save Project (.jsonlink)</span>
                   <span className="text-[10px] text-muted-foreground">Standalone complete project backup</span>
@@ -451,9 +451,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <DropdownMenuItem
                 onClick={onOpenShare}
                 disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs"
+                className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Share2 className="size-3.5 text-blue-500" />
+                <Share2 className="size-3.5 text-blue-500 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Share &amp; Handoff</span>
                   <span className="text-[10px] text-muted-foreground">Instant URL link or .jsonlink package</span>
