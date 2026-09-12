@@ -64,7 +64,7 @@ describe('SaveProjectModal', () => {
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('blocks save when password is enabled but empty', () => {
+  it('blocks save when password is empty or confirmation mismatches', () => {
     render(<SaveProjectModal {...defaultProps} />);
     const checkbox = screen.getByLabelText(/Protect with Password/i);
     fireEvent.click(checkbox);
@@ -72,5 +72,19 @@ describe('SaveProjectModal', () => {
     const saveBtn = screen.getByRole('button', { name: /Save/i });
     expect(saveBtn).toHaveProperty('disabled', true);
     expect(screen.getByText(/Password is required to encrypt this file/i)).not.toBeNull();
+
+    const pwInput = screen.getByPlaceholderText(/Enter backup encryption password/i);
+    fireEvent.change(pwInput, { target: { value: 'ValidBackupPass123' } });
+
+    expect(screen.getByText(/Strength:/i)).not.toBeNull();
+    expect(saveBtn).toHaveProperty('disabled', true);
+
+    const confirmInput = screen.getByPlaceholderText(/Confirm backup password/i);
+    fireEvent.change(confirmInput, { target: { value: 'MismatchPass' } });
+    expect(screen.getByText(/Passwords do not match/i)).not.toBeNull();
+    expect(saveBtn).toHaveProperty('disabled', true);
+
+    fireEvent.change(confirmInput, { target: { value: 'ValidBackupPass123' } });
+    expect(saveBtn).toHaveProperty('disabled', false);
   });
 });

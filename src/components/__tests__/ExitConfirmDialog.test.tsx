@@ -71,6 +71,20 @@ describe('ExitConfirmDialog', () => {
     const pwInput = screen.getByPlaceholderText(/Enter backup encryption password/i);
     fireEvent.change(pwInput, { target: { value: 'SecretExitPass123' } });
 
+    // Strength meter should be displayed
+    expect(screen.getByText(/Strength:/i)).not.toBeNull();
+
+    // Still disabled without confirm password
+    expect(saveBtn.hasAttribute('disabled')).toBe(true);
+
+    // Mismatched confirm password shows error
+    const confirmInput = screen.getByPlaceholderText(/Confirm backup password/i);
+    fireEvent.change(confirmInput, { target: { value: 'WrongPass' } });
+    expect(screen.getByText(/Passwords do not match/i)).not.toBeNull();
+    expect(saveBtn.hasAttribute('disabled')).toBe(true);
+
+    // Matching confirm password enables save
+    fireEvent.change(confirmInput, { target: { value: 'SecretExitPass123' } });
     expect(saveBtn.hasAttribute('disabled')).toBe(false);
     fireEvent.click(saveBtn);
 

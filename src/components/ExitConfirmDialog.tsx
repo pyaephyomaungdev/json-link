@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, ArrowLeft, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Download, ArrowLeft, Lock, Eye, EyeOff, AlertTriangle, AlertCircle } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { exportProjectFile } from '@/lib/project';
+import { evaluatePasswordStrength } from '@/lib/passwordStrength';
 
 interface ExitConfirmDialogProps {
   open: boolean;
@@ -36,6 +37,11 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
   const [enablePassword, setEnablePassword] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const isPasswordMismatch = enablePassword && Boolean(confirmPassword) && password !== confirmPassword;
+  const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password]);
 
   React.useEffect(() => {
     if (defaultProjectName) {
@@ -45,6 +51,7 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
       setIsProcessing(false);
       setEnablePassword(false);
       setPassword('');
+      setConfirmPassword('');
     }
   }, [defaultProjectName, open]);
 
@@ -52,7 +59,7 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
     e?.preventDefault();
     e?.stopPropagation();
     if (isProcessing) return;
-    if (enablePassword && !password.trim()) return;
+    if (enablePassword && (!password.trim() || password !== confirmPassword)) return;
     setIsProcessing(true);
     const filename = projectName.trim() || 'my-translations';
     const effectivePw = enablePassword && password.trim() ? password.trim() : undefined;
@@ -147,9 +154,54 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
                   </button>
                 </div>
 
+                {/* Password Strength Meter */}
+                {password.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-muted-foreground">Strength:</span>
+                      <span className={`font-semibold ${passwordStrength.colorClass}`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${passwordStrength.barColorClass}`}
+                        style={{ width: `${passwordStrength.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm Password Input */}
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm backup password..."
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className={`text-xs h-8 pr-8 bg-muted/20 ${isPasswordMismatch ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(p => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-1"
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                  </button>
+                </div>
+
                 {!password.trim() && (
                   <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                     Password is required to encrypt this file.
+                  </p>
+                )}
+
+                {isPasswordMismatch && (
+                  <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                    <AlertCircle className="size-3 shrink-0" />
+                    Passwords do not match.
                   </p>
                 )}
 
@@ -171,7 +223,7 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
           {/* Primary: Save and return home */}
           <Button
             onClick={handleSaveAndExit}
-            disabled={isProcessing || (enablePassword && !password.trim())}
+            disabled={isProcessing || (enablePassword && (!password.trim() || password !== confirmPassword))}
             className="w-full gap-2 font-semibold shadow-xs text-xs h-8 cursor-pointer"
           >
             <Download className="size-3.5" />

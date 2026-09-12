@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Download, Check, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Download, Check, Lock, Eye, EyeOff, AlertTriangle, AlertCircle } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { exportProjectFile, saveLocalDraft } from '@/lib/project';
+import { evaluatePasswordStrength } from '@/lib/passwordStrength';
 
 interface SaveProjectModalProps {
   open: boolean;
@@ -34,6 +35,11 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
   const [enablePassword, setEnablePassword] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const isPasswordMismatch = enablePassword && Boolean(confirmPassword) && password !== confirmPassword;
+  const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password]);
 
   React.useEffect(() => {
     if (defaultProjectName) {
@@ -42,11 +48,12 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
     if (!open) {
       setEnablePassword(false);
       setPassword('');
+      setConfirmPassword('');
     }
   }, [defaultProjectName, open]);
 
   const handleSave = async () => {
-    if (enablePassword && !password.trim()) return;
+    if (enablePassword && (!password.trim() || password !== confirmPassword)) return;
     const filename = projectName.trim() || 'translations-backup';
     const effectivePw = enablePassword && password.trim() ? password.trim() : undefined;
     await exportProjectFile(filename, items, languages, effectivePw);
@@ -148,9 +155,54 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
                   </button>
                 </div>
 
+                {/* Password Strength Meter */}
+                {password.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-muted-foreground">Strength:</span>
+                      <span className={`font-semibold ${passwordStrength.colorClass}`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${passwordStrength.barColorClass}`}
+                        style={{ width: `${passwordStrength.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm Password Input */}
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm backup password..."
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className={`text-xs h-8 pr-8 bg-muted/20 ${isPasswordMismatch ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(p => !p)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-1"
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                  </button>
+                </div>
+
                 {!password.trim() && (
                   <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                     Password is required to encrypt this file.
+                  </p>
+                )}
+
+                {isPasswordMismatch && (
+                  <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                    <AlertCircle className="size-3 shrink-0" />
+                    Passwords do not match.
                   </p>
                 )}
 
@@ -175,7 +227,7 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={enablePassword && !password.trim()}
+            disabled={enablePassword && (!password.trim() || password !== confirmPassword)}
             className="flex-1 sm:flex-none gap-2 text-xs font-semibold shadow-xs h-8 cursor-pointer"
           >
             {saved ? (
