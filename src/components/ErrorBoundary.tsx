@@ -35,8 +35,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     super(props);
     const initialDark =
       typeof window !== 'undefined'
-        ? localStorage.getItem('json-link-theme') === 'dark' ||
-          (!localStorage.getItem('json-link-theme') &&
+        ? (localStorage.getItem('json_link_theme') ||
+            localStorage.getItem('json-link-theme')) === 'dark' ||
+          (!(
+            localStorage.getItem('json_link_theme') ||
+            localStorage.getItem('json-link-theme')
+          ) &&
             window.matchMedia?.('(prefers-color-scheme: dark)').matches)
         : false;
 
@@ -85,10 +89,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       () => {
         if (this.state.isDark) {
           document.documentElement.classList.add('dark');
-          localStorage.setItem('json-link-theme', 'dark');
+          localStorage.setItem('json_link_theme', 'dark');
         } else {
           document.documentElement.classList.remove('dark');
-          localStorage.setItem('json-link-theme', 'light');
+          localStorage.setItem('json_link_theme', 'light');
         }
       }
     );
@@ -128,7 +132,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   handleDownloadEmergencyBackup = () => {
     try {
-      const draft = localStorage.getItem('json-link-draft');
+      const draft =
+        localStorage.getItem('jsonlink_current_project') ||
+        localStorage.getItem('json-link-draft');
       if (!draft) {
         alert('No draft data found in browser storage.');
         return;
@@ -160,7 +166,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     const hasLocalStorageDraft =
-      typeof window !== 'undefined' && Boolean(localStorage.getItem('json-link-draft'));
+      typeof window !== 'undefined' &&
+      Boolean(
+        localStorage.getItem('jsonlink_current_project') ||
+          localStorage.getItem('json-link-draft')
+      );
 
     return (
       <div
@@ -175,7 +185,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <Button
               variant="ghost"
               size="sm"
-              onClick={this.handleGoHome}
+              onClick={this.handleReset}
               className="gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
               title="Return to Workspace"
             >
@@ -186,7 +196,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <div className="h-4 w-px bg-border/80 hidden sm:block shrink-0" />
             <div className="flex items-center gap-2 min-w-0">
               <button
-                onClick={this.handleGoHome}
+                onClick={this.handleReset}
                 className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
                 title="JSON Link"
               >
@@ -200,8 +210,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Badge
-              variant="outline"
-              className="bg-rose-500/10 text-rose-600 border-rose-500/20 text-xs font-mono"
+              variant="destructive"
+              className="text-xs font-mono"
             >
               System Crash Caught
             </Badge>
@@ -222,11 +232,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <div className="max-w-2xl w-full text-center space-y-6">
             {/* Visual Icon & Pill */}
             <div className="flex flex-col items-center space-y-3">
-              <div className="size-16 sm:size-20 rounded-2xl bg-gradient-to-br from-rose-500/10 via-amber-500/10 to-indigo-500/10 border border-border shadow-sm flex items-center justify-center">
-                <ShieldAlert className="size-8 sm:size-10 text-rose-600 dark:text-rose-400 animate-pulse" />
+              <div className="size-16 sm:size-20 rounded-2xl bg-destructive/10 border border-destructive/20 shadow-xs flex items-center justify-center">
+                <ShieldAlert className="size-8 sm:size-10 text-destructive animate-pulse" />
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-destructive/20 bg-destructive/10 text-destructive text-xs font-semibold">
                 <span>Application Crash Caught • Safe Recovery Mode</span>
               </div>
 
@@ -241,9 +251,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             {/* Error Message Box & Stack Trace */}
             <div className="max-w-lg mx-auto w-full space-y-2 text-left">
-              <div className="p-3 rounded-lg border border-border bg-muted/30 font-mono text-xs text-rose-600 dark:text-rose-400 break-all">
+              <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 font-mono text-xs text-destructive break-all shadow-2xs">
                 <span className="font-semibold block mb-0.5">{error?.name || 'Error'}:</span>
-                <span>{error?.message || 'An unknown error occurred'}</span>
+                <span className="text-foreground/90 font-normal">{error?.message || 'An unknown error occurred'}</span>
               </div>
 
               {/* Collapsible Details */}

@@ -3,9 +3,12 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Variable, Hash } from 'lucide-react';
 import { TranslationItem } from '@/types';
@@ -82,7 +85,7 @@ export function IcuTesterModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <DialogBody className="space-y-4 text-xs">
           {/* Key Selection or Templates */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -90,7 +93,7 @@ export function IcuTesterModal({
               <select
                 value={selectedKey}
                 onChange={e => setSelectedKey(e.target.value)}
-                className="px-2.5 py-1 text-xs bg-muted/40 border border-border rounded-lg outline-none cursor-pointer"
+                className="px-2.5 py-1 text-xs bg-background border border-input rounded-md outline-none cursor-pointer shadow-2xs font-medium"
               >
                 <option value="custom">Custom Message</option>
                 {items.slice(0, 30).map(i => (
@@ -125,7 +128,7 @@ export function IcuTesterModal({
                 value={customMessage}
                 onChange={e => setCustomMessage(e.target.value)}
                 placeholder="Enter ICU plural message..."
-                className="w-full p-2.5 text-xs font-mono bg-muted/20 border border-border rounded-lg outline-none focus:border-primary resize-y"
+                className="w-full p-2.5 text-xs font-mono bg-background border border-input rounded-md outline-none focus:ring-1 focus:ring-ring resize-y shadow-2xs"
               />
             </div>
           )}
@@ -194,7 +197,7 @@ export function IcuTesterModal({
                         value={customParams[v] || ''}
                         onChange={e => handleParamChange(v, e.target.value)}
                         placeholder={`Value for ${v}`}
-                        className="flex-1 px-2 py-0.5 text-xs bg-background border border-border rounded outline-none"
+                        className="flex-1 px-2 py-0.5 text-xs bg-background border border-input rounded outline-none focus:ring-1 focus:ring-ring"
                       />
                     </div>
                   ))}
@@ -249,7 +252,19 @@ export function IcuTesterModal({
               })}
             </div>
           </div>
-        </div>
+        </DialogBody>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="flex-1 sm:flex-none h-8 text-xs cursor-pointer"
+          >
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -3,6 +3,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
+  DialogFooter,
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
@@ -92,124 +94,138 @@ export function TranslationMemoryModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Stats & Actions Ribbon */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border border-border bg-card shadow-2xs">
-          <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Database className="size-3.5 text-purple-500" />
-              <span>
-                <strong className="text-foreground">{entries.length}</strong> phrases
-              </span>
+        <DialogBody className="space-y-4 text-xs">
+          {/* Stats & Actions Ribbon */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border border-border bg-card shadow-2xs">
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Database className="size-3.5 text-purple-500" />
+                <span>
+                  <strong className="text-foreground">{entries.length}</strong> phrases
+                </span>
+              </div>
+              <div className="h-3 w-px bg-border" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Languages className="size-3.5 text-blue-500" />
+                <span>
+                  <strong className="text-foreground">{totalTranslations}</strong> translated pairs
+                </span>
+              </div>
             </div>
-            <div className="h-3 w-px bg-border" />
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Languages className="size-3.5 text-blue-500" />
-              <span>
-                <strong className="text-foreground">{totalTranslations}</strong> translated pairs
-              </span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSeed}
+                className="gap-1.5 text-xs font-semibold cursor-pointer h-7"
+                title="Index current project translations into memory"
+              >
+                <Sparkles className="size-3.5 text-amber-500" />
+                <span>Index Active Workspace</span>
+              </Button>
+
+              {entries.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClear}
+                  className="size-7 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
+                  title="Clear all memory"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSeed}
-              className="gap-1.5 text-xs font-semibold cursor-pointer"
-              title="Index current project translations into memory"
-            >
-              <Sparkles className="size-3.5 text-amber-500" />
-              <span>Index Active Workspace</span>
-            </Button>
+          {/* Feedback notification */}
+          {feedback && (
+            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
+              <CheckCircle2 className="size-3.5 shrink-0" />
+              <span>{feedback}</span>
+            </div>
+          )}
 
-            {entries.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClear}
-                className="size-7 p-0 text-muted-foreground hover:text-destructive cursor-pointer"
-                title="Clear all memory"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+          {/* Search and Language Filter */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search source or translated phrases..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-background border border-input rounded-md outline-none focus:ring-1 focus:ring-ring transition-colors shadow-2xs"
+              />
+            </div>
+
+            <select
+              value={selectedLang}
+              onChange={e => setSelectedLang(e.target.value)}
+              className="px-2.5 py-1.5 text-xs bg-background border border-input rounded-md outline-none cursor-pointer shadow-2xs font-medium"
+            >
+              <option value="all">All Languages</option>
+              {languages.map(l => (
+                <option key={l} value={l}>
+                  {l.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Entries List */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden max-h-72 overflow-y-auto divide-y divide-border/60">
+            {filteredEntries.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold text-foreground">No translation memory entries found.</p>
+                <p className="text-[11px]">
+                  Click &ldquo;Index Active Workspace&rdquo; to populate phrases from your spreadsheet.
+                </p>
+              </div>
+            ) : (
+              filteredEntries.map(entry => (
+                <div key={entry.id} className="p-3 hover:bg-muted/20 transition-colors space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground">
+                      &ldquo;{entry.sourceText}&rdquo;
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      used {entry.usageCount || 1}x
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {Object.entries(entry.translations).map(([lang, text]) => (
+                      <Badge
+                        key={lang}
+                        variant="outline"
+                        className="text-[11px] font-normal gap-1 bg-muted/40"
+                      >
+                        <span className="font-mono font-bold text-primary uppercase text-[9px]">
+                          {lang}:
+                        </span>
+                        <span>{text}</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        </div>
+        </DialogBody>
 
-        {/* Feedback notification */}
-        {feedback && (
-          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
-            <CheckCircle2 className="size-3.5 shrink-0" />
-            <span>{feedback}</span>
-          </div>
-        )}
-
-        {/* Search and Language Filter */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search source or translated phrases..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-muted/40 border border-border rounded-lg outline-none focus:border-primary/80 transition-colors"
-            />
-          </div>
-
-          <select
-            value={selectedLang}
-            onChange={e => setSelectedLang(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-muted/40 border border-border rounded-lg outline-none cursor-pointer"
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="flex-1 sm:flex-none h-8 text-xs cursor-pointer"
           >
-            <option value="all">All Languages</option>
-            {languages.map(l => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Entries List */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden max-h-72 overflow-y-auto divide-y divide-border/60">
-          {filteredEntries.length === 0 ? (
-            <div className="p-8 text-center text-xs text-muted-foreground space-y-1">
-              <p>No translation memory entries found.</p>
-              <p className="text-[11px]">
-                Click &ldquo;Index Active Workspace&rdquo; to populate phrases from your spreadsheet.
-              </p>
-            </div>
-          ) : (
-            filteredEntries.map(entry => (
-              <div key={entry.id} className="p-3 hover:bg-muted/20 transition-colors space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-foreground">
-                    &ldquo;{entry.sourceText}&rdquo;
-                  </span>
-                  <span className="text-[10px] font-mono text-muted-foreground">
-                    used {entry.usageCount || 1}x
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {Object.entries(entry.translations).map(([lang, text]) => (
-                    <Badge
-                      key={lang}
-                      variant="outline"
-                      className="text-[11px] font-normal gap-1 bg-muted/40"
-                    >
-                      <span className="font-mono font-bold text-primary uppercase text-[9px]">
-                        {lang}:
-                      </span>
-                      <span>{text}</span>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
