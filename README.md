@@ -142,6 +142,50 @@ A modern, high-performance web application designed for multilingual localizatio
 - Missing Variable Validation:
   - Alert badges identify translations missing expected placeholders, preventing runtime application crashes.
 
+### Local Folder Direct Sync (Native File System Access API)
+- Real-Time Bidirectional Folder Link: Connect directly to your local project directory (e.g. `src/locales` or `assets/l10n`) on your hard drive using the modern browser File System Access API.
+- Live Status Indicator: Displays connected folder name (`📁 Sync: locales/`) with status badge and last-synced timestamp.
+- 1-Click Sync to Disk: Writes all language translation files directly to disk simultaneously without downloading individual zip files.
+- Auto-Sync on Edit: Optional toggle to automatically persist spreadsheet edits straight to your hard drive files in real time.
+- Reload from Disk: Pulls the latest changes from disk if external files were modified by team members or git updates.
+- Safe Disconnect: Easily unbind linked folders with one click whenever needed.
+
+---
+
+### Translation Memory (TM Cache)
+- Passive Memory Learning: Automatically caches previously verified, translated, or approved phrase pairs in browser local storage.
+- Intelligent Pre-Translation & Token Cost Savings: Checks incoming or missing strings against the TM Cache before sending AI translation requests, dramatically reducing token costs and keeping translations consistent.
+- Dedicated TM Management Modal: Search stored source-target phrase pairs, view occurrence counts, manually add/edit entries, or export/import memory data.
+- 1-Click Current Project Extraction: Extracts all existing translations from the active spreadsheet straight into Translation Memory in 1 click.
+
+---
+
+### ICU Message & Plural Format Tester
+- Real-Time Syntax & Plural Evaluation: Test complex ICU syntax strings containing `{count, plural, one {...} other {...}}`, `{gender, select, male {...} female {...}}`, and nested arguments.
+- Live Parameter Simulation: Dynamic input fields for test variable inputs (e.g. `count = 0`, `count = 1`, `count = 5`) with instant preview across all configured languages.
+- Syntax Error Linting: Catches unclosed brackets, invalid plural keywords, and malformed ICU strings before exporting to production.
+
+---
+
+### Duplicate Value Finder
+- Project-Wide Redundancy Audit: Scans all translation keys to identify duplicate translated strings across languages.
+- Clean Duplicate Grouping: Groups identical values together, displaying all associated translation keys and their respective language columns.
+- Jump & Refactor: Directly navigate to duplicate keys in the spreadsheet with 1 click to consolidate keys or verify intentional reuse.
+
+---
+
+### PWA Offline Support & Desktop Installation
+- 100% Offline Capability: Service worker caching and web app manifest allow JSON Link to launch and function completely offline without internet access.
+- Desktop App Installation: One-click "Install App" button in the header installs JSON Link as a standalone desktop app on macOS, Windows, Linux, and Android.
+
+---
+
+### Streamlined Toolbar IA & Polish
+- Semantic Menu Grouping: Toolbar actions organized cleanly into `Translate ▾` (AI Auto-Translate, TM Cache, Glossary), `File ▾` (Import, Folder Sync, Save .jsonlink), and `Tools ▾` (Find & Replace, ICU Tester, Duplicate Finder, Command Palette, Workspace Reset).
+- Clear CTA Hierarchy: Single primary `Export` button to prevent visual competition.
+- Responsive Header: Tailored layouts for Mobile (compact project name, icon-only QA buttons, brand mark) and Tablet (balanced ribbon breathing room).
+- Clean Row Status Indicator: Subtle dot status indicator (Approved = green, Needs Review = amber, Draft = hover) replacing noisy text badges.
+
 ---
 
 ### AI Auto-Translate (OpenRouter BYOK)
@@ -234,8 +278,8 @@ A modern, high-performance web application designed for multilingual localizatio
 Quality, stability, and zero-regression architecture are verified with an extensive automated test suite:
 
 - Testing Framework: Vitest (Vite-native runner) with `@testing-library/react`.
-- Test Coverage: 267 Automated Tests across 32 test files:
-  - 12 Core Library Test Suites (173 unit tests):
+- Test Coverage: 308 Automated Tests across 42 test files:
+  - 16 Core Library Test Suites (204 unit tests):
     - `linter.test.ts`: Whitespace detection, variable mismatch, length expansion, auto-fixer.
     - `findReplace.test.ts`: Search, scope filtering, whole-word matching, regex replacement.
     - `myanmarFont.test.ts`: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
@@ -248,10 +292,14 @@ Quality, stability, and zero-regression architecture are verified with an extens
     - `variables.test.ts`: ICU, Mustache, Printf tokenization and validation.
     - `languages.test.ts`: ISO definitions, labels, and RTL language detection.
     - `project.test.ts`: .jsonlink serialization and workspace restoration.
-  - 20 UI Component Test Suites (94 component integration tests):
+    - `fileSystem.test.ts`: File System Access API read/write operations and permission checks.
+    - `translationMemory.test.ts`: Phrase pair caching, fuzzy matching, and memory import/export.
+    - `duplicateFinder.test.ts`: Duplicate translation value group analysis.
+    - `icuEvaluator.test.ts`: ICU plural, select, and nested argument parsing and evaluation.
+  - 26 UI Component Test Suites (104 component integration tests):
     - `DocumentationModal.test.tsx`: User guide modal, visual annotations, tab navigation, search filtering.
     - `SpreadsheetTable.test.tsx`: Grid headers, row keys, empty state, and column actions.
-    - `Toolbar.test.tsx`: Search, namespace, status, and high-contrast All/Missing filter segmented buttons.
+    - `Toolbar.test.tsx`: Search, namespace, status, and semantic dropdown menus.
     - `LinterModal.test.tsx`: QA issue categories, 1-click whitespace cleanup, jump-to-cell navigation.
     - `ScorecardModal.test.tsx`: Language health breakdown, completion progress, variable mismatch audit.
     - `AiTranslateModal.test.tsx`: OpenRouter BYOK validation, missing keys batch translation.
@@ -261,9 +309,14 @@ Quality, stability, and zero-regression architecture are verified with an extens
     - `FindReplaceModal.test.tsx`: Search & replace execution across languages and keys.
     - `CommandPalette.test.tsx`: Quick command navigation, keyboard shortcuts, and filtering.
     - `DiffMergeModal.test.tsx`: Smart import diff calculation and collision resolution.
+    - `FolderSyncModal.test.tsx`: Local folder sync interface, auto-sync toggle, sync status.
+    - `TranslationMemoryModal.test.tsx`: TM cache viewer, search filter, project phrase extraction.
+    - `DuplicateFinderModal.test.tsx`: Duplicate value grouping, key jumping.
+    - `IcuTesterModal.test.tsx`: Live ICU message simulator and plural testing.
+    - `PwaInstallButton.test.tsx`: PWA install prompt handler.
     - `AddKeyDialog.test.tsx` & `AddLanguageDialog.test.tsx`: Modal key and language addition workflows.
     - `ConfirmDialog.test.tsx` & `ExitConfirmDialog.test.tsx`: Destructive action guards.
-    - `SaveProjectModal.test.tsx`, `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`.
+    - `SaveProjectModal.test.tsx`, `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`, `ErrorBoundary.test.tsx`.
 - Continuous Integration: GitHub Actions workflow running typecheck and tests on every push and pull request.
 
 ---
