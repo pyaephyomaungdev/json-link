@@ -214,7 +214,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full h-full overflow-y-auto bg-background text-foreground selection:bg-primary/20 scroll-smooth">
+    <div className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -232,12 +232,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
 
       {/* 2. Hero Section */}
-      <section className="relative w-full pt-8 pb-12 sm:pt-14 sm:pb-16 px-4 sm:px-6 max-w-7xl mx-auto flex flex-col items-center">
+      <section className="relative w-full max-w-7xl mx-auto pt-8 pb-12 sm:pt-14 sm:pb-16 px-4 sm:px-6 flex flex-col items-center overflow-x-clip">
         {/* Subtle Ambient Aura */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[700px] h-[320px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-[600px] sm:max-w-[700px] h-[320px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
 
         {/* Hero Flanking Layout */}
-        <div className="w-full flex items-center justify-between gap-4 xl:gap-8">
+        <div className="w-full max-w-full min-w-0 flex items-center justify-between gap-4 xl:gap-8">
           {/* Left Flank - Pure Floating Official Brand Logos (No Background Box, Larger Size, Glow Aura) */}
           <div className="hidden lg:flex flex-col items-center justify-center gap-6 xl:gap-8 w-28 xl:w-36 shrink-0 relative py-4 select-none">
             {/* Ambient Background Aura */}
@@ -267,7 +267,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Center Column: Badge, Headline, Subtitle, Actions, Sample */}
-          <div className="flex-1 flex flex-col items-center text-center max-w-2xl xl:max-w-3xl mx-auto">
+          <div className="flex-1 flex flex-col items-center text-center max-w-2xl xl:max-w-3xl mx-auto w-full min-w-0 px-2 sm:px-0">
             {/* Product Hunt Featured Badge */}
             <div className="mb-5 flex items-center justify-center">
               <a
@@ -379,29 +379,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         {/* 3. Hero Product Mockup & Interactive Dropzone */}
-        <div className="w-full mt-8 sm:mt-10 max-w-6xl">
+        <div className="w-full max-w-6xl min-w-0 mt-8 sm:mt-10">
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl ${
+            className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl w-full max-w-full ${
               isDragOver
                 ? 'border-primary ring-4 ring-primary/20 scale-[1.005]'
                 : 'border-border/80 hover:border-primary/50'
             }`}
           >
             {/* Window Header */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/60 bg-muted/40 text-xs">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="size-2 sm:size-2.5 rounded-full bg-rose-500/80" />
-                <span className="size-2 sm:size-2.5 rounded-full bg-amber-500/80" />
-                <span className="size-2 sm:size-2.5 rounded-full bg-emerald-500/80" />
-                <span className="ml-1.5 sm:ml-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground hidden xs:inline sm:inline">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/60 bg-muted/40 text-xs w-full max-w-full min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span className="size-2 sm:size-2.5 rounded-full bg-rose-500/80 shrink-0" />
+                <span className="size-2 sm:size-2.5 rounded-full bg-amber-500/80 shrink-0" />
+                <span className="size-2 sm:size-2.5 rounded-full bg-emerald-500/80 shrink-0" />
+                <span className="ml-1.5 sm:ml-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground truncate hidden xs:inline sm:inline">
                   locales/en.json ↔ my.json ↔ ja.json
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground shrink-0">
                 <Badge variant="outline" className="text-[9px] sm:text-[10px] py-0 h-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="size-2.5 sm:size-3 mr-1" />
                   AES-256 GCM
@@ -411,8 +411,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Mockup Toolbar */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-border/40 bg-background/50 text-[10px] sm:text-[11px]">
-              <div className="flex items-center gap-2 sm:gap-3 font-mono text-muted-foreground truncate">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-border/40 bg-background/50 text-[10px] sm:text-[11px] w-full max-w-full min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 font-mono text-muted-foreground truncate min-w-0">
                 <span className="font-semibold text-primary shrink-0">fx</span>
                 <span className="text-foreground truncate max-w-xs sm:max-w-md">
                   &quot;Welcome back, {'{user}'}! You have {'{count, plural, one{# item} other{# items}}'}.&quot;
@@ -424,7 +424,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Mockup Spreadsheet Table */}
-            <div className="overflow-x-auto text-left font-sans text-xs select-none">
+            <div className="w-full max-w-full overflow-x-auto text-left font-sans text-xs select-none scrollbar-thin min-w-0">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b border-border/50 bg-muted/30 text-[11px] text-muted-foreground">
@@ -474,14 +474,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Drop Zone Callout Footer */}
-            <div className="px-3.5 py-3 sm:px-5 sm:py-3 bg-muted/40 border-t border-border/60 flex flex-col lg:flex-row items-center justify-between gap-2.5 sm:gap-3 text-xs">
-              <div className="flex items-center gap-2 text-muted-foreground text-center lg:text-left">
+            <div className="px-3.5 py-3 sm:px-5 sm:py-3 bg-muted/40 border-t border-border/60 flex flex-col lg:flex-row items-center justify-between gap-2.5 sm:gap-3 text-xs w-full max-w-full min-w-0">
+              <div className="flex items-center gap-2 text-muted-foreground text-center lg:text-left min-w-0">
                 <UploadCloud className="size-4 text-primary shrink-0 hidden sm:inline-block" />
                 <span className="text-[11px] sm:text-xs">
                   <strong className="text-foreground font-semibold">Click or drop files anywhere</strong> on this preview to load instantly into workspace
                 </span>
               </div>
-              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap lg:flex-nowrap justify-center shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap lg:flex-nowrap justify-center max-w-full">
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-background/80 border border-border/70 text-foreground/90 whitespace-nowrap shadow-2xs">
                   <JsonLinkLogo className="size-3 shrink-0" /> .jsonlink
                 </span>

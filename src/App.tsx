@@ -1560,9 +1560,9 @@ export function App() {
   }
 
   return (
-    <div className={`h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
+    <div className={`h-screen w-full max-w-full flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''}`}>
       {/* Top MS Excel Ribbon Header: Edge-to-edge */}
-      <header className="border-b border-border bg-card px-3 sm:px-4 h-12 flex items-center justify-between shrink-0 select-none">
+      <header className="border-b border-border bg-card px-3 sm:px-4 h-12 flex items-center justify-between shrink-0 select-none w-full max-w-full">
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
           <button
             onClick={handleLogoClick}
