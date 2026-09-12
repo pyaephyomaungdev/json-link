@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Sliders, Sparkles, Variable, Hash } from 'lucide-react';
+import { Sparkles, Variable, Hash } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { evaluateIcuMessage, extractVariables, isIcuPlural } from '@/lib/icuEvaluator';
 
@@ -74,11 +74,10 @@ export function IcuTesterModal({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Sliders className="size-4 text-cyan-500" />
-            <span>ICU Plural & Variable Tester</span>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            ICU Plural & Variable Tester
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Test complex ICU plural forms ({`{count, plural, =0{...} one{...} other{...}}`}) and interpolation placeholders interactively across your languages.
           </DialogDescription>
         </DialogHeader>

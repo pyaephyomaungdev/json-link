@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  FolderSync,
   FolderOpen,
   CheckCircle2,
   AlertCircle,
@@ -80,9 +79,8 @@ export function FolderSyncModal({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-            <FolderSync className="size-4 text-emerald-500" />
-            <span>Local Folder Direct Sync</span>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Local Folder Direct Sync
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Connect a directory on your computer (e.g. <code className="font-mono text-primary text-xs font-medium">locales/</code> or <code className="font-mono text-primary text-xs font-medium">flutter-l10n/</code>) to read and save translation files directly to disk without downloading ZIPs.

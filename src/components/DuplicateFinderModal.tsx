@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Search, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, CheckCircle2, ArrowRight } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { findDuplicateValues } from '@/lib/duplicateFinder';
 
@@ -55,11 +55,10 @@ export function DuplicateFinderModal({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Copy className="size-4 text-amber-500" />
-            <span>Duplicate Value Finder</span>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Duplicate Value Finder
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Identify keys that share identical translation values so you can consolidate redundant keys and keep translations consistent.
           </DialogDescription>
         </DialogHeader>

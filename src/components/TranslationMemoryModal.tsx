@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Brain,
   Search,
   Sparkles,
   Trash2,
@@ -85,11 +84,10 @@ export function TranslationMemoryModal({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Brain className="size-4 text-purple-500" />
-            <span>Translation Memory (TM Cache)</span>
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Translation Memory (TM Cache)
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Translation Memory stores approved translations in your browser so you can reuse identical phrases without re-translating or spending AI tokens.
           </DialogDescription>
         </DialogHeader>
