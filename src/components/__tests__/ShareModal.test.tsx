@@ -57,4 +57,12 @@ describe('ShareModal', () => {
     fireEvent.click(closeBtns[0]);
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it('does not jump to file tab when password protection is toggled', () => {
+    render(<ShareModal {...defaultProps} />);
+    const checkbox = screen.getByLabelText(/Protect with Password/i);
+    fireEvent.click(checkbox);
+    expect(screen.getByPlaceholderText(/Enter link password/i)).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Copy Link/i })).not.toBeNull();
+  });
 });

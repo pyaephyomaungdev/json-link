@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
+  // Prevent auto-switching tabs once user has interacted or initial evaluation occurred
+  const hasAutoSwitchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      hasAutoSwitchedRef.current = false;
+      setActiveTab('url');
+      setEnablePassword(false);
+      setPassword('');
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open || items.length === 0) return;
 
@@ -70,8 +82,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           setUrlLength(res.length);
           setIsSafeLength(res.isSafeLength);
           setIsGenerating(false);
-          // If project is too large, default to file handoff tab for better UX
-          if (!res.isSafeLength) {
+          // If project is too large, default to file handoff tab only once on initial open if user hasn't interacted
+          if (!res.isSafeLength && !hasAutoSwitchedRef.current) {
+            hasAutoSwitchedRef.current = true;
             setActiveTab('file');
           }
         }
@@ -85,6 +98,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       isMounted = false;
     };
   }, [open, projectName, items, languages, enablePassword, password]);
+
+  const switchTab = (tab: 'url' | 'file') => {
+    hasAutoSwitchedRef.current = true;
+    setActiveTab(tab);
+  };
 
   const handleCopy = () => {
     if (!shareUrl) return;
@@ -157,7 +175,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div className="flex border-b border-border">
             <button
               type="button"
-              onClick={() => setActiveTab('url')}
+              onClick={() => switchTab('url')}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === 'url'
                   ? 'border-primary text-primary'
@@ -178,7 +196,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('file')}
+              onClick={() => switchTab('file')}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === 'file'
                   ? 'border-primary text-primary'
@@ -236,6 +254,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         type="checkbox"
                         checked={enablePassword}
                         onChange={e => {
+                          hasAutoSwitchedRef.current = true;
                           setEnablePassword(e.target.checked);
                           if (!e.target.checked) setPassword('');
                         }}
@@ -260,7 +279,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Enter link password..."
                           value={password}
-                          onChange={e => setPassword(e.target.value)}
+                          onChange={e => {
+                            hasAutoSwitchedRef.current = true;
+                            setPassword(e.target.value);
+                          }}
                           className="text-xs h-8 pr-8 bg-muted/20"
                           autoFocus
                         />
@@ -305,7 +327,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <span>Large Project ({Math.round(urlLength / 1024 * 10) / 10} KB / {items.length} keys)</span>
                   </div>
                   <p className="leading-relaxed">
-                    This link exceeds the safe chat limit (2.5 KB) and may get truncated in chat apps. For large projects, please use the <strong className="underline cursor-pointer" onClick={() => setActiveTab('file')}>Team Handoff (.jsonlink)</strong> file instead.
+                    This link exceeds the safe chat limit (2.5 KB) and may get truncated in chat apps. For large projects, please use the <strong className="underline cursor-pointer" onClick={() => switchTab('file')}>Team Handoff (.jsonlink)</strong> file instead.
                   </p>
                 </div>
               )}
