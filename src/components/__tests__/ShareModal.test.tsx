@@ -47,7 +47,8 @@ describe('ShareModal', () => {
     expect(projectLib.exportProjectFile).toHaveBeenCalledWith(
       'my-app',
       defaultProps.items,
-      defaultProps.languages
+      defaultProps.languages,
+      undefined
     );
   });
 
@@ -63,6 +64,22 @@ describe('ShareModal', () => {
     const checkbox = screen.getByLabelText(/Protect with Password/i);
     fireEvent.click(checkbox);
     expect(screen.getByPlaceholderText(/Enter link password/i)).not.toBeNull();
-    expect(screen.getByRole('button', { name: /Copy Link/i })).not.toBeNull();
+    // When password is empty, Copy Link button should be disabled
+    const copyBtn = screen.getByRole('button', { name: /Copy Link/i });
+    expect(copyBtn).toHaveProperty('disabled', true);
+    expect(screen.getByText(/Password is required to encrypt this share link/i)).not.toBeNull();
+  });
+
+  it('blocks file download when password protection is enabled but password is empty', () => {
+    render(<ShareModal {...defaultProps} />);
+    const fileTab = screen.getByText('Team Handoff (.jsonlink)');
+    fireEvent.click(fileTab);
+
+    const checkbox = screen.getByLabelText(/Protect with Password/i);
+    fireEvent.click(checkbox);
+
+    const downloadBtn = screen.getByRole('button', { name: /Download/i });
+    expect(downloadBtn).toHaveProperty('disabled', true);
+    expect(screen.getByText(/Password is required to encrypt this handoff file/i)).not.toBeNull();
   });
 });

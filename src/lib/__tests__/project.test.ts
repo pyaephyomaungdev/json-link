@@ -4,6 +4,9 @@ import {
   saveLocalDraft,
   loadLocalDraft,
   clearLocalDraft,
+  buildProjectFileContent,
+  isProjectFileEncrypted,
+  decryptProjectFile,
 } from '../project';
 import { TranslationItem } from '@/types';
 
@@ -107,6 +110,52 @@ describe('project.ts', () => {
       const loaded = loadLocalDraft();
       expect(loaded?.items).toEqual([]);
       expect(loaded?.languages).toEqual(['en']);
+    });
+  });
+
+  describe('encrypted .jsonlink file format', () => {
+    const sampleItems: TranslationItem[] = [
+      { key: 'auth.login', en: 'Log In', my: 'လော့ဂ်အင်' },
+      { key: 'auth.logout', en: 'Log Out', my: 'ထွက်မည်' },
+    ];
+    const sampleLangs = ['en', 'my'];
+
+    it('builds plain JSON when no password is provided', async () => {
+      const content = await buildProjectFileContent('my-app', sampleItems, sampleLangs);
+      expect(isProjectFileEncrypted(content)).toBe(false);
+      const parsed = parseProjectFile(content);
+      expect(parsed.items).toHaveLength(2);
+      expect(parsed.name).toBe('my-app');
+    });
+
+    it('builds encrypted JSON when password is provided and fails parseProjectFile', async () => {
+      const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
+      expect(isProjectFileEncrypted(encryptedContent)).toBe(true);
+      expect(() => parseProjectFile(encryptedContent)).toThrow('PROJECT_ENCRYPTED');
+
+      // Verify no plaintext items leak in the file
+      expect(encryptedContent).not.toContain('auth.login');
+      expect(encryptedContent).not.toContain('လော့ဂ်အင်');
+    });
+
+    it('decrypts encrypted project file with correct password', async () => {
+      const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
+      const decrypted = await decryptProjectFile(encryptedContent, 'secret123');
+      expect(decrypted.name).toBe('my-app');
+      expect(decrypted.languages).toEqual(['en', 'my']);
+      expect(decrypted.items).toHaveLength(2);
+      expect(decrypted.items[0].en).toBe('Log In');
+      expect(decrypted.items[0].my).toBe('လော့ဂ်အင်');
+    });
+
+    it('rejects decryption with incorrect password', async () => {
+      const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
+      await expect(decryptProjectFile(encryptedContent, 'wrong-password')).rejects.toThrow('INCORRECT_PASSWORD');
+    });
+
+    it('rejects decryption with empty password', async () => {
+      const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
+      await expect(decryptProjectFile(encryptedContent, '   ')).rejects.toThrow('PASSWORD_REQUIRED');
     });
   });
 });

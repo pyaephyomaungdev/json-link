@@ -31,7 +31,7 @@ interface EncryptedContainer {
 
 export const MAX_SAFE_URL_LENGTH = 2500;
 
-function bytesToBase64Url(bytes: Uint8Array): string {
+export function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -39,7 +39,7 @@ function bytesToBase64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function base64UrlToBytes(base64url: string): Uint8Array {
+export function base64UrlToBytes(base64url: string): Uint8Array {
   let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
   while (base64.length % 4) {
     base64 += '=';
@@ -55,7 +55,7 @@ function base64UrlToBytes(base64url: string): Uint8Array {
 /**
  * Derives a 256-bit AES-GCM CryptoKey using PBKDF2 with 100,000 iterations
  */
-async function deriveKeyFromPassword(password: string, salt: Uint8Array, usages: KeyUsage[]): Promise<CryptoKey> {
+export async function deriveKeyFromPassword(password: string, salt: Uint8Array, usages: KeyUsage[]): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const baseKey = await crypto.subtle.importKey(
     'raw',

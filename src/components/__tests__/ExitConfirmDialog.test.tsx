@@ -26,8 +26,8 @@ describe('ExitConfirmDialog', () => {
     expect(input).not.toBeNull();
   });
 
-  it('calls exportProjectFile and onConfirmExit on save button click', () => {
-    const exportSpy = vi.spyOn(projectLib, 'exportProjectFile').mockImplementation(() => {});
+  it('calls exportProjectFile and onConfirmExit on save button click', async () => {
+    const exportSpy = vi.spyOn(projectLib, 'exportProjectFile').mockResolvedValue(undefined);
     render(<ExitConfirmDialog {...baseProps} />);
 
     const saveBtn = screen.getByRole('button', { name: /Save \.jsonlink & Exit/i });

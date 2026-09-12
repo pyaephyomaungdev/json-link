@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { buildShareUrl } from '@/lib/shareUrl';
-import { exportProjectFile } from '@/lib/project';
+import { exportProjectFile, buildProjectFileContent } from '@/lib/project';
 
 interface ShareModalProps {
   open: boolean;
@@ -71,6 +71,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     if (!open || items.length === 0) return;
 
     let isMounted = true;
+
+    if (enablePassword && !password.trim()) {
+      setShareUrl('');
+      setUrlLength(0);
+      setIsSafeLength(true);
+      setIsGenerating(false);
+      return;
+    }
+
     setIsGenerating(true);
 
     const effectivePassword = enablePassword && password.trim() ? password.trim() : undefined;
@@ -111,27 +120,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setTimeout(() => setCopied(false), 1800);
   };
 
-  const handleDownloadFile = () => {
+  const handleDownloadFile = async () => {
+    if (enablePassword && !password.trim()) return;
     const filename = projectName.trim() || 'translations';
-    exportProjectFile(filename, items, languages);
+    const effectivePw = enablePassword && password.trim() ? password.trim() : undefined;
+    await exportProjectFile(filename, items, languages, effectivePw);
   };
 
   const handleNativeShare = async () => {
     if (typeof navigator === 'undefined' || !navigator.share) return;
+    if (enablePassword && !password.trim()) return;
     try {
       const filename = `${projectName.trim() || 'translations'}.jsonlink`;
-      const jsonContent = JSON.stringify(
-        {
-          format: 'jsonlink',
-          version: '1.0.0',
-          name: projectName,
-          updatedAt: new Date().toISOString(),
-          languages,
-          items,
-        },
-        null,
-        2
-      );
+      const effectivePw = enablePassword && password.trim() ? password.trim() : undefined;
+      const jsonContent = await buildProjectFileContent(projectName, items, languages, effectivePw);
       const file = new File([jsonContent], filename, { type: 'application/json' });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -176,11 +178,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <button
               type="button"
               onClick={() => switchTab('url')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === 'url'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'url'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <Link2 className="size-3.5 shrink-0" />
               <span>Instant URL Link</span>
@@ -197,11 +198,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <button
               type="button"
               onClick={() => switchTab('file')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
-                activeTab === 'file'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'file'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <FileCode className="size-3.5 shrink-0" />
               <span>Team Handoff (.jsonlink)</span>
@@ -223,12 +223,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <div className="flex gap-2">
                   <Input
                     readOnly
-                    value={isGenerating ? 'Generating compressed link...' : shareUrl}
+                    value={
+                      enablePassword && !password.trim()
+                        ? 'Enter a password below to generate encrypted link...'
+                        : isGenerating
+                          ? 'Generating compressed link...'
+                          : shareUrl
+                    }
                     className="font-mono text-[11px] h-9 bg-muted/30 select-all"
                   />
                   <Button
                     onClick={handleCopy}
-                    disabled={isGenerating || !shareUrl}
+                    disabled={isGenerating || !shareUrl || (enablePassword && !password.trim())}
                     size="sm"
                     className="gap-1.5 shrink-0 h-9 font-semibold text-xs cursor-pointer shadow-xs"
                   >
@@ -273,7 +279,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   </div>
 
                   {enablePassword && (
-                    <div className="space-y-2 pl-5.5">
+                    <div className="space-y-2 pl-5.5 mt-2">
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
@@ -283,7 +289,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             hasAutoSwitchedRef.current = true;
                             setPassword(e.target.value);
                           }}
-                          className="text-xs h-8 pr-8 bg-muted/20"
+                          className={`text-xs h-8 pr-8 bg-muted/20 ${!password.trim() ? 'border-amber-500/50' : ''}`}
                           autoFocus
                         />
                         <button
@@ -296,6 +302,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           {showPassword ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
                         </button>
                       </div>
+
+                      {!password.trim() && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          Password is required to encrypt this share link.
+                        </p>
+                      )}
 
                       {/* No-Recovery Warning */}
                       <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10.5px] text-amber-800 dark:text-amber-300 space-y-0.5">
@@ -338,20 +350,92 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 Export a self-contained, lossless <code className="font-mono text-emerald-600 font-semibold">.jsonlink</code> project package. Zero size restrictions — handles 10,000+ translation keys smoothly.
               </p>
 
+              {/* Password Protection for File Handoff */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={enablePassword}
+                      onChange={e => {
+                        hasAutoSwitchedRef.current = true;
+                        setEnablePassword(e.target.checked);
+                        if (!e.target.checked) setPassword('');
+                      }}
+                      className="rounded border-border text-primary focus:ring-primary size-3.5 cursor-pointer"
+                    />
+                    <span className="flex items-center gap-1.5">
+                      <Lock className="size-3 text-muted-foreground" />
+                      Protect with Password (Optional)
+                    </span>
+                  </label>
+                  {enablePassword && (
+                    <span className="text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
+                      AES-256
+                    </span>
+                  )}
+                </div>
+
+                {enablePassword && (
+                  <div className="space-y-2 pl-5.5 mt-2">
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Enter file encryption password..."
+                        value={password}
+                        onChange={e => {
+                          hasAutoSwitchedRef.current = true;
+                          setPassword(e.target.value);
+                        }}
+                        className={`text-xs h-8 pr-8 bg-muted/20 ${!password.trim() ? 'border-amber-500/50' : ''}`}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(p => !p)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-1"
+                        tabIndex={-1}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                      </button>
+                    </div>
+
+                    {!password.trim() && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                        Password is required to encrypt this handoff file.
+                      </p>
+                    )}
+
+                    <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10.5px] text-amber-800 dark:text-amber-300 space-y-0.5">
+                      <div className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300">
+                        <AlertTriangle className="size-3 shrink-0" />
+                        <span>No Password Recovery</span>
+                      </div>
+                      <p className="leading-relaxed text-muted-foreground dark:text-amber-300/80">
+                        Encrypted 100% in-browser using AES-GCM 256. Passwords are never stored on any server. If forgotten, this file cannot be opened or recovered.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Button
                   onClick={handleDownloadFile}
+                  disabled={enablePassword && !password.trim()}
                   variant="outline"
                   size="sm"
                   className="gap-2 h-9 font-semibold text-xs cursor-pointer shadow-xs border-primary/30 hover:bg-primary/5"
                 >
                   <Download className="size-3.5 text-primary" />
-                  Download .jsonlink
+                  {enablePassword && password.trim() ? 'Download Encrypted' : 'Download .jsonlink'}
                 </Button>
 
                 {hasNativeShare && (
                   <Button
                     onClick={handleNativeShare}
+                    disabled={enablePassword && !password.trim()}
                     size="sm"
                     className="gap-2 h-9 font-semibold text-xs cursor-pointer shadow-xs"
                   >
@@ -363,7 +447,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     ) : (
                       <>
                         <Send className="size-3.5" />
-                        Native Share
+                        {enablePassword && password.trim() ? 'Share Encrypted' : 'Native Share'}
                       </>
                     )}
                   </Button>
@@ -371,7 +455,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               </div>
 
               <div className="p-2.5 rounded-lg bg-muted/40 border border-border text-[11px] text-muted-foreground">
-                <strong className="text-foreground">How team handoff works:</strong> Send the file to any translator or developer. When they drop it into JSON Link, all {items.length} keys, namespaces, and language columns load instantly.
+                <strong className="text-foreground">How team handoff works:</strong> Send the file to any translator or developer. When they drop it into JSON Link{enablePassword && password.trim() ? ' and enter the password' : ''}, all {items.length} keys, namespaces, and language columns load instantly.
               </div>
             </div>
           )}

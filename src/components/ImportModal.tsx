@@ -19,6 +19,7 @@ import {
   parseArbFile,
   mergeTranslations,
 } from '@/lib/parser';
+import { isProjectFileEncrypted } from '@/lib/project';
 import { TranslationItem } from '@/types';
 
 interface ImportModalProps {
@@ -76,6 +77,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
         if (ext === 'json' || ext === 'jsonlink') {
           const text = await file.text();
+          if (isProjectFileEncrypted(text)) {
+            setError(`"${file.name}" is password-protected. Please open encrypted projects from the home screen or drag directly to workspace to unlock.`);
+            continue;
+          }
           const parsed = parseJsonFile(text, file.name);
           newLoadedFiles.push({
             name: file.name,

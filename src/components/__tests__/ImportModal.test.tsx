@@ -52,6 +52,28 @@ describe('ImportModal', () => {
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('warns when an encrypted project file is uploaded', async () => {
+    render(<ImportModal {...defaultProps} />);
+
+    const encryptedJson = JSON.stringify({
+      format: 'jsonlink',
+      version: '1.0',
+      encrypted: true,
+      enc: 'aes-256-gcm',
+      ciphertext: 'abcd',
+      iv: '1234',
+      salt: '5678',
+    });
+    const file = new File([encryptedJson], 'secret.jsonlink', { type: 'application/json' });
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/"secret\.jsonlink" is password-protected/i)).not.toBeNull();
+    });
+  });
+
   it('calls onOpenChange(false) when cancel button is clicked', () => {
     render(<ImportModal {...defaultProps} />);
     const cancelBtn = screen.getByRole('button', { name: 'Cancel' });

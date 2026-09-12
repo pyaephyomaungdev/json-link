@@ -12,11 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Eye, EyeOff, AlertTriangle, KeyRound } from 'lucide-react';
 import { decodeSharePayload, ShareProjectData } from '@/lib/shareUrl';
+import { decryptProjectFile } from '@/lib/project';
 
 interface UnlockShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  shareHash: string;
+  shareHash?: string | null;
+  encryptedFileContent?: string | null;
   onUnlocked: (data: ShareProjectData) => void;
   onCancel: () => void;
 }
@@ -25,6 +27,7 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
   open,
   onOpenChange,
   shareHash,
+  encryptedFileContent,
   onUnlocked,
   onCancel,
 }) => {
@@ -41,7 +44,18 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
     setErrorMessage(null);
 
     try {
-      const data = await decodeSharePayload(shareHash, password.trim());
+      let data: ShareProjectData | null = null;
+      if (encryptedFileContent) {
+        const proj = await decryptProjectFile(encryptedFileContent, password.trim());
+        data = {
+          projectName: proj.name,
+          languages: proj.languages,
+          items: proj.items,
+        };
+      } else if (shareHash) {
+        data = await decodeSharePayload(shareHash, password.trim());
+      }
+
       if (data && data.items) {
         setIsDecrypting(false);
         setPassword('');
@@ -72,10 +86,12 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base text-foreground">
-            Password Protected Workspace
+            {encryptedFileContent ? 'Encrypted Project File' : 'Password Protected Workspace'}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            This translation workspace is encrypted with client-side AES-256.
+            {encryptedFileContent
+              ? 'This .jsonlink project file is encrypted with client-side AES-256.'
+              : 'This translation workspace is encrypted with client-side AES-256.'}
           </DialogDescription>
         </DialogHeader>
 

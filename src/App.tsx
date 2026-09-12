@@ -50,7 +50,7 @@ import {
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
-import { loadLocalDraft, saveLocalDraft, clearLocalDraft, parseProjectFile } from '@/lib/project';
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft, parseProjectFile, isProjectFileEncrypted } from '@/lib/project';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -181,7 +181,9 @@ export function App() {
   const [isSaveProjectOpen, setIsSaveProjectOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [pendingShareHash, setPendingShareHash] = useState<string | null>(null);
+  const [pendingEncryptedFile, setPendingEncryptedFile] = useState<{ name: string; content: string } | null>(null);
   const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
+  const shareDecodeSeqRef = useRef<number>(0);
 
   // New Feature Modals
   const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
@@ -244,12 +246,15 @@ export function App() {
     const hash = window.location.hash;
     if (hash && (hash.startsWith('#share=') || hash.startsWith('#/share='))) {
       const cleanHash = hash.replace(/^#\/?share=/, '');
+      const currentSeq = ++shareDecodeSeqRef.current;
       if (isPayloadEncrypted(cleanHash)) {
         // Encrypted workspace: prompt for decryption password
         setPendingShareHash(cleanHash);
         setIsUnlockDialogOpen(true);
       } else {
         decodeSharePayload(cleanHash).then(shared => {
+          if (currentSeq !== shareDecodeSeqRef.current) return;
+          if (isStartingEmptyRef.current || isExitingRef.current) return;
           if (shared && shared.items && shared.items.length > 0) {
             setIsWorkspaceActive(true);
             setItemsWithoutHistory(shared.items);
@@ -271,7 +276,10 @@ export function App() {
       setProjectName(shared.projectName);
       setIsUnlockDialogOpen(false);
       setPendingShareHash(null);
-      window.history.replaceState(null, '', window.location.pathname);
+      setPendingEncryptedFile(null);
+      if (typeof window !== 'undefined' && window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     }
   };
 
@@ -627,6 +635,13 @@ export function App() {
     setIsCommandPaletteOpen(false);
     setIsAddKeyOpen(false);
     setIsAddLanguageOpen(false);
+    setIsUnlockDialogOpen(false);
+    setPendingShareHash(null);
+    setPendingEncryptedFile(null);
+    shareDecodeSeqRef.current += 1;
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
 
     setItemsWithoutHistory([]);
     setLanguages(['en', 'my']);
@@ -771,6 +786,11 @@ export function App() {
 
         if (ext === 'jsonlink') {
           const text = await file.text();
+          if (isProjectFileEncrypted(text)) {
+            setPendingEncryptedFile({ name: file.name, content: text });
+            setIsUnlockDialogOpen(true);
+            return;
+          }
           try {
             const project = parseProjectFile(text);
             if (project.items && project.items.length > 0) {
@@ -803,6 +823,11 @@ export function App() {
           incomingLanguages = res.languages;
         } else if (ext === 'json') {
           const text = await file.text();
+          if (isProjectFileEncrypted(text)) {
+            setPendingEncryptedFile({ name: file.name, content: text });
+            setIsUnlockDialogOpen(true);
+            return;
+          }
           if (text.includes('"format"') && text.includes('"jsonlink"')) {
             try {
               const project = parseProjectFile(text);
@@ -1179,11 +1204,23 @@ export function App() {
   const handleStartEmptySheet = () => {
     isExitingRef.current = false;
     isStartingEmptyRef.current = true;
-    // Lock sample data restoration for 6000ms so no delayed click or ghost tap can hydrate sample
-    exitCooldownUntilRef.current = Date.now() + 6000;
+    shareDecodeSeqRef.current += 1; // Invalidate any in-flight share decode
+
+    // Clean hash from URL immediately so it never re-triggers or leaks
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
+    // Dismiss any pending share or encrypted file modal
+    setPendingShareHash(null);
+    setPendingEncryptedFile(null);
+    setIsUnlockDialogOpen(false);
+
+    // Prevent immediate click-through ghost taps for 600ms
+    exitCooldownUntilRef.current = Date.now() + 600;
     setTimeout(() => {
       isStartingEmptyRef.current = false;
-    }, 6000);
+    }, 600);
 
     clearLocalDraft();
     try {
@@ -1962,10 +1999,14 @@ export function App() {
         open={isUnlockDialogOpen}
         onOpenChange={setIsUnlockDialogOpen}
         shareHash={pendingShareHash || ''}
+        encryptedFileContent={pendingEncryptedFile?.content}
         onUnlocked={handleShareUnlocked}
         onCancel={() => {
           setPendingShareHash(null);
-          window.history.replaceState(null, '', window.location.pathname);
+          setPendingEncryptedFile(null);
+          if (typeof window !== 'undefined' && window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
         }}
       />
 

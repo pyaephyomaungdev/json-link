@@ -12,6 +12,10 @@ vi.mock('@/lib/shareUrl', async () => {
   };
 });
 
+vi.mock('@/lib/project', () => ({
+  decryptProjectFile: vi.fn(),
+}));
+
 describe('UnlockShareDialog', () => {
   afterEach(() => {
     cleanup();
@@ -75,5 +79,44 @@ describe('UnlockShareDialog', () => {
     const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
     fireEvent.click(cancelBtn);
     expect(defaultProps.onCancel).toHaveBeenCalled();
+  });
+
+  it('unlocks encrypted file content when provided', async () => {
+    const projectLib = await import('@/lib/project');
+    const mockFileProj = {
+      format: 'jsonlink' as const,
+      version: '1.0.0',
+      name: 'file-project',
+      updatedAt: '2026-01-01',
+      languages: ['en'],
+      items: [{ key: 'file.key', en: 'Val' }],
+    };
+    vi.mocked(projectLib.decryptProjectFile).mockResolvedValueOnce(mockFileProj);
+
+    const onUnlocked = vi.fn();
+    render(
+      <UnlockShareDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        encryptedFileContent='{"encrypted":true}'
+        onUnlocked={onUnlocked}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('heading', { name: 'Encrypted Project File' })).not.toBeNull();
+    const input = screen.getByPlaceholderText('Enter workspace password...');
+    fireEvent.change(input, { target: { value: 'file-pw' } });
+
+    const unlockBtn = screen.getByRole('button', { name: /Unlock Workspace/i });
+    fireEvent.click(unlockBtn);
+
+    await waitFor(() => {
+      expect(onUnlocked).toHaveBeenCalledWith({
+        projectName: 'file-project',
+        languages: ['en'],
+        items: [{ key: 'file.key', en: 'Val' }],
+      });
+    });
   });
 });
