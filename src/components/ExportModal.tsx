@@ -187,8 +187,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold">Export Translations</DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogTitle className="text-base font-semibold text-foreground">Export Translations</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Export across Web, Mobile (Android/iOS), Flutter, Rails, and Developer types.
           </DialogDescription>
         </DialogHeader>
