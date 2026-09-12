@@ -157,5 +157,13 @@ describe('project.ts', () => {
       const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
       await expect(decryptProjectFile(encryptedContent, '   ')).rejects.toThrow('PASSWORD_REQUIRED');
     });
+
+    it('rejects decryption when ciphertext is corrupted/tampered', async () => {
+      const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
+      const parsed = JSON.parse(encryptedContent);
+      // Flip the last characters of ciphertext
+      parsed.ciphertext = parsed.ciphertext.slice(0, -4) + 'AAAA';
+      await expect(decryptProjectFile(JSON.stringify(parsed), 'secret123')).rejects.toThrow('INCORRECT_PASSWORD');
+    });
   });
 });

@@ -11,6 +11,7 @@ export interface EncryptedProjectContainer {
   updatedAt: string;
   encrypted: true;
   cipher: 'aes-gcm-256';
+  enc?: 'aes-256-gcm';
   kdf: 'pbkdf2-sha256-100k';
   salt: string;
   iv: string;
@@ -47,6 +48,7 @@ export async function buildProjectFileContent(
       updatedAt: new Date().toISOString(),
       encrypted: true,
       cipher: 'aes-gcm-256',
+      enc: 'aes-256-gcm',
       kdf: 'pbkdf2-sha256-100k',
       salt: bytesToBase64Url(salt),
       iv: bytesToBase64Url(iv),

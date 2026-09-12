@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { ExitConfirmDialog } from '../ExitConfirmDialog';
 import * as projectLib from '@/lib/project';
 
@@ -33,9 +33,11 @@ describe('ExitConfirmDialog', () => {
     const saveBtn = screen.getByRole('button', { name: /Save \.jsonlink & Exit/i });
     fireEvent.click(saveBtn);
 
-    expect(exportSpy).toHaveBeenCalledWith('my-mobile-app', baseProps.items, baseProps.languages);
-    expect(baseProps.onOpenChange).toHaveBeenCalledWith(false);
-    expect(baseProps.onConfirmExit).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(exportSpy).toHaveBeenCalledWith('my-mobile-app', baseProps.items, baseProps.languages, undefined);
+      expect(baseProps.onOpenChange).toHaveBeenCalledWith(false);
+      expect(baseProps.onConfirmExit).toHaveBeenCalledTimes(1);
+    });
     exportSpy.mockRestore();
   });
 
@@ -49,6 +51,30 @@ describe('ExitConfirmDialog', () => {
     expect(exportSpy).not.toHaveBeenCalled();
     expect(baseProps.onOpenChange).toHaveBeenCalledWith(false);
     expect(baseProps.onConfirmExit).toHaveBeenCalledTimes(1);
+    exportSpy.mockRestore();
+  });
+
+  it('handles password protection toggle and passes password to exportProjectFile', async () => {
+    const exportSpy = vi.spyOn(projectLib, 'exportProjectFile').mockResolvedValue(undefined);
+    render(<ExitConfirmDialog {...baseProps} />);
+
+    const checkbox = screen.getByRole('checkbox', { name: /Protect with Password/i });
+    expect(checkbox).not.toBeNull();
+    fireEvent.click(checkbox);
+
+    // Save button should be disabled when password is empty
+    const saveBtn = screen.getByRole('button', { name: /Save \.jsonlink & Exit/i });
+    expect(saveBtn.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText(/Password is required to encrypt this file/i)).not.toBeNull();
+
+    // Fill in password
+    const pwInput = screen.getByPlaceholderText(/Enter backup encryption password/i);
+    fireEvent.change(pwInput, { target: { value: 'SecretExitPass123' } });
+
+    expect(saveBtn.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(saveBtn);
+
+    expect(exportSpy).toHaveBeenCalledWith('my-mobile-app', baseProps.items, baseProps.languages, 'SecretExitPass123');
     exportSpy.mockRestore();
   });
 });

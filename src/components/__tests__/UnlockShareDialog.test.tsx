@@ -119,4 +119,31 @@ describe('UnlockShareDialog', () => {
       });
     });
   });
+
+  it('shows error message when incorrect password is typed for encrypted file', async () => {
+    const projectLib = await import('@/lib/project');
+    vi.mocked(projectLib.decryptProjectFile).mockRejectedValueOnce(new Error('INCORRECT_PASSWORD'));
+
+    const onUnlocked = vi.fn();
+    render(
+      <UnlockShareDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        encryptedFileContent='{"encrypted":true}'
+        onUnlocked={onUnlocked}
+        onCancel={vi.fn()}
+      />
+    );
+
+    const input = screen.getByPlaceholderText('Enter workspace password...');
+    fireEvent.change(input, { target: { value: 'wrong-file-pw' } });
+
+    const unlockBtn = screen.getByRole('button', { name: /Unlock Workspace/i });
+    fireEvent.click(unlockBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Incorrect password\. Please verify and try again\./i)).not.toBeNull();
+    });
+    expect(onUnlocked).not.toHaveBeenCalled();
+  });
 });
