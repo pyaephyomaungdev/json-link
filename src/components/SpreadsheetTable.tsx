@@ -814,7 +814,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const isMissingOnly = (activeFilter === 'missing' || Boolean(filterMissingLang)) && !searchQuery;
       if (isMissingOnly) {
         return (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
+          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none bg-background">
             <div className="size-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-xs">
               <CheckCircle2 className="size-8 stroke-[1.5]" />
             </div>
@@ -835,7 +835,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       }
 
       return (
-        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none bg-background">
           <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 shadow-xs">
             <SearchX className="size-8 stroke-[1.5]" />
           </div>
@@ -1409,7 +1409,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               <tr>
                 <td
                   colSpan={3 + (showDescription ? 1 : 0) + languages.length}
-                  className="p-10 sm:p-14 text-center select-none bg-background/50 border-b border-border"
+                  className="p-6 sm:p-14 text-center select-none bg-background/50 border-b border-border"
                 >
                   <div className="max-w-md mx-auto flex flex-col items-center justify-center gap-3">
                     <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">

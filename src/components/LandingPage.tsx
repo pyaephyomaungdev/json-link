@@ -324,7 +324,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
               >
                 <Sparkles className="size-3.5 text-primary" />
-                Or test with sample data (30 example keys)
+                Or test with sample data (32 example keys)
               </button>
             </div>
           </div>
@@ -435,38 +435,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <th className="py-2 px-3.5 font-medium min-w-44">Japanese (ja)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/30 text-[11px] font-mono">
+                <tbody className="divide-y divide-border/30 text-[11px] font-sans">
                   <tr className="hover:bg-muted/30 transition-colors">
-                    <td className="py-2 px-3.5 text-center text-muted-foreground border-r border-border/40">1</td>
-                    <td className="py-2 px-3.5 font-semibold text-foreground border-r border-border/40">app.title</td>
+                    <td className="py-2 px-3.5 text-center text-muted-foreground border-r border-border/40 font-mono">1</td>
+                    <td className="py-2 px-3.5 font-semibold text-foreground border-r border-border/40 font-mono">app.title</td>
                     <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40">JSON Link</td>
-                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40">JSON Link</td>
+                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans">JSON Link</td>
                     <td className="py-2 px-3.5 text-muted-foreground">JSON Link</td>
                   </tr>
                   <tr className="bg-primary/5 hover:bg-primary/10 transition-colors">
-                    <td className="py-2 px-3.5 text-center text-primary font-bold border-r border-border/40">2</td>
-                    <td className="py-2 px-3.5 font-semibold text-primary border-r border-border/40">auth.welcome</td>
+                    <td className="py-2 px-3.5 text-center text-primary font-bold border-r border-border/40 font-mono">2</td>
+                    <td className="py-2 px-3.5 font-semibold text-primary border-r border-border/40 font-mono">auth.welcome</td>
                     <td className="py-2 px-3.5 text-foreground border-r border-border/40">
-                      Welcome back, <span className="text-primary font-semibold">{'{user}'}</span>!
+                      Welcome back, <span className="text-primary font-semibold font-mono">{'{user}'}</span>!
                     </td>
-                    <td className="py-2 px-3.5 text-foreground border-r border-border/40">
-                      ပြန်လည်ကြိုဆိုပါသည် <span className="text-primary font-semibold">{'{user}'}</span>!
+                    <td className="py-2 px-3.5 text-foreground border-r border-border/40 leading-relaxed font-sans">
+                      ပြန်လည်ကြိုဆိုပါသည် <span className="text-primary font-semibold font-mono">{'{user}'}</span>!
                     </td>
                     <td className="py-2 px-3.5 text-foreground">
-                      おかえりなさい、<span className="text-primary font-semibold">{'{user}'}</span>様!
+                      おかえりなさい、<span className="text-primary font-semibold font-mono">{'{user}'}</span>様!
                     </td>
                   </tr>
                   <tr className="hover:bg-muted/30 transition-colors">
-                    <td className="py-2 px-3.5 text-center text-muted-foreground border-r border-border/40">3</td>
-                    <td className="py-2 px-3.5 font-semibold text-foreground border-r border-border/40">checkout.items</td>
-                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40">
+                    <td className="py-2 px-3.5 text-center text-muted-foreground border-r border-border/40 font-mono">3</td>
+                    <td className="py-2 px-3.5 font-semibold text-foreground border-r border-border/40 font-mono">checkout.items</td>
+                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 font-mono">
                       {'{count, plural, one{# item} other{# items}}'}
                     </td>
-                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40">
-                      ပစ္စည်း {'{count}'} ခု
+                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans">
+                      ပစ္စည်း <span className="font-mono text-foreground font-semibold">{'{count}'}</span> ခု
                     </td>
                     <td className="py-2 px-3.5 text-muted-foreground">
-                      {'{count}'}個のアイテム
+                      <span className="font-mono text-foreground font-semibold">{'{count}'}</span>個のアイテム
                     </td>
                   </tr>
                 </tbody>
@@ -541,7 +541,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-xs text-muted-foreground mt-1 font-medium">In-Browser Privacy</p>
           </div>
           <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">8+ Formats</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">10+ Formats</p>
             <p className="text-xs text-muted-foreground mt-1 font-medium">JSON, ARB, Excel & More</p>
           </div>
           <div>
@@ -579,7 +579,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <CardDescription className="text-xs">Zero remote databases or background tracking</CardDescription>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Files are parsed, validated, and translated right in your browser via Web Workers and Web Crypto. Your company proprietary copy never touches our servers.
+              Files are parsed, validated, and translated right in your browser via Web Workers and Web Crypto. Your company's proprietary copy never touches our servers.
             </CardContent>
           </Card>
 
