@@ -132,6 +132,8 @@ export function App() {
 
   // Flag to guard against saving back state during Discard & Exit sequence
   const isExitingRef = useRef<boolean>(false);
+  // Flag to guard against ghost sample restore when explicitly starting an empty sheet
+  const isStartingEmptyRef = useRef<boolean>(false);
   // Timestamp until which all sample auto-restore or bleed-through clicks are blocked
   const exitCooldownUntilRef = useRef<number>(0);
 
@@ -1130,6 +1132,13 @@ export function App() {
 
   const handleStartEmptySheet = () => {
     isExitingRef.current = false;
+    isStartingEmptyRef.current = true;
+    // Lock sample data restoration for 6000ms so no delayed click or ghost tap can hydrate sample
+    exitCooldownUntilRef.current = Date.now() + 6000;
+    setTimeout(() => {
+      isStartingEmptyRef.current = false;
+    }, 6000);
+
     clearLocalDraft();
     try {
       sessionStorage.removeItem('jsonlink_user_discarded');
@@ -1138,8 +1147,9 @@ export function App() {
       localStorage.removeItem('json-link-draft');
       localStorage.removeItem('jsonlink_draft');
     } catch {}
-    // Lock sample data restoration for 1500ms so no delayed click or ghost tap can hydrate sample
-    exitCooldownUntilRef.current = Date.now() + 1500;
+
+    // Explicitly ensure no dialog is open
+    setIsAddKeyOpen(false);
     setIsWorkspaceActive(true);
     setItemsWithoutHistory([]);
     setLanguages(['en', 'my']);
@@ -1152,7 +1162,7 @@ export function App() {
   };
 
   const handleResetToSample = () => {
-    if (isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
+    if (isExitingRef.current || isStartingEmptyRef.current || Date.now() < exitCooldownUntilRef.current) return;
     isExitingRef.current = false;
     try {
       sessionStorage.removeItem('jsonlink_user_discarded');
@@ -1650,6 +1660,7 @@ export function App() {
                   variant="outline"
                   size="sm"
                   onClick={e => {
+                    e.preventDefault();
                     e.stopPropagation();
                     handleStartEmptySheet();
                   }}
@@ -1691,8 +1702,9 @@ export function App() {
             <div className="text-center">
               <button
                 onClick={e => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  if (Date.now() < exitCooldownUntilRef.current) return;
+                  if (isStartingEmptyRef.current || isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
                   handleResetToSample();
                 }}
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"

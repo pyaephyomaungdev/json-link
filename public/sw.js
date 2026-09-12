@@ -1,4 +1,4 @@
-const CACHE_NAME = 'json-link-v1.0.0';
+const CACHE_NAME = 'json-link-v1.1.0';
 
 const PRECACHE_URLS = [
   './',
@@ -11,7 +11,7 @@ const PRECACHE_URLS = [
   './apple-touch-icon.png',
 ];
 
-// Install event: Pre-cache shell assets
+// Install event: Pre-cache shell assets and skip waiting immediately
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -22,7 +22,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate event: Clean up previous cache versions
+// Activate event: Clean up previous cache versions and claim clients
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -33,7 +33,8 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event: Stale-while-revalidate for local assets, network-first for external APIs
+// Fetch event: Network-first for navigation requests to ensure fresh deployments;
+// Stale-while-revalidate for local static assets; network-first for external APIs
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -42,10 +43,31 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Navigation requests (HTML documents): Network-first with cache fallback
+  // This ensures deployments and fresh HTML/JS hashes are loaded immediately without stale version traps
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match('./index.html') || caches.match('./');
+        })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       if (cachedResponse) {
-        // Fetch in background to update cache (stale-while-revalidate)
+        // Fetch in background to update cache (stale-while-revalidate for assets)
         fetch(event.request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then(cache => {
@@ -71,7 +93,6 @@ self.addEventListener('fetch', event => {
 
         return networkResponse;
       }).catch(() => {
-        // If offline and requesting navigation, return cached index.html
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html') || caches.match('./');
         }

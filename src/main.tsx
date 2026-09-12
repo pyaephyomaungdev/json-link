@@ -17,7 +17,10 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.loca
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('./sw.js')
-      .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+      .then(reg => {
+        console.log('[PWA] Service Worker registered:', reg.scope);
+        reg.update().catch(() => {});
+      })
       .catch(err => console.warn('[PWA] Service Worker registration failed:', err));
   });
 }
