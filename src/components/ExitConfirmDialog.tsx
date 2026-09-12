@@ -33,15 +33,22 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
 }) => {
   const [projectName, setProjectName] = useState(defaultProjectName || 'my-translations');
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
   React.useEffect(() => {
     if (defaultProjectName) {
       setProjectName(defaultProjectName);
+    }
+    if (!open) {
+      setIsProcessing(false);
     }
   }, [defaultProjectName, open]);
 
   const handleSaveAndExit = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
+    if (isProcessing) return;
+    setIsProcessing(true);
     const filename = projectName.trim() || 'my-translations';
     exportProjectFile(filename, items, languages);
     onOpenChange(false);
@@ -51,6 +58,8 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
   const handleDiscardAndExit = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
+    if (isProcessing) return;
+    setIsProcessing(true);
     onOpenChange(false);
     onConfirmExit();
   };
@@ -86,14 +95,15 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
           </div>
         </DialogBody>
 
-        <DialogFooter className="flex-col sm:flex-col gap-2">
+        <DialogFooter className={`flex-col sm:flex-col gap-2 ${isProcessing ? 'pointer-events-none opacity-80' : ''}`}>
           {/* Primary: Save and return home */}
           <Button
             onClick={handleSaveAndExit}
+            disabled={isProcessing}
             className="w-full gap-2 font-semibold shadow-xs text-xs h-8 cursor-pointer"
           >
             <Download className="size-3.5" />
-            Save .jsonlink & Exit to Home
+            {isProcessing ? 'Exiting...' : 'Save .jsonlink & Exit to Home'}
           </Button>
 
           <div className="flex items-center gap-2 w-full">
@@ -101,6 +111,7 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
             <Button
               variant="outline"
               size="sm"
+              disabled={isProcessing}
               onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -116,10 +127,11 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
             <Button
               variant="destructive"
               size="sm"
+              disabled={isProcessing}
               onClick={handleDiscardAndExit}
               className="flex-1 text-xs h-8 cursor-pointer"
             >
-              Discard & Exit
+              {isProcessing ? 'Discarding...' : 'Discard & Exit'}
             </Button>
           </div>
         </DialogFooter>

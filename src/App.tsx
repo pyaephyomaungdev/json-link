@@ -110,6 +110,8 @@ export function App() {
 
   // Flag to guard against saving back state during Discard & Exit sequence
   const isExitingRef = useRef<boolean>(false);
+  // Timestamp until which all sample auto-restore or bleed-through clicks are blocked
+  const exitCooldownUntilRef = useRef<number>(0);
 
   // Auto-save draft to localStorage whenever spreadsheet data changes
   useEffect(() => {
@@ -521,10 +523,16 @@ export function App() {
   // Reset to empty home screen when exit confirmed
   const handleConfirmExit = () => {
     isExitingRef.current = true;
+    exitCooldownUntilRef.current = Date.now() + 1200; // Block sample restoration for 1200ms
     clearLocalDraft();
     try {
       localStorage.removeItem('jsonlink_current_project');
       localStorage.removeItem('json-link-draft');
+      localStorage.removeItem('jsonlink_draft');
+      sessionStorage.removeItem('jsonlink_current_project');
+      sessionStorage.removeItem('json-link-draft');
+      sessionStorage.removeItem('jsonlink_draft');
+      sessionStorage.setItem('jsonlink_user_discarded', 'true');
     } catch {}
 
     // Close all open dialogs & modals to prevent stale modal flashing
@@ -562,7 +570,7 @@ export function App() {
     setTimeout(() => {
       clearLocalDraft();
       isExitingRef.current = false;
-    }, 600);
+    }, 1200);
   };
 
   // Helper to compute Diff between current items and incoming items
@@ -1095,8 +1103,11 @@ export function App() {
   };
 
   const handleResetToSample = () => {
-    if (isExitingRef.current) return;
+    if (isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
     isExitingRef.current = false;
+    try {
+      sessionStorage.removeItem('jsonlink_user_discarded');
+    } catch {}
     const sample = getInitialTranslations();
     setItemsWithoutHistory(sample.items);
     setLanguages(sample.languages);
@@ -1629,7 +1640,11 @@ export function App() {
 
             <div className="text-center">
               <button
-                onClick={handleResetToSample}
+                onClick={e => {
+                  e.stopPropagation();
+                  if (Date.now() < exitCooldownUntilRef.current) return;
+                  handleResetToSample();
+                }}
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
               >
                 <Sparkles className="size-3 text-primary" />

@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="0.5" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#10b981" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0.20"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="115" fill="url(#g)"/>
+  <rect x="19" y="19" width="474" height="474" rx="103" fill="#090d16"/>
+  <rect x="19" y="19" width="474" height="474" rx="103" fill="url(#glow)"/>
+  <g transform="translate(136,136) scale(7.5)">
+    <path d="M11 7C9.34315 7 8 8.34315 8 10V13C8 14.6569 6.65685 16 5 16C6.65685 16 8 17.3431 8 19V22C8 23.6569 9.34315 25 11 25" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M21 7C22.6569 7 24 8.34315 24 10V13C24 14.6569 25.3431 16 27 16C25.3431 16 24 17.3431 24 19V22C24 23.6569 22.6569 25 21 25" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M12 16H20" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 2.5" fill="none"/>
+    <circle cx="12" cy="16" r="2" fill="#34d399"/>
+    <circle cx="20" cy="16" r="2" fill="#38bdf8"/>
+  </g>
+</svg>

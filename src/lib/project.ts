@@ -72,6 +72,9 @@ export function saveLocalDraft(
       items,
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(project));
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('jsonlink_user_discarded');
+    }
   } catch (e) {
     console.warn('Failed to save draft to localStorage', e);
   }
@@ -82,6 +85,9 @@ export function saveLocalDraft(
  */
 export function loadLocalDraft(): JsonLinkProject | null {
   try {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('jsonlink_user_discarded') === 'true') {
+      return null;
+    }
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       return parseProjectFile(saved);

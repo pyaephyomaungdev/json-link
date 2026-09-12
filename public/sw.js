@@ -5,6 +5,10 @@ const PRECACHE_URLS = [
   './index.html',
   './manifest.json',
   './og-image.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-512.svg',
+  './apple-touch-icon.png',
 ];
 
 // Install event: Pre-cache shell assets
