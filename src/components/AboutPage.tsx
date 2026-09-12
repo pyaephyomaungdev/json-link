@@ -75,9 +75,9 @@ const highlights = [
   },
   {
     icon: <ShieldCheck className="size-4 text-teal-500" />,
-    title: '100% Client-Side',
+    title: '100% Client-Side & Zero-Cost Share',
     description:
-      'No account, no server, no upload. Translations live in your browser with auto-saved drafts and BYOK AI keys.',
+      'No account, no server, no cloud storage. Share projects instantly via compressed URL hash (#share=...) or portable .jsonlink handoff files.',
   },
 ];
 
@@ -171,15 +171,15 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
           <div className="flex flex-col items-center text-center">
             <Logo size="lg" />
             <span className="text-[11px] text-muted-foreground mt-2.5">
-              — Offline-First i18n Localization Spreadsheet Studio —
+              — Private In-Browser Translation Workspace —
             </span>
             <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground max-w-xl mt-3">
-              The localization workspace for developers & translators
+              The private localization workspace for developers &amp; translators
             </h1>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xl mt-2">
-              View, edit, validate, and translate your localization files side-by-side in an
-              Excel-style spreadsheet. Auto-translate with AI, lint for quality issues, and export
-              to every framework you ship to — 100% offline-first without your data ever leaving the browser.
+              Seamlessly link, edit, validate, and translate your localization files side-by-side in an
+              authentic spreadsheet interface. Zero-cost serverless sharing, auto-translate with AI, and export
+              to 10+ frameworks — 100% in-browser without your data ever leaving your machine.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
               <Badge variant="success">Free & Open Source</Badge>

@@ -25,6 +25,8 @@ import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
 import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
 import { IcuTesterModal } from '@/components/IcuTesterModal';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
+import { ShareModal } from '@/components/ShareModal';
+import { decodeSharePayload } from '@/lib/shareUrl';
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -176,6 +178,7 @@ export function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isSaveProjectOpen, setIsSaveProjectOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // New Feature Modals
   const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
@@ -231,6 +234,25 @@ export function App() {
       localStorage.setItem('jsonlink_auto_sync', String(enabled));
     } catch {}
   };
+
+  // Check for shared workspace in URL hash (#share=...) on initial load
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (hash && (hash.startsWith('#share=') || hash.startsWith('#/share='))) {
+      const cleanHash = hash.replace(/^#\/?share=/, '');
+      decodeSharePayload(cleanHash).then(shared => {
+        if (shared && shared.items && shared.items.length > 0) {
+          setIsWorkspaceActive(true);
+          setItemsWithoutHistory(shared.items);
+          setLanguages(shared.languages);
+          setProjectName(shared.projectName);
+          // Clean up hash from address bar without reloading
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      });
+    }
+  }, [setItemsWithoutHistory]);
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -564,6 +586,7 @@ export function App() {
     // Close all open dialogs & modals to prevent stale modal flashing
     setIsExitConfirmOpen(false);
     setIsSaveProjectOpen(false);
+    setIsShareModalOpen(false);
     setIsImportOpen(false);
     setIsExportOpen(false);
     setIsAiTranslateOpen(false);
@@ -1489,7 +1512,7 @@ export function App() {
             </div>
           ) : (
             <span className="text-[10px] text-muted-foreground hidden lg:inline">
-              — i18n Localization Spreadsheet
+              — Private In-Browser Translation Workspace
             </span>
           )}
 
@@ -1643,11 +1666,10 @@ export function App() {
 
               <div>
                 <h2 className="text-[15px] sm:text-base md:text-lg font-bold tracking-tight text-foreground leading-snug">
-                  Drop translation files here to open spreadsheet
+                  Private In-Browser Translation Workspace
                 </h2>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-1.5 max-w-xs sm:max-w-sm md:max-w-md leading-relaxed mx-auto">
-                  Upload multiple JSON files (e.g. <span className="font-mono text-primary font-semibold">en.json</span> & <span className="font-mono text-primary font-semibold">my.json</span>), Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>
-                  ), <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span> project, or import Excel, CSV, YAML, Android XML & iOS Strings.
+                  Drop translation files or browse to begin. Seamlessly link and edit JSON, Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>), Excel, CSV, YAML, Android XML &amp; iOS Strings with 100% offline privacy.
                 </p>
               </div>
 
@@ -1750,6 +1772,7 @@ export function App() {
             onOpenImport={() => setIsImportOpen(true)}
             onOpenExport={() => setIsExportOpen(true)}
             onOpenSaveProject={() => setIsSaveProjectOpen(true)}
+            onOpenShare={() => setIsShareModalOpen(true)}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -1778,7 +1801,7 @@ export function App() {
                   💡
                 </span>
                 <p className="text-[11px] sm:text-xs text-muted-foreground truncate sm:text-clip">
-                  <strong className="text-foreground font-semibold">Private & In-Browser:</strong> Your spreadsheet changes are saved automatically in this browser. Use <span className="font-semibold text-primary">Export</span> or <span className="font-semibold text-emerald-600 dark:text-emerald-400">Save (.jsonlink)</span> to back up or hand off anytime.
+                  <strong className="text-foreground font-semibold">Private & In-Browser:</strong> Your spreadsheet changes are saved automatically in this browser. Use <span className="font-semibold text-primary">Share</span> or <span className="font-semibold text-emerald-600 dark:text-emerald-400">Save (.jsonlink)</span> to back up or hand off anytime.
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -1902,6 +1925,14 @@ export function App() {
         items={items}
         languages={languages}
         defaultProjectName={projectName}
+      />
+
+      <ShareModal
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+        items={items}
+        languages={languages}
+        projectName={projectName}
       />
 
       {/* AI Auto-Translation Modal */}

@@ -27,6 +27,7 @@ import {
   Brain,
   Copy,
   Sliders,
+  Share2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -54,6 +55,7 @@ interface ToolbarProps {
   onOpenImport: () => void;
   onOpenExport: () => void;
   onOpenSaveProject?: () => void;
+  onOpenShare?: () => void;
   onResetToSample: () => void;
   onClearAll: () => void;
   hasItems: boolean;
@@ -89,6 +91,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenImport,
   onOpenExport,
   onOpenSaveProject,
+  onOpenShare,
   onResetToSample,
   onClearAll,
   hasItems,
@@ -444,6 +447,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 </div>
               </DropdownMenuItem>
             )}
+            {onOpenShare && (
+              <DropdownMenuItem
+                onClick={onOpenShare}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Share2 className="size-3.5 text-blue-500" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Share &amp; Handoff</span>
+                  <span className="text-[10px] text-muted-foreground">Instant URL link or .jsonlink package</span>
+                </div>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -589,6 +605,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <span>Save Project (.jsonlink)</span>
               </DropdownMenuItem>
             )}
+            {onOpenShare && (
+              <DropdownMenuItem
+                onClick={onOpenShare}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Share2 className="size-3.5 text-blue-500" />
+                <span>Share &amp; Handoff</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onOpenAddLanguage} className="gap-2 cursor-pointer text-xs sm:hidden">
               <Globe className="size-3.5 text-emerald-600" />
               <span>Add Language Column</span>
@@ -658,6 +684,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Share Button (Desktop & Tablet) */}
+        {onOpenShare && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenShare}
+            disabled={!hasItems}
+            className="hidden sm:inline-flex gap-1.5 text-xs h-7 px-2.5 font-medium shadow-2xs shrink-0 cursor-pointer"
+            title="Share & Handoff Workspace"
+          >
+            <Share2 className="size-3 text-muted-foreground" />
+            <span>Share</span>
+          </Button>
+        )}
 
         {/* 4. Export Translations — The Single Primary CTA Button */}
         <Button
