@@ -22,6 +22,12 @@ import {
   Replace,
   Activity,
   BookOpen,
+  FolderSync,
+  Table2,
+  FolderTree,
+  Brain,
+  Copy,
+  Sliders,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -62,6 +68,13 @@ interface ToolbarProps {
   onOpenScorecard?: () => void;
   onOpenLinter?: () => void;
   onOpenGlossary?: () => void;
+  linkedFolderName?: string | null;
+  onOpenFolderSync?: () => void;
+  viewMode?: 'grid' | 'tree';
+  onToggleViewMode?: () => void;
+  onOpenTranslationMemory?: () => void;
+  onOpenDuplicateFinder?: () => void;
+  onOpenIcuTester?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -92,6 +105,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenScorecard,
   onOpenLinter,
   onOpenGlossary,
+  linkedFolderName,
+  onOpenFolderSync,
+  viewMode = 'grid',
+  onToggleViewMode,
+  onOpenTranslationMemory,
+  onOpenDuplicateFinder,
+  onOpenIcuTester,
 }) => {
   // Local search query for zero-latency keystrokes + 150ms debounce to parent
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -349,6 +369,47 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <span className="hidden sm:inline">Lang</span>
         </Button>
 
+        {onToggleViewMode && hasItems && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleViewMode}
+            className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0"
+            title={viewMode === 'tree' ? 'Switch to Spreadsheet Grid' : 'Switch to Namespace Tree View'}
+          >
+            {viewMode === 'tree' ? (
+              <>
+                <Table2 className="size-3 text-emerald-500" />
+                <span className="hidden md:inline">Grid View</span>
+              </>
+            ) : (
+              <>
+                <FolderTree className="size-3 text-amber-500" />
+                <span className="hidden md:inline">Tree View</span>
+              </>
+            )}
+          </Button>
+        )}
+
+        {onOpenFolderSync && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenFolderSync}
+            className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 ${
+              linkedFolderName
+                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
+                : 'text-muted-foreground'
+            }`}
+            title={linkedFolderName ? `Connected folder: ${linkedFolderName}` : 'Sync with local project folder'}
+          >
+            <FolderSync className="size-3" />
+            <span className="hidden sm:inline">
+              {linkedFolderName ? `📁 ${linkedFolderName}` : 'Folder Sync'}
+            </span>
+          </Button>
+        )}
+
         <Button
           variant="outline"
           size="sm"
@@ -423,6 +484,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <DropdownMenuItem onClick={onOpenGlossary} className="gap-2 cursor-pointer text-xs xl:hidden">
                 <BookOpen className="size-3.5 text-purple-500" />
                 <span>Glossary &amp; Termbase</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenTranslationMemory && (
+              <DropdownMenuItem onClick={onOpenTranslationMemory} className="gap-2 cursor-pointer text-xs">
+                <Brain className="size-3.5 text-purple-500" />
+                <span>Translation Memory (TM)</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenDuplicateFinder && hasItems && (
+              <DropdownMenuItem onClick={onOpenDuplicateFinder} className="gap-2 cursor-pointer text-xs">
+                <Copy className="size-3.5 text-amber-500" />
+                <span>Duplicate Value Finder</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenIcuTester && (
+              <DropdownMenuItem onClick={onOpenIcuTester} className="gap-2 cursor-pointer text-xs">
+                <Sliders className="size-3.5 text-cyan-500" />
+                <span>ICU Plural &amp; Variable Tester</span>
               </DropdownMenuItem>
             )}
             {onOpenSaveProject && (

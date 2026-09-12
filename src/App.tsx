@@ -20,6 +20,21 @@ import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { AboutPage } from '@/components/AboutPage';
 import { NotFoundPage } from '@/components/NotFoundPage';
+import { FolderSyncModal } from '@/components/FolderSyncModal';
+import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
+import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
+import { IcuTesterModal } from '@/components/IcuTesterModal';
+import { TreeView } from '@/components/TreeView';
+import { PwaInstallButton } from '@/components/PwaInstallButton';
+import {
+  storeDirectoryHandle,
+  getStoredDirectoryHandle,
+  clearStoredDirectoryHandle,
+  verifyDirectoryPermission,
+  readTranslationsFromDirectory,
+  writeTranslationsToDirectory,
+} from '@/lib/fileSystem';
+import { upsertMemoryEntry } from '@/lib/translationMemory';
 import { Logo } from '@/components/Logo';
 import { runLocalizationLinter } from '@/lib/linter';
 import { isEffectivelyMissing } from '@/lib/variables';
@@ -48,6 +63,11 @@ import {
   AlertCircle,
   Key,
   Globe,
+  FolderSync,
+  FolderTree,
+  Brain,
+  Copy,
+  Sliders,
   CheckCircle2,
   Heart,
   Undo2,
@@ -136,6 +156,155 @@ export function App() {
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
+
+  // View mode: 'grid' (Spreadsheet table) vs 'tree' (Namespace hierarchy)
+  const [viewMode, setViewMode] = useState<'grid' | 'tree'>(() => {
+    try {
+      return (localStorage.getItem('jsonlink_view_mode') as 'grid' | 'tree') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
+  const toggleViewMode = () => {
+    setViewMode(prev => {
+      const next = prev === 'grid' ? 'tree' : 'grid';
+      try {
+        localStorage.setItem('jsonlink_view_mode', next);
+      } catch {}
+      return next;
+    });
+  };
+
+  // Modals for new productivity features
+  const [isFolderSyncOpen, setIsFolderSyncOpen] = useState(false);
+  const [isTranslationMemoryOpen, setIsTranslationMemoryOpen] = useState(false);
+  const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
+  const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
+
+  // Local Folder Direct Sync state
+  const [linkedDirHandle, setLinkedDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [linkedFolderName, setLinkedFolderName] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [autoSync, setAutoSync] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('jsonlink_auto_sync') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleAutoSync = (enabled: boolean) => {
+    setAutoSync(enabled);
+    try {
+      localStorage.setItem('jsonlink_auto_sync', String(enabled));
+    } catch {}
+  };
+
+  // Re-verify stored directory handle on load
+  useEffect(() => {
+    let mounted = true;
+    getStoredDirectoryHandle().then(handle => {
+      if (mounted && handle) {
+        setLinkedDirHandle(handle);
+        setLinkedFolderName(handle.name);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSelectFolder = async () => {
+    try {
+      if (typeof window === 'undefined' || !(window as any).showDirectoryPicker) {
+        alert('File System Access API is not supported in this browser. Please use Chrome, Edge, Brave, or Opera.');
+        return;
+      }
+      const dirHandle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({
+        mode: 'readwrite',
+      });
+      const hasPerm = await verifyDirectoryPermission(dirHandle, true);
+      if (!hasPerm) {
+        alert('Permission to write to the folder was denied.');
+        return;
+      }
+
+      await storeDirectoryHandle(dirHandle);
+      setLinkedDirHandle(dirHandle);
+      setLinkedFolderName(dirHandle.name);
+
+      // Read files from folder
+      const result = await readTranslationsFromDirectory(dirHandle);
+      if (result.items.length > 0) {
+        setItems(result.items);
+        if (result.languages.length > 0) {
+          setLanguages(result.languages);
+        }
+        if (result.projectName) {
+          setProjectName(result.projectName);
+        }
+      }
+      setLastSyncedAt(new Date());
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Failed to select folder:', err);
+      }
+    }
+  };
+
+  const handleSyncToDisk = async () => {
+    if (!linkedDirHandle) return;
+    setIsSyncing(true);
+    try {
+      const hasPerm = await verifyDirectoryPermission(linkedDirHandle, true);
+      if (!hasPerm) {
+        throw new Error('Permission denied');
+      }
+      await writeTranslationsToDirectory(linkedDirHandle, items, languages, projectName);
+      setLastSyncedAt(new Date());
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleReloadFromDisk = async () => {
+    if (!linkedDirHandle) return;
+    setIsSyncing(true);
+    try {
+      const hasPerm = await verifyDirectoryPermission(linkedDirHandle, false);
+      if (!hasPerm) {
+        throw new Error('Permission denied');
+      }
+      const result = await readTranslationsFromDirectory(linkedDirHandle);
+      if (result.items.length > 0) {
+        setItems(result.items);
+        if (result.languages.length > 0) {
+          setLanguages(result.languages);
+        }
+      }
+      setLastSyncedAt(new Date());
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnectFolder = async () => {
+    await clearStoredDirectoryHandle();
+    setLinkedDirHandle(null);
+    setLinkedFolderName(null);
+    setLastSyncedAt(null);
+  };
+
+  // Auto-sync debounced (1.5s) to disk when autoSync is enabled
+  useEffect(() => {
+    if (!autoSync || !linkedDirHandle || items.length === 0) return;
+    const timer = setTimeout(() => {
+      handleSyncToDisk().catch(e => console.warn('Auto-sync failed:', e));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [items, autoSync, linkedDirHandle]);
 
   // Debounced linter issue count (300ms) to avoid CPU spikes during fast typing.
   // After the debounce elapses the scan is pushed into idle time when available,
@@ -270,7 +439,11 @@ export function App() {
     isFindReplaceOpen ||
     isScorecardOpen ||
     isGlossaryOpen ||
-    isLinterOpen;
+    isLinterOpen ||
+    isFolderSyncOpen ||
+    isTranslationMemoryOpen ||
+    isDuplicateFinderOpen ||
+    isIcuTesterOpen;
 
   // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
   useEffect(() => {
@@ -691,13 +864,44 @@ export function App() {
   // Handlers for cell editing and status
   const handleUpdateCell = (key: string, lang: string, value: string) => {
     setItems(
-      items.map(item => (item.key === key ? { ...item, [lang]: value } : item))
+      items.map(item => {
+        if (item.key !== key) return item;
+        const sourceLang = languages[0] || 'en';
+        if (lang !== sourceLang && item[sourceLang] && value.trim()) {
+          try {
+            upsertMemoryEntry(item[sourceLang]!, sourceLang, lang, value.trim());
+          } catch {}
+        }
+        return { ...item, [lang]: value };
+      })
     );
   };
 
   const handleUpdateRowStatus = (key: string, status: RowStatus) => {
     setItems(
-      items.map(item => (item.key === key ? { ...item, status } : item))
+      items.map(item => {
+        if (item.key !== key) return item;
+        if (status === 'approved') {
+          const sourceLang = languages[0] || 'en';
+          const srcText = item[sourceLang];
+          if (srcText) {
+            for (const lang of languages) {
+              if (lang !== sourceLang && item[lang]) {
+                try {
+                  upsertMemoryEntry(srcText, sourceLang, lang, item[lang]!);
+                } catch {}
+              }
+            }
+          }
+        }
+        return { ...item, status };
+      })
+    );
+  };
+
+  const handleUpdateDescription = (key: string, description: string) => {
+    setItems(
+      items.map(item => (item.key === key ? { ...item, description } : item))
     );
   };
 
@@ -906,6 +1110,46 @@ export function App() {
   const paletteCommands: CommandItem[] = useMemo(
     () => [
       {
+        id: 'folder-sync',
+        category: 'Export',
+        title: 'Local Folder Direct Sync',
+        description: 'Read and write translation files directly to local disk without ZIPs',
+        icon: <FolderSync className="size-3.5" />,
+        action: () => setIsFolderSyncOpen(true),
+      },
+      {
+        id: 'toggle-view',
+        category: 'View',
+        title: viewMode === 'tree' ? 'Switch to Spreadsheet Grid' : 'Switch to Namespace Tree View',
+        description: 'Toggle between flat spreadsheet grid and collapsible key hierarchy tree',
+        icon: <FolderTree className="size-3.5" />,
+        action: toggleViewMode,
+      },
+      {
+        id: 'translation-memory',
+        category: 'AI',
+        title: 'Translation Memory (TM Cache)',
+        description: 'Search and reuse previously approved translations across keys',
+        icon: <Brain className="size-3.5" />,
+        action: () => setIsTranslationMemoryOpen(true),
+      },
+      {
+        id: 'duplicate-finder',
+        category: 'Spreadsheet',
+        title: 'Duplicate Value Finder',
+        description: 'Find and audit redundant translation values across keys',
+        icon: <Copy className="size-3.5" />,
+        action: () => setIsDuplicateFinderOpen(true),
+      },
+      {
+        id: 'icu-tester',
+        category: 'Spreadsheet',
+        title: 'ICU Plural & Variable Tester',
+        description: 'Interactive test suite for ICU plural messages and parameter interpolation',
+        icon: <Sliders className="size-3.5" />,
+        action: () => setIsIcuTesterOpen(true),
+      },
+      {
         id: 'find-replace',
         category: 'Spreadsheet',
         title: 'Find & Replace Across Languages',
@@ -1047,7 +1291,7 @@ export function App() {
         action: toggleTheme,
       },
     ],
-    [isDark, undo, redo]
+    [isDark, undo, redo, viewMode]
   );
 
   // Dedicated About page route (/about)
@@ -1222,6 +1466,8 @@ export function App() {
               </Button>
             </>
           )}
+
+          <PwaInstallButton />
 
           <Button
             variant="ghost"
@@ -1404,30 +1650,49 @@ export function App() {
             onOpenScorecard={() => setIsScorecardOpen(true)}
             onOpenLinter={() => setIsLinterOpen(true)}
             onOpenGlossary={() => setIsGlossaryOpen(true)}
+            linkedFolderName={linkedFolderName}
+            onOpenFolderSync={() => setIsFolderSyncOpen(true)}
+            viewMode={viewMode}
+            onToggleViewMode={toggleViewMode}
+            onOpenTranslationMemory={() => setIsTranslationMemoryOpen(true)}
+            onOpenDuplicateFinder={() => setIsDuplicateFinderOpen(true)}
+            onOpenIcuTester={() => setIsIcuTesterOpen(true)}
           />
 
-          {/* Full-bleed Edge-to-Edge Spreadsheet */}
-          <SpreadsheetTable
-            items={filteredItems}
-            languages={languages}
-            onUpdateCell={handleUpdateCell}
-            onUpdateKey={handleUpdateKey}
-            onDeleteRow={handleDeleteRow}
-            onDuplicateRow={handleDuplicateRow}
-            onDeleteLanguage={handleDeleteLanguage}
-            onRenameLanguage={handleRenameLanguage}
-            onAddRow={() => setIsAddKeyOpen(true)}
-            onOpenImport={() => setIsImportOpen(true)}
-            onBatchUpdate={handleBatchUpdate}
-            onOpenAiTranslate={handleOpenAiTranslate}
-            onUpdateRowStatus={handleUpdateRowStatus}
-            filterMissingLang={filterMissingLang}
-            totalItemCount={items.length}
-            onClearFilters={handleClearFilters}
-            onToggleFilterMissingLang={(lang) => {
-              setFilterMissingLang(prev => (prev === lang ? null : lang));
-            }}
-          />
+          {/* Full-bleed Edge-to-Edge Spreadsheet or Hierarchical Tree View */}
+          {viewMode === 'tree' ? (
+            <div className="flex-1 p-2 sm:p-3 overflow-hidden bg-muted/5 flex flex-col min-h-0">
+              <TreeView
+                items={filteredItems}
+                languages={languages}
+                onUpdateCell={handleUpdateCell}
+                onUpdateStatus={handleUpdateRowStatus}
+                onUpdateDescription={handleUpdateDescription}
+              />
+            </div>
+          ) : (
+            <SpreadsheetTable
+              items={filteredItems}
+              languages={languages}
+              onUpdateCell={handleUpdateCell}
+              onUpdateKey={handleUpdateKey}
+              onDeleteRow={handleDeleteRow}
+              onDuplicateRow={handleDuplicateRow}
+              onDeleteLanguage={handleDeleteLanguage}
+              onRenameLanguage={handleRenameLanguage}
+              onAddRow={() => setIsAddKeyOpen(true)}
+              onOpenImport={() => setIsImportOpen(true)}
+              onBatchUpdate={handleBatchUpdate}
+              onOpenAiTranslate={handleOpenAiTranslate}
+              onUpdateRowStatus={handleUpdateRowStatus}
+              filterMissingLang={filterMissingLang}
+              totalItemCount={items.length}
+              onClearFilters={handleClearFilters}
+              onToggleFilterMissingLang={(lang) => {
+                setFilterMissingLang(prev => (prev === lang ? null : lang));
+              }}
+            />
+          )}
 
             {/* Primary actions always within reach on narrow viewports
                 (complements the ⋯ overflow menu; hidden ≥ sm) */}
@@ -1583,6 +1848,49 @@ export function App() {
         onJumpToCell={(key) => {
           setSearchQuery(key);
         }}
+      />
+
+      {/* Local Folder Direct Sync Modal */}
+      <FolderSyncModal
+        isOpen={isFolderSyncOpen}
+        onClose={() => setIsFolderSyncOpen(false)}
+        folderName={linkedFolderName}
+        fileCount={languages.length}
+        lastSyncedAt={lastSyncedAt}
+        autoSync={autoSync}
+        onToggleAutoSync={handleToggleAutoSync}
+        onSelectFolder={handleSelectFolder}
+        onSyncToDisk={handleSyncToDisk}
+        onReloadFromDisk={handleReloadFromDisk}
+        onDisconnectFolder={handleDisconnectFolder}
+        isSyncing={isSyncing}
+      />
+
+      {/* Translation Memory (TM Cache) Modal */}
+      <TranslationMemoryModal
+        isOpen={isTranslationMemoryOpen}
+        onClose={() => setIsTranslationMemoryOpen(false)}
+        items={items}
+        languages={languages}
+      />
+
+      {/* Duplicate Value Finder Modal */}
+      <DuplicateFinderModal
+        isOpen={isDuplicateFinderOpen}
+        onClose={() => setIsDuplicateFinderOpen(false)}
+        items={items}
+        languages={languages}
+        onSelectKey={(key) => {
+          setSearchQuery(key);
+        }}
+      />
+
+      {/* ICU Plural & Variable Tester Modal */}
+      <IcuTesterModal
+        isOpen={isIcuTesterOpen}
+        onClose={() => setIsIcuTesterOpen(false)}
+        items={items}
+        languages={languages}
       />
     </div>
   );
