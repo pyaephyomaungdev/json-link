@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Search, CheckCircle2, ArrowRight } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { findDuplicateValues } from '@/lib/duplicateFinder';
@@ -85,12 +86,11 @@ export function DuplicateFinderModal({
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground">
-                <input
-                  type="checkbox"
+              <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                <Checkbox
                   checked={caseSensitive}
-                  onChange={e => setCaseSensitive(e.target.checked)}
-                  className="size-3.5 rounded accent-primary cursor-pointer"
+                  onCheckedChange={(checked) => setCaseSensitive(Boolean(checked))}
+                  className="size-3.5"
                 />
                 <span>Case-sensitive</span>
               </label>

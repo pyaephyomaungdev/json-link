@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Copy,
   Check,
@@ -222,18 +223,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <div>
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={enablePassword}
-                      onChange={e => {
+                      onCheckedChange={(checked) => {
                         hasAutoSwitchedRef.current = true;
-                        setEnablePassword(e.target.checked);
-                        if (!e.target.checked) {
+                        const isChecked = Boolean(checked);
+                        setEnablePassword(isChecked);
+                        if (!isChecked) {
                           setPassword('');
                           setConfirmPassword('');
                         }
                       }}
-                      className="rounded border-border text-primary focus:ring-primary size-3.5 cursor-pointer"
+                      className="size-3.5"
                     />
                     <span className="flex items-center gap-1.5">
                       <Lock className="size-3 text-muted-foreground" />
@@ -420,18 +421,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <div className="pt-2.5 mt-2.5 border-t border-border/70 space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={enablePassword}
-                        onChange={e => {
+                        onCheckedChange={(checked) => {
                           hasAutoSwitchedRef.current = true;
-                          setEnablePassword(e.target.checked);
-                          if (!e.target.checked) {
+                          const isChecked = Boolean(checked);
+                          setEnablePassword(isChecked);
+                          if (!isChecked) {
                             setPassword('');
                             setConfirmPassword('');
                           }
                         }}
-                        className="rounded border-border text-primary focus:ring-primary size-3.5 cursor-pointer"
+                        className="size-3.5"
                       />
                       <span className="flex items-center gap-1.5">
                         <Lock className="size-3 text-muted-foreground" />

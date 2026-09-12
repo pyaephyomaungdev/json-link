@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   FolderOpen,
   CheckCircle2,
@@ -172,11 +173,10 @@ export function FolderSyncModal({
                     Automatically write to local files whenever cells are edited
                   </span>
                 </div>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={autoSync}
-                  onChange={e => onToggleAutoSync(e.target.checked)}
-                  className="size-4 rounded accent-primary cursor-pointer shrink-0"
+                  onCheckedChange={(checked) => onToggleAutoSync(Boolean(checked))}
+                  className="shrink-0"
                 />
               </div>
 
