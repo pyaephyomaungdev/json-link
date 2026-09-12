@@ -1635,7 +1635,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer">
+                        <button
+                          type="button"
+                          aria-label={`Row actions for key ${item.key}`}
+                          title={`Row actions for key ${item.key}`}
+                          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
                           <MoreHorizontal className="size-4" />
                         </button>
                       </DropdownMenuTrigger>

@@ -258,11 +258,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
                   Privacy by architecture, not by promise
                 </h3>
                 <p className="text-[11px] text-muted-foreground leading-relaxed mt-1.5">
-                  JSON Link is a static single-page app with zero backend. Files are parsed, edited,
-                  and exported entirely in your browser; drafts auto-save to local storage. AI
-                  translation uses your own OpenRouter key (BYOK) — session-only by default, or
-                  AES-GCM 256-bit encrypted if you opt into remembering it on this device. Nothing
-                  is uploaded to a JSON Link server, because there isn't one.
+                  JSON Link is a static single-page app with zero backend. The name <strong>"Link"</strong> refers to seamlessly linking and synchronizing your local localization files across frameworks (Web JSON, Flutter ARB, iOS Strings, Android XML) directly from your browser without cloud storage. Files are parsed, edited, and exported entirely on your machine; drafts auto-save to browser storage. AI translation uses your own OpenRouter key (BYOK) — session-only by default, or AES-GCM 256-bit encrypted if you opt into remembering it on this device. Nothing is ever uploaded to a remote server.
                 </p>
               </div>
             </div>
