@@ -247,5 +247,12 @@ describe('variables.ts', () => {
       expect(isEffectivelyMissing('Hello')).toBe(false);
       expect(isEffectivelyMissing('Hello {user}')).toBe(false);
     });
+
+    it('isEffectivelyMissing respects placeholder-only sourceText as completed', () => {
+      expect(isEffectivelyMissing('{label}', '{label}')).toBe(false);
+      expect(isEffectivelyMissing('{count}', '{count}')).toBe(false);
+      expect(isEffectivelyMissing('', '{label}')).toBe(true);
+      expect(isEffectivelyMissing('{label}', 'Posted by {label}')).toBe(true);
+    });
   });
 });

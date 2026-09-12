@@ -23,9 +23,11 @@ export const StatsBar: React.FC<StatsBarProps> = ({
     return null;
   }
 
-  // Calculate completeness for each language (placeholder-only = not filled)
+  const sourceLang = languages.includes('en') ? 'en' : languages[0];
+
+  // Calculate completeness for each language (placeholder-only = not filled unless source is placeholder-only)
   const stats = languages.map(lang => {
-    const filledCount = items.filter(item => !isEffectivelyMissing(item[lang])).length;
+    const filledCount = items.filter(item => !isEffectivelyMissing(item[lang], item[sourceLang])).length;
     const missingCount = totalKeys - filledCount;
     const percentage = totalKeys > 0 ? Math.round((filledCount / totalKeys) * 100) : 0;
 
@@ -37,9 +39,10 @@ export const StatsBar: React.FC<StatsBarProps> = ({
     };
   });
 
-  const totalMissingAcrossAll = items.filter(item =>
-    languages.some(lang => isEffectivelyMissing(item[lang]))
-  ).length;
+  const totalMissingAcrossAll = items.filter(item => {
+    const sourceText = item[sourceLang];
+    return languages.some(lang => isEffectivelyMissing(item[lang], sourceText));
+  }).length;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 shadow-xs">

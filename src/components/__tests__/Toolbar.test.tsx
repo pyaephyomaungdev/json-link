@@ -116,4 +116,28 @@ describe('Toolbar search debounce', () => {
     const moreBtn = screen.getByRole('button', { name: 'More' });
     expect(moreBtn).not.toBeNull();
   });
+
+  it('renders column missing filter chip and triggers onClearFilterMissingLang on close and on All click', () => {
+    const onClearFilterMissingLang = vi.fn();
+    const onFilterChange = vi.fn();
+    render(
+      <Toolbar
+        {...baseProps}
+        filterMissingLang="th"
+        onFilterChange={onFilterChange}
+        onClearFilterMissingLang={onClearFilterMissingLang}
+      />
+    );
+
+    expect(screen.getByText('Missing: TH')).not.toBeNull();
+
+    const clearChipBtn = screen.getByTitle('Clear column filter and show all keys');
+    fireEvent.click(clearChipBtn);
+    expect(onClearFilterMissingLang).toHaveBeenCalledTimes(1);
+
+    const allBtn = screen.getByRole('button', { name: 'All' });
+    fireEvent.click(allBtn);
+    expect(onFilterChange).toHaveBeenCalledWith('all');
+    expect(onClearFilterMissingLang).toHaveBeenCalledTimes(2);
+  });
 });

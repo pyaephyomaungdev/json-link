@@ -74,6 +74,8 @@ interface ToolbarProps {
   onOpenTranslationMemory?: () => void;
   onOpenDuplicateFinder?: () => void;
   onOpenIcuTester?: () => void;
+  filterMissingLang?: string | null;
+  onClearFilterMissingLang?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -84,7 +86,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   namespaces,
   activeFilter,
   onFilterChange,
-  statusFilter,
+  statusFilter = 'all',
   onStatusFilterChange,
   onOpenAddKey,
   onOpenAddLanguage,
@@ -110,6 +112,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenTranslationMemory,
   onOpenDuplicateFinder,
   onOpenIcuTester,
+  filterMissingLang,
+  onClearFilterMissingLang,
 }) => {
   // Local search query for zero-latency keystrokes + 150ms debounce to parent
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -220,9 +224,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {hasItems && (
           <div className="flex items-center rounded-md border border-border/80 p-0.5 bg-muted/60 h-7 shrink-0 shadow-2xs">
             <button
-              onClick={() => onFilterChange('all')}
+              onClick={() => {
+                onFilterChange('all');
+                onClearFilterMissingLang?.();
+              }}
               className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
-                activeFilter === 'all'
+                activeFilter === 'all' && !filterMissingLang
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
@@ -239,6 +246,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             >
               Missing
             </button>
+          </div>
+        )}
+
+        {/* Active Column Missing Filter Chip with 1-Click Clear */}
+        {hasItems && filterMissingLang && (
+          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 shrink-0">
+            <AlertCircle className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Missing: {filterMissingLang.toUpperCase()}</span>
+            {onClearFilterMissingLang && (
+              <button
+                type="button"
+                onClick={onClearFilterMissingLang}
+                className="ml-0.5 p-0.5 hover:bg-amber-500/25 rounded cursor-pointer text-amber-800 dark:text-amber-200"
+                title="Clear column filter and show all keys"
+              >
+                <X className="size-2.5" />
+              </button>
+            )}
           </div>
         )}
 

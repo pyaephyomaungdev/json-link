@@ -78,4 +78,21 @@ describe('SpreadsheetTable', () => {
     fireEvent.click(addLangBtn);
     expect(onOpenAddLanguage).toHaveBeenCalledTimes(1);
   });
+
+  it('renders active filter banner and allows clearing when filterMissingLang is provided', () => {
+    const onToggleFilterMissingLang = vi.fn();
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        filterMissingLang="my"
+        totalItemCount={10}
+        onToggleFilterMissingLang={onToggleFilterMissingLang}
+      />
+    );
+
+    expect(screen.getByText(/Filtering missing keys in/i)).not.toBeNull();
+    const showAllBtn = screen.getByRole('button', { name: 'Show All Keys' });
+    fireEvent.click(showAllBtn);
+    expect(onToggleFilterMissingLang).toHaveBeenCalledWith('my');
+  });
 });

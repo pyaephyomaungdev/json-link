@@ -980,17 +980,20 @@ export function App() {
   // Filtered items based on search, namespace, missing filter, status filter, and column missing filter
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const sourceLang = languages.includes('en') ? 'en' : languages[0];
 
     return items.filter(item => {
+      const sourceText = item[sourceLang];
+
       // Global Missing filter — blank OR placeholder-only (AI-variable-only) counts as missing
       if (activeFilter === 'missing') {
-        const hasMissing = languages.some(lang => isEffectivelyMissing(item[lang]));
+        const hasMissing = languages.some(lang => isEffectivelyMissing(item[lang], sourceText));
         if (!hasMissing) return false;
       }
 
       // Specific Column Missing filter (from column header badge)
       if (filterMissingLang) {
-        const isMissingInLang = isEffectivelyMissing(item[filterMissingLang]);
+        const isMissingInLang = isEffectivelyMissing(item[filterMissingLang], sourceText);
         if (!isMissingInLang) return false;
       }
 
@@ -1020,6 +1023,18 @@ export function App() {
       return true;
     });
   }, [items, languages, searchQuery, selectedNamespace, activeFilter, statusFilter, filterMissingLang]);
+
+  // Auto-clear column missing filter if the filtered language has 0 missing keys left
+  useEffect(() => {
+    if (!filterMissingLang) return;
+    const sourceLang = languages.includes('en') ? 'en' : languages[0];
+    const stillHasMissing = items.some(item =>
+      isEffectivelyMissing(item[filterMissingLang], item[sourceLang])
+    );
+    if (!stillHasMissing) {
+      setFilterMissingLang(null);
+    }
+  }, [items, filterMissingLang, languages]);
 
   // Handlers for cell editing and status
   const handleUpdateCell = (key: string, lang: string, value: string) => {
@@ -1308,7 +1323,11 @@ export function App() {
   // Quick stats summary
   const totalKeys = items.length;
   const totalMissing = useMemo(() => {
-    return items.filter(item => languages.some(l => !(item[l] || '').trim())).length;
+    const sourceLang = languages.includes('en') ? 'en' : languages[0];
+    return items.filter(item => {
+      const sourceText = item[sourceLang];
+      return languages.some(l => isEffectivelyMissing(item[l], sourceText));
+    }).length;
   }, [items, languages]);
 
   // Command palette command definitions
@@ -1824,7 +1843,14 @@ export function App() {
             onNamespaceChange={setSelectedNamespace}
             namespaces={namespaces}
             activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
+            onFilterChange={(f) => {
+              setActiveFilter(f);
+              if (f === 'all') {
+                setFilterMissingLang(null);
+              }
+            }}
+            filterMissingLang={filterMissingLang}
+            onClearFilterMissingLang={() => setFilterMissingLang(null)}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
             onOpenAddKey={() => setIsAddKeyOpen(true)}

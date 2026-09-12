@@ -52,7 +52,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { exportSingleLanguageJson, exportSingleLanguageArb } from '@/lib/exporter';
-import { tokenizeVariables, validateVariables } from '@/lib/variables';
+import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/lib/variables';
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 
@@ -839,6 +839,27 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         )}
       </div>
 
+      {/* Active Column-specific Missing Filter Alert Banner */}
+      {filterMissingLang && (
+        <div className="flex items-center justify-between px-3 py-1.5 bg-amber-500/10 dark:bg-amber-950/30 border-b border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 shrink-0 z-20">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="truncate">
+              Filtering missing keys in <strong>{filterMissingLang.toUpperCase()}</strong> ({items.length} of {totalItemCount ?? items.length} keys shown)
+            </span>
+          </div>
+          {onToggleFilterMissingLang && (
+            <button
+              type="button"
+              onClick={() => onToggleFilterMissingLang(filterMissingLang)}
+              className="px-2.5 py-0.5 text-xs font-semibold rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 transition-colors cursor-pointer shrink-0 ml-2"
+            >
+              Show All Keys
+            </button>
+          )}
+        </div>
+      )}
+
       {/* True Excel Spreadsheet Table: Edge-to-edge, Horizontal Scroll on Overflow, Dynamic Freeze Panes */}
       <div className="flex-1 overflow-auto relative w-full h-full bg-background">
         <table className="min-w-full w-max border-separate border-spacing-0 text-left">
@@ -1003,7 +1024,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 const colLetter = getColumnLetter(showDescription ? idx + 2 : idx + 1);
                 const currentWidth = getLangColWidth(lang);
 
-                const missingCount = items.filter(i => !(i[lang] || '').trim()).length;
+                const sourceLang = languages.includes('en') ? 'en' : languages[0];
+                const missingCount = items.filter(i => isEffectivelyMissing(i[lang], i[sourceLang])).length;
 
                 return (
                   <th
@@ -1039,7 +1061,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         </span>
 
                         {/* Missing keys quick-filter badge */}
-                        {missingCount > 0 && (
+                        {(missingCount > 0 || filterMissingLang === lang) && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1050,7 +1072,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             }}
                             title={
                               filterMissingLang === lang
-                                ? `Filtering ${missingCount} missing keys. Click to clear filter.`
+                                ? `Filtering missing keys in ${lang.toUpperCase()}. Click to clear filter.`
                                 : `Click to filter ${missingCount} missing keys in ${lang.toUpperCase()}`
                             }
                             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer shrink-0 ${
@@ -1060,7 +1082,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             }`}
                           >
                             <AlertCircle className="size-2.5 shrink-0" />
-                            <span>{missingCount} missing</span>
+                            <span>{filterMissingLang === lang ? 'Filtering' : `${missingCount} missing`}</span>
+                            {filterMissingLang === lang && <X className="size-2.5 ml-0.5" />}
                           </button>
                         )}
 

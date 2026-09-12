@@ -53,12 +53,18 @@ export function isPlaceholderOnly(text: string | undefined): boolean {
  * True when a cell has no meaningful content: empty/whitespace OR placeholder-only.
  * Used for "missing translations" filters, stats and linter checks so that
  * machine-generated placeholder fills are not counted as completed translations.
+ *
+ * If `sourceText` is provided and itself consists solely of placeholders (e.g. "{label}"),
+ * then the target having "{label}" is recognized as valid and NOT missing.
  */
-export function isEffectivelyMissing(text: string | undefined): boolean {
+export function isEffectivelyMissing(text: string | undefined, sourceText?: string): boolean {
   if (text === undefined || text === null) return true;
   if (typeof text !== 'string') return true;
   const trimmed = text.trim();
   if (trimmed === '') return true;
+  if (sourceText !== undefined && isPlaceholderOnly(sourceText.trim())) {
+    return false;
+  }
   return isPlaceholderOnly(trimmed);
 }
 
