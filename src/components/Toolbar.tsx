@@ -21,6 +21,7 @@ import {
   Command,
   Replace,
   Activity,
+  AlertCircle,
   BookOpen,
   FolderSync,
   Brain,
@@ -287,7 +288,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </div>
 
       {/* Right: Compact Action Buttons */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* Right: Compact Action Controls */}
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* Undo & Redo */}
         <div className="flex items-center border-r border-border pr-1 mr-0.5">
           <Button
@@ -312,41 +314,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </Button>
         </div>
 
-        {/* AI Translate */}
-        {onOpenAiTranslate && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenAiTranslate}
-            disabled={!hasItems}
-            className="gap-1 text-[11px] h-7 px-2 text-primary border-primary/30 hover:bg-primary/10 shadow-2xs font-semibold shrink-0"
-            title="Auto-translate missing keys with AI (OpenRouter BYOK)"
-          >
-            <Sparkles className="size-3 text-primary" />
-            <span className="hidden sm:inline">AI Translate</span>
-            <span className="sm:hidden">AI</span>
-          </Button>
-        )}
-
-        {/* Command Palette button - matching exact h-7 height */}
-        {onOpenCommandPalette && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenCommandPalette}
-            className="hidden md:flex items-center gap-1.5 h-7 px-2 text-[11px] font-normal text-muted-foreground hover:text-foreground shrink-0 shadow-2xs"
-            title="Command Palette (Ctrl+K / Cmd+K)"
-          >
-            <Command className="size-3 text-muted-foreground" />
-            <kbd className="font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
-          </Button>
-        )}
-
+        {/* Local Grid Actions: + Key and + Lang */}
         <Button
           variant="outline"
           size="sm"
           onClick={onOpenAddKey}
-          className="gap-1 text-[11px] h-7 px-2 shrink-0"
+          className="gap-1 text-[11px] h-7 px-2 shrink-0 font-medium cursor-pointer"
+          title="Add New Translation Key"
         >
           <Plus className="size-3" />
           <span>Key</span>
@@ -356,114 +330,165 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           variant="outline"
           size="sm"
           onClick={onOpenAddLanguage}
-          className="gap-1 text-[11px] h-7 px-2 shrink-0"
+          className="gap-1 text-[11px] h-7 px-2 shrink-0 font-medium cursor-pointer"
           disabled={!hasItems}
+          title="Add New Language Column"
         >
           <Globe className="size-3" />
           <span className="hidden sm:inline">Lang</span>
         </Button>
 
-
-
-        {onOpenFolderSync && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenFolderSync}
-            className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 ${
-              linkedFolderName
-                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15'
-                : 'text-foreground'
-            }`}
-            title={linkedFolderName ? `Connected folder: ${linkedFolderName}` : 'Sync with local project folder'}
-          >
-            <FolderSync className={`size-3 ${linkedFolderName ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
-            <span className="hidden sm:inline">
-              {linkedFolderName ? `📁 ${linkedFolderName}` : 'Folder Sync'}
-            </span>
-          </Button>
-        )}
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onOpenImport}
-          className="gap-1 text-[11px] h-7 px-2 font-medium text-primary border-primary/30 hover:bg-primary/10 shrink-0"
-        >
-          <Upload className="size-3" />
-          <span className="hidden sm:inline">Import</span>
-        </Button>
-
-        {onOpenSaveProject && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenSaveProject}
-            disabled={!hasItems}
-            className="hidden md:flex gap-1 text-[11px] h-7 px-2 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 shrink-0"
-            title="Save complete project as .jsonlink"
-          >
-            <Save className="size-3" />
-            <span>.jsonlink</span>
-          </Button>
-        )}
-
-        <Button
-          variant="default"
-          size="sm"
-          onClick={onOpenExport}
-          disabled={!hasItems}
-          className="gap-1 text-[11px] h-7 px-2 sm:px-2.5 font-semibold shadow-xs shrink-0"
-        >
-          <Download className="size-3" />
-          <span>Export</span>
-        </Button>
-
-        {/* More Actions Custom Dropdown Menu */}
+        {/* 1. Translate Dropdown: AI Translate, TM Cache, Glossary */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-7 shrink-0">
-              <MoreVertical className="size-3.5 text-muted-foreground" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
+            >
+              <Sparkles className="size-3 text-primary" />
+              <span>Translate</span>
+              <ChevronDown className="size-2.5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            {/* Mobile shortcuts */}
-            {onOpenCommandPalette && (
-              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs lg:hidden">
-                <Command className="size-3.5 text-muted-foreground" />
-                <span>Command Palette</span>
-                <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
+            <DropdownMenuLabel className="text-[11px]">Translation Tools</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {onOpenAiTranslate && (
+              <DropdownMenuItem
+                onClick={onOpenAiTranslate}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Sparkles className="size-3.5 text-primary" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">AI Auto-Translate</span>
+                  <span className="text-[10px] text-muted-foreground">Translate missing keys (OpenRouter)</span>
+                </div>
               </DropdownMenuItem>
             )}
+            {onOpenTranslationMemory && (
+              <DropdownMenuItem
+                onClick={onOpenTranslationMemory}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Brain className="size-3.5 text-purple-500" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Translation Memory</span>
+                  <span className="text-[10px] text-muted-foreground">Reuse cached phrases &amp; save tokens</span>
+                </div>
+              </DropdownMenuItem>
+            )}
+            {onOpenGlossary && hasItems && (
+              <DropdownMenuItem
+                onClick={onOpenGlossary}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <BookOpen className="size-3.5 text-blue-500" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Glossary &amp; Termbase</span>
+                  <span className="text-[10px] text-muted-foreground">Enforce brand terminology rules</span>
+                </div>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* 2. File Dropdown: Import, Folder Sync, Save .jsonlink */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer ${
+                linkedFolderName
+                  ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
+                  : ''
+              }`}
+            >
+              <Upload className="size-3 text-muted-foreground" />
+              <span>{linkedFolderName ? `📁 Sync` : 'File'}</span>
+              <ChevronDown className="size-2.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-[11px]">File Operations</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onOpenImport} className="gap-2 cursor-pointer text-xs">
+              <Upload className="size-3.5 text-primary" />
+              <div className="flex flex-col">
+                <span className="font-semibold">Import Files</span>
+                <span className="text-[10px] text-muted-foreground">JSON, Excel, CSV, YAML, ARB, XML...</span>
+              </div>
+            </DropdownMenuItem>
+            {onOpenFolderSync && (
+              <DropdownMenuItem onClick={onOpenFolderSync} className="gap-2 cursor-pointer text-xs">
+                <FolderSync className="size-3.5 text-emerald-500" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Local Folder Sync</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {linkedFolderName ? `Connected: ${linkedFolderName}` : 'Direct read/write with hard drive'}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            )}
+            {onOpenSaveProject && (
+              <DropdownMenuItem
+                onClick={onOpenSaveProject}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Save className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex flex-col">
+                  <span className="font-semibold">Save Project (.jsonlink)</span>
+                  <span className="text-[10px] text-muted-foreground">Standalone complete project backup</span>
+                </div>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* 3. Tools / Utilities Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
+              title="Tools &amp; Utilities"
+            >
+              <MoreVertical className="size-3 text-muted-foreground" />
+              <span className="hidden md:inline">Tools</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-[11px]">Quality Suite</DropdownMenuLabel>
+            {onOpenScorecard && (
+              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs">
+                <Activity className="size-3.5 text-blue-500" />
+                <span>Quality Scorecard</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenLinter && (
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs">
+                <AlertCircle className="size-3.5 text-amber-500" />
+                <span>QA &amp; Consistency Linter</span>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px]">Tools &amp; Utilities</DropdownMenuLabel>
+            <DropdownMenuSeparator />
             {onOpenFindReplace && hasItems && (
-              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs lg:hidden">
+              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs">
                 <Replace className="size-3.5 text-blue-500" />
                 <span>Find &amp; Replace</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘H</kbd>
               </DropdownMenuItem>
             )}
-            {onOpenScorecard && hasItems && (
-              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs lg:hidden">
-                <Activity className="size-3.5 text-emerald-500" />
-                <span>Localization Scorecard</span>
-              </DropdownMenuItem>
-            )}
-            {onOpenLinter && hasItems && (
-              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs lg:hidden">
-                <Sparkles className="size-3.5 text-amber-500" />
-                <span>QA Linter</span>
-              </DropdownMenuItem>
-            )}
-            {onOpenGlossary && hasItems && (
-              <DropdownMenuItem onClick={onOpenGlossary} className="gap-2 cursor-pointer text-xs xl:hidden">
-                <BookOpen className="size-3.5 text-purple-500" />
-                <span>Glossary &amp; Termbase</span>
-              </DropdownMenuItem>
-            )}
-            {onOpenTranslationMemory && (
-              <DropdownMenuItem onClick={onOpenTranslationMemory} className="gap-2 cursor-pointer text-xs">
-                <Brain className="size-3.5 text-purple-500" />
-                <span>Translation Memory (TM)</span>
+            {onOpenIcuTester && (
+              <DropdownMenuItem onClick={onOpenIcuTester} className="gap-2 cursor-pointer text-xs">
+                <Sliders className="size-3.5 text-cyan-500" />
+                <span>ICU Message Tester</span>
               </DropdownMenuItem>
             )}
             {onOpenDuplicateFinder && hasItems && (
@@ -472,53 +497,42 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <span>Duplicate Value Finder</span>
               </DropdownMenuItem>
             )}
-            {onOpenIcuTester && (
-              <DropdownMenuItem onClick={onOpenIcuTester} className="gap-2 cursor-pointer text-xs">
-                <Sliders className="size-3.5 text-cyan-500" />
-                <span>ICU Plural &amp; Variable Tester</span>
+            {onOpenCommandPalette && (
+              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs">
+                <Command className="size-3.5 text-muted-foreground" />
+                <span>Command Palette</span>
+                <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
               </DropdownMenuItem>
             )}
-            {onOpenSaveProject && (
-              <DropdownMenuItem
-                onClick={onOpenSaveProject}
-                disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs lg:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
-              >
-                <Save className="size-3.5" />
-                <span>Save Project (.jsonlink)</span>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs lg:hidden">
-              <Globe className="size-3.5" />
-              <span>Add Language Column</span>
-            </DropdownMenuItem>
-            {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
-              <DropdownMenuSeparator className="lg:hidden" />
-            )}
-
-            <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px]">Workspace</DropdownMenuLabel>
             <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-              <Sparkles className="size-3.5" />
-              Load Sample Data (32 keys)
+              <RotateCcw className="size-3.5 text-muted-foreground" />
+              <span>Reset to Sample (32 keys)</span>
             </DropdownMenuItem>
             {hasItems && (
-              <>
-                <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-                  <RotateCcw className="size-3.5" />
-                  Reset to Sample
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={onClearAll}
-                  className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
-                >
-                  <Trash className="size-3.5" />
-                  Clear All Rows
-                </DropdownMenuItem>
-              </>
+              <DropdownMenuItem
+                onClick={onClearAll}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+              >
+                <Trash className="size-3.5" />
+                <span>Clear All Keys</span>
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* 4. Export Translations — The Single Primary CTA Button */}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={onOpenExport}
+          disabled={!hasItems}
+          className="gap-1.5 text-xs h-7 px-3 font-semibold shadow-xs shrink-0 cursor-pointer"
+        >
+          <Download className="size-3.5" />
+          <span>Export</span>
+        </Button>
       </div>
     </HorizontalScrollContainer>
   );

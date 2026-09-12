@@ -24,7 +24,7 @@ describe('AboutPage', () => {
     expect(screen.getByText('Cell Context Menu & 1-Click Revert')).not.toBeNull();
     expect(screen.getByText('AI Auto-Translate')).not.toBeNull();
     expect(screen.getByText('Zawgyi ⇄ Unicode')).not.toBeNull();
-    expect(screen.getByText('266 Automated Tests')).not.toBeNull();
+    expect(screen.getByText('300+ Automated Tests')).not.toBeNull();
   });
 
   it('calls onOpenDocs when User Guide button is clicked', () => {

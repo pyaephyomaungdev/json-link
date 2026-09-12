@@ -60,12 +60,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   languages,
   defaultFilename,
 }) => {
-  const [activeTab, setActiveTab] = useState<ExportFormat>('excel');
+  const [activeTab, setActiveTab] = useState<ExportFormat>(() => {
+    const saved = localStorage.getItem('jsonlink_last_export_format') as ExportFormat;
+    const validFormats: ExportFormat[] = [
+      'excel', 'csv', 'json-zip', 'json-combined', 'yaml-zip',
+      'android-xml', 'ios-strings', 'arb-zip', 'typescript-dts', 'project-bundle'
+    ];
+    return validFormats.includes(saved) ? saved : 'excel';
+  });
   const [nested, setNested] = useState(false);
   const [indent, setIndent] = useState(2);
   const [filename, setFilename] = useState(defaultFilename || 'translations');
   const [previewLang, setPreviewLang] = useState(languages[0] || 'en');
   const [copied, setCopied] = useState(false);
+
+  const handleSelectTab = (tab: ExportFormat) => {
+    setActiveTab(tab);
+    try {
+      localStorage.setItem('jsonlink_last_export_format', tab);
+    } catch {
+      // ignore localStorage errors
+    }
+  };
 
   // Sync defaultFilename when changed or modal opened
   React.useEffect(() => {
@@ -195,21 +211,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         <DialogBody className="space-y-4 text-xs">
           {/* Format Selector Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
           {formatButtons.map(fmt => (
             <button
               key={fmt.id}
               type="button"
-              onClick={() => setActiveTab(fmt.id)}
-              className={`flex items-center gap-1.5 sm:gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
+              onClick={() => handleSelectTab(fmt.id)}
+              className={`flex items-center gap-1.5 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
                 activeTab === fmt.id
                   ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
                   : 'border-border hover:bg-muted/50 text-foreground'
               }`}
             >
               {fmt.icon}
-              <span className="truncate hidden sm:inline">{fmt.label}</span>
-              <span className="truncate sm:hidden text-[11px]">{fmt.shortLabel}</span>
+              <span className="leading-tight break-words text-[11px]">{fmt.label}</span>
             </button>
           ))}
         </div>
