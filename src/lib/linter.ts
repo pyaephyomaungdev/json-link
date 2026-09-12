@@ -1,5 +1,5 @@
 import { TranslationItem } from '@/types';
-import { validateVariables } from './variables';
+import { validateVariables, isPlaceholderOnly } from './variables';
 
 export type LintSeverity = 'error' | 'warning' | 'info';
 
@@ -72,6 +72,22 @@ export function runLocalizationLinter(
           message: `Missing translation for ${lang.toUpperCase()}`,
         });
         continue;
+      }
+
+      // 2b. Placeholder-only check: an AI-filled target consisting solely of
+      // interpolation tokens (e.g. "{user}") counts as not translated, even
+      // though the cell is non-empty — otherwise "missing" filters/stats hide it.
+      if (isPlaceholderOnly(val)) {
+        issues.push({
+          id: `empty-${item.key}-${lang}-${val.length}`,
+          key: item.key,
+          lang,
+          category: 'empty',
+          severity: 'warning',
+          message: `Translation for ${lang.toUpperCase()} contains only variables — no actual text`,
+          details: `"${val}"`,
+          canAutoFix: false,
+        });
       }
 
       // 3. Value whitespace check

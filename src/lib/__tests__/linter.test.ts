@@ -182,4 +182,44 @@ describe('linter.ts', () => {
     expect(keys).toContain('save');
     expect(keys).toContain(' save ');
   });
+
+  describe('placeholder-only translation gating', () => {
+    it('flags an AI-filled target consisting only of variables as an "empty" warning', () => {
+      const items: TranslationItem[] = [
+        { key: 'greet', en: 'greet', my: '{user}' },
+      ];
+      const report = runLocalizationLinter(items, ['en', 'my']);
+      const issue = report.issues.find(i => i.id.startsWith('empty-greet-my'));
+      expect(issue).toBeDefined();
+      expect(issue!.category).toBe('empty');
+      expect(issue!.message).toContain('only variables');
+      expect(issue!.details).toContain('{user}');
+    });
+
+    it('does NOT flag normal translations with real text mixed with placeholders', () => {
+      const items: TranslationItem[] = [
+        { key: 'greet', en: 'Hello {user}', my: 'မင်္ဂလာပါ {user}' },
+      ];
+      const report = runLocalizationLinter(items, ['en', 'my']);
+      expect(report.issues.some(i => i.category === 'empty' && i.lang === 'my')).toBe(false);
+    });
+
+    it('placeholder-only source counts too, covering the source language column', () => {
+      const items: TranslationItem[] = [
+        { key: 'k1', en: '%s', my: '%s' },
+      ];
+      const report = runLocalizationLinter(items, ['en', 'my']);
+      expect(report.issues.filter(i => i.category === 'empty').length).toBe(2); // en + my
+    });
+
+    it('plain blank values keep the original missing-translation message', () => {
+      const items: TranslationItem[] = [
+        { key: 'k1', en: 'Hi', my: '' },
+      ];
+      const report = runLocalizationLinter(items, ['en', 'my']);
+      const issue = report.issues.find(i => i.lang === 'my' && i.category === 'empty');
+      expect(issue).toBeDefined();
+      expect(issue!.message).toContain('Missing translation for MY');
+    });
+  });
 });

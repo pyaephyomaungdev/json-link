@@ -51,10 +51,10 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold">
+          <DialogTitle className="text-base font-semibold text-foreground">
             Import Comparison & Merge Preview
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Review differences between your current spreadsheet and the uploaded file.
           </DialogDescription>
         </DialogHeader>

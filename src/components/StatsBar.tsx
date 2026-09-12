@@ -1,6 +1,7 @@
 import React from 'react';
 import { TranslationItem } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { isEffectivelyMissing } from '@/lib/variables';
 import { CheckCircle2, AlertCircle, Globe, Key } from 'lucide-react';
 
 interface StatsBarProps {
@@ -22,9 +23,9 @@ export const StatsBar: React.FC<StatsBarProps> = ({
     return null;
   }
 
-  // Calculate completeness for each language
+  // Calculate completeness for each language (placeholder-only = not filled)
   const stats = languages.map(lang => {
-    const filledCount = items.filter(item => (item[lang] || '').trim().length > 0).length;
+    const filledCount = items.filter(item => !isEffectivelyMissing(item[lang])).length;
     const missingCount = totalKeys - filledCount;
     const percentage = totalKeys > 0 ? Math.round((filledCount / totalKeys) * 100) : 0;
 
@@ -37,7 +38,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({
   });
 
   const totalMissingAcrossAll = items.filter(item =>
-    languages.some(lang => !(item[lang] || '').trim())
+    languages.some(lang => isEffectivelyMissing(item[lang]))
   ).length;
 
   return (

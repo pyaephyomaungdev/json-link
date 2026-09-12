@@ -21,6 +21,11 @@ import {
   Command,
   Replace,
   Activity,
+  BookOpen,
+  FolderSync,
+  Brain,
+  Copy,
+  Sliders,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -60,6 +65,12 @@ interface ToolbarProps {
   onOpenFindReplace?: () => void;
   onOpenScorecard?: () => void;
   onOpenLinter?: () => void;
+  onOpenGlossary?: () => void;
+  linkedFolderName?: string | null;
+  onOpenFolderSync?: () => void;
+  onOpenTranslationMemory?: () => void;
+  onOpenDuplicateFinder?: () => void;
+  onOpenIcuTester?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -89,6 +100,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenFindReplace,
   onOpenScorecard,
   onOpenLinter,
+  onOpenGlossary,
+  linkedFolderName,
+  onOpenFolderSync,
+  onOpenTranslationMemory,
+  onOpenDuplicateFinder,
+  onOpenIcuTester,
 }) => {
   // Local search query for zero-latency keystrokes + 150ms debounce to parent
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -346,6 +363,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <span className="hidden sm:inline">Lang</span>
         </Button>
 
+
+
+        {onOpenFolderSync && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenFolderSync}
+            className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 ${
+              linkedFolderName
+                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15'
+                : 'text-foreground'
+            }`}
+            title={linkedFolderName ? `Connected folder: ${linkedFolderName}` : 'Sync with local project folder'}
+          >
+            <FolderSync className={`size-3 ${linkedFolderName ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
+            <span className="hidden sm:inline">
+              {linkedFolderName ? `📁 ${linkedFolderName}` : 'Folder Sync'}
+            </span>
+          </Button>
+        )}
+
         <Button
           variant="outline"
           size="sm"
@@ -391,47 +429,71 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <DropdownMenuContent align="end" className="w-56">
             {/* Mobile shortcuts */}
             {onOpenCommandPalette && (
-              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs md:hidden">
+              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Command className="size-3.5 text-muted-foreground" />
                 <span>Command Palette</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
               </DropdownMenuItem>
             )}
             {onOpenFindReplace && hasItems && (
-              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Replace className="size-3.5 text-blue-500" />
                 <span>Find &amp; Replace</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘H</kbd>
               </DropdownMenuItem>
             )}
             {onOpenScorecard && hasItems && (
-              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Activity className="size-3.5 text-emerald-500" />
                 <span>Localization Scorecard</span>
               </DropdownMenuItem>
             )}
             {onOpenLinter && hasItems && (
-              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs lg:hidden">
                 <Sparkles className="size-3.5 text-amber-500" />
                 <span>QA Linter</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenGlossary && hasItems && (
+              <DropdownMenuItem onClick={onOpenGlossary} className="gap-2 cursor-pointer text-xs xl:hidden">
+                <BookOpen className="size-3.5 text-purple-500" />
+                <span>Glossary &amp; Termbase</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenTranslationMemory && (
+              <DropdownMenuItem onClick={onOpenTranslationMemory} className="gap-2 cursor-pointer text-xs">
+                <Brain className="size-3.5 text-purple-500" />
+                <span>Translation Memory (TM)</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenDuplicateFinder && hasItems && (
+              <DropdownMenuItem onClick={onOpenDuplicateFinder} className="gap-2 cursor-pointer text-xs">
+                <Copy className="size-3.5 text-amber-500" />
+                <span>Duplicate Value Finder</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenIcuTester && (
+              <DropdownMenuItem onClick={onOpenIcuTester} className="gap-2 cursor-pointer text-xs">
+                <Sliders className="size-3.5 text-cyan-500" />
+                <span>ICU Plural &amp; Variable Tester</span>
               </DropdownMenuItem>
             )}
             {onOpenSaveProject && (
               <DropdownMenuItem
                 onClick={onOpenSaveProject}
                 disabled={!hasItems}
-                className="gap-2 cursor-pointer text-xs md:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
+                className="gap-2 cursor-pointer text-xs lg:hidden text-emerald-600 dark:text-emerald-400 focus:text-emerald-600"
               >
                 <Save className="size-3.5" />
                 <span>Save Project (.jsonlink)</span>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs sm:hidden">
+            <DropdownMenuItem onClick={onOpenAddLanguage} disabled={!hasItems} className="gap-2 cursor-pointer text-xs lg:hidden">
               <Globe className="size-3.5" />
               <span>Add Language Column</span>
             </DropdownMenuItem>
             {((onOpenCommandPalette) || (onOpenSaveProject) || hasItems) && (
-              <DropdownMenuSeparator className="md:hidden" />
+              <DropdownMenuSeparator className="lg:hidden" />
             )}
 
             <DropdownMenuLabel className="text-[11px]">Data Actions</DropdownMenuLabel>
