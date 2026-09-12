@@ -30,6 +30,7 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
   const [newTarget, setNewTarget] = useState('');
   const [newDoNotTranslate, setNewDoNotTranslate] = useState(false);
   const [newNote, setNewNote] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleAddEntry = () => {
     if (!newTerm.trim()) return;
@@ -169,13 +170,41 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
                       <p className="text-[10px] text-muted-foreground">{entry.note}</p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(entry.id)}
-                    className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  {deletingId === entry.id ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleDelete(entry.id);
+                          setDeletingId(null);
+                        }}
+                        aria-label={`Confirm delete glossary rule for ${entry.term}`}
+                        title="Confirm deletion"
+                        className="px-2 py-0.5 text-[11px] font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded transition-colors cursor-pointer"
+                      >
+                        Delete?
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingId(null)}
+                        aria-label={`Cancel delete glossary rule for ${entry.term}`}
+                        title="Cancel deletion"
+                        className="px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setDeletingId(entry.id)}
+                      aria-label={`Delete glossary rule for ${entry.term}`}
+                      title={`Delete glossary rule for "${entry.term}"`}
+                      className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

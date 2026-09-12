@@ -108,6 +108,28 @@ export function App() {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
 
+  // Workspace active status (tracks whether user has entered an empty sheet or loaded data)
+  const [isWorkspaceActive, setIsWorkspaceActive] = useState<boolean>(() => {
+    try {
+      if (initialDraft && Array.isArray(initialDraft.items) && initialDraft.items.length > 0) {
+        return true;
+      }
+      return sessionStorage.getItem('jsonlink_workspace_active') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (isWorkspaceActive) {
+        sessionStorage.setItem('jsonlink_workspace_active', 'true');
+      } else {
+        sessionStorage.removeItem('jsonlink_workspace_active');
+      }
+    } catch {}
+  }, [isWorkspaceActive]);
+
   // Flag to guard against saving back state during Discard & Exit sequence
   const isExitingRef = useRef<boolean>(false);
   // Timestamp until which all sample auto-restore or bleed-through clicks are blocked
@@ -513,9 +535,9 @@ export function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [undo, redo, isAnyModalOpen]);
 
-  // When clicking logo, if user has data in table, prompt to save as .jsonlink
+  // When clicking logo, if user has data in table or active workspace, prompt to save/exit
   const handleLogoClick = () => {
-    if (items.length > 0) {
+    if (items.length > 0 || isWorkspaceActive) {
       setIsExitConfirmOpen(true);
     }
   };
@@ -524,6 +546,7 @@ export function App() {
   const handleConfirmExit = () => {
     isExitingRef.current = true;
     exitCooldownUntilRef.current = Date.now() + 1200; // Block sample restoration for 1200ms
+    setIsWorkspaceActive(false);
     clearLocalDraft();
     try {
       localStorage.removeItem('jsonlink_current_project');
@@ -532,6 +555,7 @@ export function App() {
       sessionStorage.removeItem('jsonlink_current_project');
       sessionStorage.removeItem('json-link-draft');
       sessionStorage.removeItem('jsonlink_draft');
+      sessionStorage.removeItem('jsonlink_workspace_active');
       sessionStorage.setItem('jsonlink_user_discarded', 'true');
     } catch {}
 
@@ -842,6 +866,7 @@ export function App() {
 
       if (items.length === 0) {
         // Direct initial load
+        setIsWorkspaceActive(true);
         setItems(incomingItems);
         setLanguages(incomingLanguages);
       } else {
@@ -1092,6 +1117,7 @@ export function App() {
 
   const handleImportComplete = (newItems: TranslationItem[], newLanguages: string[]) => {
     isExitingRef.current = false;
+    setIsWorkspaceActive(true);
     if (items.length === 0) {
       setItems(newItems);
       setLanguages(newLanguages);
@@ -1102,12 +1128,31 @@ export function App() {
     }
   };
 
+  const handleStartEmptySheet = () => {
+    if (isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
+    isExitingRef.current = false;
+    try {
+      sessionStorage.removeItem('jsonlink_user_discarded');
+      sessionStorage.setItem('jsonlink_workspace_active', 'true');
+    } catch {}
+    setIsWorkspaceActive(true);
+    setItemsWithoutHistory([]);
+    setLanguages(['en', 'my']);
+    setProjectName('translations');
+    setSearchQuery('');
+    setSelectedNamespace('all');
+    setActiveFilter('all');
+    setStatusFilter('all');
+    setFilterMissingLang(null);
+  };
+
   const handleResetToSample = () => {
     if (isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
     isExitingRef.current = false;
     try {
       sessionStorage.removeItem('jsonlink_user_discarded');
     } catch {}
+    setIsWorkspaceActive(true);
     const sample = getInitialTranslations();
     setItemsWithoutHistory(sample.items);
     setLanguages(sample.languages);
@@ -1379,13 +1424,13 @@ export function App() {
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
-            title={items.length > 0 ? "Return to Landing (with Save prompt)" : "JSON Link"}
+            title={(items.length > 0 || isWorkspaceActive) ? "Return to Landing (with Save prompt)" : "JSON Link"}
           >
             <Logo size="md" showText={false} className="sm:hidden" />
             <Logo size="md" showText={true} className="hidden sm:flex" />
           </button>
 
-          {items.length > 0 && (
+          {(items.length > 0 || isWorkspaceActive) && (
             <Button
               variant="ghost"
               size="sm"
@@ -1399,7 +1444,7 @@ export function App() {
           )}
 
           {/* Editable Project Name or Subtitle */}
-          {items.length > 0 ? (
+          {(items.length > 0 || isWorkspaceActive) ? (
             <div className="flex items-center gap-1 min-w-0 pl-1.5 sm:pl-2.5 border-l border-border">
               {isEditingProjectName ? (
                 <input
@@ -1540,7 +1585,7 @@ export function App() {
       </header>
 
       {/* Main Content Area */}
-      {items.length === 0 ? (
+      {!isWorkspaceActive && items.length === 0 ? (
         // Empty Upload View
         <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
           <div className="max-w-2xl md:max-w-3xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
@@ -1601,9 +1646,9 @@ export function App() {
                   size="sm"
                   onClick={e => {
                     e.stopPropagation();
-                    setIsAddKeyOpen(true);
+                    handleStartEmptySheet();
                   }}
-                  className="gap-1.5 h-9 sm:h-8 w-full sm:w-auto"
+                  className="gap-1.5 h-9 sm:h-8 w-full sm:w-auto cursor-pointer"
                 >
                   <Plus className="size-4" />
                   Start Empty Sheet
@@ -1763,11 +1808,12 @@ export function App() {
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}
+            onOpenAddLanguage={() => setIsAddLanguageOpen(true)}
           />
 
             {/* Primary actions always within reach on narrow viewports
                 (complements the ⋯ overflow menu; hidden ≥ sm) */}
-            {items.length > 0 && (
+            {(items.length > 0 || isWorkspaceActive) && (
               <div className="sm:hidden shrink-0 grid grid-cols-3 gap-px bg-border border-t border-border">
                 <button
                   onClick={() => setIsImportOpen(true)}

@@ -68,6 +68,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     ];
     return validFormats.includes(saved) ? saved : 'excel';
   });
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'bundles' | 'platform' | 'data'>('all');
   const [nested, setNested] = useState(false);
   const [indent, setIndent] = useState(2);
   const [filename, setFilename] = useState(defaultFilename || 'translations');
@@ -186,18 +187,36 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const formatButtons = [
-    { id: 'project-bundle' as ExportFormat, label: 'Full Bundle (ZIP)', shortLabel: 'Full Bundle', icon: <Package className="size-3.5 text-indigo-500 shrink-0" /> },
-    { id: 'excel' as ExportFormat, label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
-    { id: 'csv' as ExportFormat, label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
-    { id: 'json-zip' as ExportFormat, label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
-    { id: 'json-combined' as ExportFormat, label: 'Single JSON', shortLabel: 'Single JSON', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
-    { id: 'yaml-zip' as ExportFormat, label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
-    { id: 'android-xml' as ExportFormat, label: 'Android (strings.xml)', shortLabel: 'Android XML', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
-    { id: 'ios-strings' as ExportFormat, label: 'iOS (.strings)', shortLabel: 'iOS Strings', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
-    { id: 'arb-zip' as ExportFormat, label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
-    { id: 'typescript-dts' as ExportFormat, label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
+  const formatButtons: {
+    id: ExportFormat;
+    label: string;
+    shortLabel: string;
+    category: 'bundles' | 'platform' | 'data';
+    isRecommended?: boolean;
+    icon: React.ReactNode;
+  }[] = [
+    { id: 'project-bundle', label: 'Full Bundle (ZIP)', shortLabel: 'Full Bundle', category: 'bundles', isRecommended: true, icon: <Package className="size-3.5 text-indigo-500 shrink-0" /> },
+    { id: 'json-zip', label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', category: 'bundles', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
+    { id: 'json-combined', label: 'Single JSON', shortLabel: 'Single JSON', category: 'bundles', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
+    { id: 'arb-zip', label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', category: 'platform', isRecommended: true, icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
+    { id: 'android-xml', label: 'Android (strings.xml)', shortLabel: 'Android XML', category: 'platform', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
+    { id: 'ios-strings', label: 'iOS (.strings)', shortLabel: 'iOS Strings', category: 'platform', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
+    { id: 'typescript-dts', label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', category: 'platform', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
+    { id: 'excel', label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', category: 'data', isRecommended: true, icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
+    { id: 'csv', label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', category: 'data', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
+    { id: 'yaml-zip', label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', category: 'data', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
   ];
+
+  const categories: { id: 'all' | 'bundles' | 'platform' | 'data'; label: string; count: number }[] = [
+    { id: 'all', label: 'All Formats', count: formatButtons.length },
+    { id: 'bundles', label: 'App Bundles', count: formatButtons.filter(f => f.category === 'bundles').length },
+    { id: 'platform', label: 'Mobile & Platform', count: formatButtons.filter(f => f.category === 'platform').length },
+    { id: 'data', label: 'Data & Sheets', count: formatButtons.filter(f => f.category === 'data').length },
+  ];
+
+  const visibleFormats = selectedCategory === 'all'
+    ? formatButtons
+    : formatButtons.filter(f => f.category === selectedCategory);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,24 +229,49 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </DialogHeader>
 
         <DialogBody className="space-y-4 text-xs">
+          {/* Category Filter Tabs */}
+          <div className="flex items-center gap-1 border-b border-border pb-2 overflow-x-auto no-scrollbar">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+              >
+                {cat.label} ({cat.count})
+              </button>
+            ))}
+          </div>
+
           {/* Format Selector Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
-          {formatButtons.map(fmt => (
-            <button
-              key={fmt.id}
-              type="button"
-              onClick={() => handleSelectTab(fmt.id)}
-              className={`flex items-center gap-1.5 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
-                activeTab === fmt.id
-                  ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
-                  : 'border-border hover:bg-muted/50 text-foreground'
-              }`}
-            >
-              {fmt.icon}
-              <span className="leading-tight break-words text-[11px]">{fmt.label}</span>
-            </button>
-          ))}
-        </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2 my-1.5 sm:my-2">
+            {visibleFormats.map(fmt => (
+              <button
+                key={fmt.id}
+                type="button"
+                onClick={() => handleSelectTab(fmt.id)}
+                className={`relative flex items-center justify-between gap-1.5 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
+                  activeTab === fmt.id
+                    ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                    : 'border-border hover:bg-muted/50 text-foreground'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {fmt.icon}
+                  <span className="leading-tight break-words text-[11px] truncate">{fmt.label}</span>
+                </div>
+                {fmt.isRecommended && (
+                  <span className="text-[9px] px-1 py-0.2 rounded font-semibold bg-primary/15 text-primary shrink-0">
+                    Rec
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
 
         {/* Description Banner per Format */}
         <div className="p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border text-xs">

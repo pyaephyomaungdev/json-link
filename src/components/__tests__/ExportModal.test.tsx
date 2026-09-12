@@ -90,4 +90,18 @@ describe('ExportModal', () => {
 
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it('filters export formats when switching category tabs', () => {
+    render(<ExportModal {...defaultProps} />);
+    // By default 'All Formats' displays Excel and Flutter ARB
+    expect(screen.getByText(/Excel \(\.xlsx\)/i)).not.toBeNull();
+    expect(screen.getByText(/Flutter ARB/i)).not.toBeNull();
+
+    // Switch to 'Mobile & Platform' category
+    const mobileCatBtn = screen.getByRole('button', { name: /Mobile & Platform/i });
+    fireEvent.click(mobileCatBtn);
+
+    expect(screen.getByText(/Flutter ARB/i)).not.toBeNull();
+    expect(screen.queryByText(/Excel \(\.xlsx\)/i)).toBeNull();
+  });
 });

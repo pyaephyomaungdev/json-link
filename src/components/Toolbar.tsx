@@ -153,7 +153,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       {/* Left: Search & Filter Controls */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {/* Compact Search Input with Zero-Latency Local State */}
-        <div className="relative w-32 sm:w-44 lg:w-56 shrink-0">
+        <div className="relative w-28 sm:w-44 lg:w-56 shrink-0 transition-all focus-within:w-36 sm:focus-within:w-44 lg:focus-within:w-56">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
           <Input
             value={localSearch}
@@ -290,8 +290,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       {/* Right: Compact Action Buttons */}
       {/* Right: Compact Action Controls */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {/* Undo & Redo */}
-        <div className="flex items-center border-r border-border pr-1 mr-0.5">
+        {/* Undo & Redo (hidden on mobile to conserve space) */}
+        <div className="hidden sm:flex items-center border-r border-border pr-1 mr-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -330,21 +330,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           variant="outline"
           size="sm"
           onClick={onOpenAddLanguage}
-          className="gap-1 text-[11px] h-7 px-2 shrink-0 font-medium cursor-pointer"
-          disabled={!hasItems}
+          className="hidden sm:inline-flex gap-1 text-[11px] h-7 px-2 shrink-0 font-medium cursor-pointer"
           title="Add New Language Column"
         >
           <Globe className="size-3" />
           <span className="hidden sm:inline">Lang</span>
         </Button>
 
-        {/* 1. Translate Dropdown: AI Translate, TM Cache, Glossary */}
+        {/* 1. Translate Dropdown: Desktop (xl+) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
+              className="hidden xl:inline-flex gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
             >
               <Sparkles className="size-3 text-primary" />
               <span>Translate</span>
@@ -394,13 +393,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 2. File Dropdown: Import, Folder Sync, Save .jsonlink */}
+        {/* 2. File Dropdown: Desktop (xl+) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className={`gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer ${
+              className={`hidden xl:inline-flex gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer ${
                 linkedFolderName
                   ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
                   : ''
@@ -448,13 +447,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* 3. Tools / Utilities Dropdown */}
+        {/* 3. Tools / Utilities Dropdown: Desktop (xl+) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
+              className="hidden xl:inline-flex gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
               title="Tools &amp; Utilities"
             >
               <MoreVertical className="size-3 text-muted-foreground" />
@@ -509,6 +508,144 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
               <RotateCcw className="size-3.5 text-muted-foreground" />
               <span>Reset to Sample (32 keys)</span>
+            </DropdownMenuItem>
+            {hasItems && (
+              <DropdownMenuItem
+                onClick={onClearAll}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+              >
+                <Trash className="size-3.5" />
+                <span>Clear All Keys</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Unified Responsive 'More' Action Menu for Tablet & Mobile (viewports < xl) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer inline-flex xl:hidden"
+              title="More tools and actions"
+            >
+              <Sliders className="size-3 text-muted-foreground" />
+              <span>More</span>
+              <ChevronDown className="size-2.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60 max-h-[85vh] overflow-y-auto">
+            <DropdownMenuLabel className="text-[11px]">Translation &amp; AI</DropdownMenuLabel>
+            {onOpenAiTranslate && (
+              <DropdownMenuItem
+                onClick={onOpenAiTranslate}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Sparkles className="size-3.5 text-primary" />
+                <span>AI Auto-Translate</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenTranslationMemory && (
+              <DropdownMenuItem
+                onClick={onOpenTranslationMemory}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Brain className="size-3.5 text-purple-500" />
+                <span>Translation Memory</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenGlossary && (
+              <DropdownMenuItem
+                onClick={onOpenGlossary}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <BookOpen className="size-3.5 text-blue-500" />
+                <span>Glossary &amp; Termbase</span>
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px]">File &amp; Project</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onOpenImport} className="gap-2 cursor-pointer text-xs">
+              <Upload className="size-3.5 text-primary" />
+              <span>Import Files</span>
+            </DropdownMenuItem>
+            {onOpenFolderSync && (
+              <DropdownMenuItem onClick={onOpenFolderSync} className="gap-2 cursor-pointer text-xs">
+                <FolderSync className="size-3.5 text-emerald-500" />
+                <span>Local Folder Sync</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenSaveProject && (
+              <DropdownMenuItem
+                onClick={onOpenSaveProject}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Save className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Save Project (.jsonlink)</span>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onOpenAddLanguage} className="gap-2 cursor-pointer text-xs sm:hidden">
+              <Globe className="size-3.5 text-emerald-600" />
+              <span>Add Language Column</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px]">Quality Suite &amp; Tools</DropdownMenuLabel>
+            {onOpenScorecard && (
+              <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs">
+                <Activity className="size-3.5 text-blue-500" />
+                <span>Quality Scorecard</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenLinter && (
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs">
+                <AlertCircle className="size-3.5 text-amber-500" />
+                <span>QA &amp; Consistency Linter</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenFindReplace && (
+              <DropdownMenuItem
+                onClick={onOpenFindReplace}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Replace className="size-3.5 text-blue-500" />
+                <span>Find &amp; Replace</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenIcuTester && (
+              <DropdownMenuItem onClick={onOpenIcuTester} className="gap-2 cursor-pointer text-xs">
+                <Sliders className="size-3.5 text-cyan-500" />
+                <span>ICU Message Tester</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenDuplicateFinder && (
+              <DropdownMenuItem
+                onClick={onOpenDuplicateFinder}
+                disabled={!hasItems}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Copy className="size-3.5 text-amber-500" />
+                <span>Duplicate Finder</span>
+              </DropdownMenuItem>
+            )}
+            {onOpenCommandPalette && (
+              <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs">
+                <Command className="size-3.5 text-muted-foreground" />
+                <span>Command Palette</span>
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[11px]">Workspace</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
+              <RotateCcw className="size-3.5 text-muted-foreground" />
+              <span>Reset to Sample</span>
             </DropdownMenuItem>
             {hasItems && (
               <DropdownMenuItem

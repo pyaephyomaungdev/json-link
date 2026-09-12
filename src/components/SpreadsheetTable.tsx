@@ -41,6 +41,7 @@ import {
   RotateCcw,
   ClipboardPaste,
   ClipboardCopy,
+  Globe,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -65,6 +66,7 @@ interface SpreadsheetTableProps {
   onOpenImport: () => void;
   onDeleteLanguage?: (lang: string) => void;
   onRenameLanguage?: (oldLang: string, newLang: string) => void;
+  onOpenAddLanguage?: () => void;
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
   onOpenAiTranslate?: (targetLang?: string, targetKey?: string) => void;
@@ -124,6 +126,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onOpenImport,
   onDeleteLanguage,
   onRenameLanguage,
+  onOpenAddLanguage,
   onDuplicateRow,
   onBatchUpdate,
   onOpenAiTranslate,
@@ -735,31 +738,6 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         </div>
       );
     }
-
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center select-none bg-background">
-        <div className="size-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 shadow-xs">
-          <KeyRound className="size-8 stroke-[1.5]" />
-        </div>
-        <h3 className="text-xl font-bold tracking-tight text-foreground">
-          No translation spreadsheet loaded
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
-          Drag and drop your translation files (<code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">en.json</code>, <code className="font-mono text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded">app_en.arb</code>, Excel, or CSV) to open the spreadsheet table.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button onClick={onOpenImport} size="lg" className="gap-2 shadow-sm font-semibold">
-            <FileUp className="size-4" />
-            Upload Translation Files
-          </Button>
-          <Button onClick={onAddRow} variant="outline" size="lg" className="gap-2">
-            <Plus className="size-4" />
-            Add First Key
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -1245,7 +1223,64 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
           {/* Full Spreadsheet Body */}
           <tbody className="text-sm font-sans">
-            {items.map((item, rowIdx) => {
+            {items.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                  className="p-10 sm:p-14 text-center select-none bg-background/50 border-b border-border"
+                >
+                  <div className="max-w-md mx-auto flex flex-col items-center justify-center gap-3">
+                    <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
+                      <KeyRound className="size-7 stroke-[1.5]" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                        Empty Translation Grid
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                        No translation keys yet. Add your first key, add target languages, or import existing files to begin.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
+                      <Button
+                        onClick={onAddRow}
+                        size="sm"
+                        className="gap-1.5 font-semibold text-xs h-8 shadow-xs cursor-pointer"
+                      >
+                        <Plus className="size-3.5" />
+                        Add First Key
+                      </Button>
+                      {onOpenAddLanguage && (
+                        <Button
+                          onClick={onOpenAddLanguage}
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
+                        >
+                          <Globe className="size-3.5 text-primary" />
+                          Add Language
+                        </Button>
+                      )}
+                      <Button
+                        onClick={onOpenImport}
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
+                      >
+                        <FileUp className="size-3.5 text-muted-foreground" />
+                        Upload Translation Files
+                      </Button>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground/80 mt-1">
+                      Tip: Press <kbd className="font-mono bg-muted px-1.5 py-0.5 rounded border border-border">Ctrl+V</kbd> to paste tabular cells directly, or drop files anywhere.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              items.map((item, rowIdx) => {
               const rowNumber = rowIdx + 1;
               const isKeySelected =
                 selectedCell?.key === item.key && selectedCell.field === 'key';
@@ -1729,7 +1764,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   </td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </table>
       </div>

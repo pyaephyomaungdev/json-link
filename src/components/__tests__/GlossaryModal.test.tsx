@@ -59,7 +59,7 @@ describe('GlossaryModal', () => {
     expect(screen.getByText('KEEP AS-IS')).not.toBeNull();
   });
 
-  it('deletes an existing rule', () => {
+  it('deletes an existing rule with accessible button and confirmation flow', () => {
     render(<GlossaryModal {...defaultProps} />);
     const termInput = screen.getByPlaceholderText('e.g. KBZPay, Sign In');
     const targetInput = screen.getByPlaceholderText('e.g. အကောင့်ဝင်ပါ');
@@ -71,9 +71,15 @@ describe('GlossaryModal', () => {
 
     expect(screen.getByText('To Delete')).not.toBeNull();
 
-    const deleteBtns = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-trash-2'));
-    expect(deleteBtns.length).toBeGreaterThan(0);
-    fireEvent.click(deleteBtns[0]);
+    // 1. Check accessible name of the delete button
+    const deleteBtn = screen.getByRole('button', { name: 'Delete glossary rule for To Delete' });
+    expect(deleteBtn).not.toBeNull();
+    fireEvent.click(deleteBtn);
+
+    // 2. Inline confirmation appears
+    const confirmBtn = screen.getByRole('button', { name: 'Confirm delete glossary rule for To Delete' });
+    expect(confirmBtn).not.toBeNull();
+    fireEvent.click(confirmBtn);
 
     expect(screen.queryByText('To Delete')).toBeNull();
   });

@@ -101,4 +101,19 @@ describe('Toolbar search debounce', () => {
     const input = screen.getByPlaceholderText('Search keys...') as HTMLInputElement;
     expect(input.value).toBe('from-parent');
   });
+
+  it('keeps Add Language button enabled when hasItems is false for empty sheet workflow', () => {
+    render(<Toolbar {...baseProps} hasItems={false} />);
+    const langBtn = screen.getByRole('button', { name: 'Lang' });
+    expect(langBtn.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(langBtn);
+    expect(baseProps.onOpenAddLanguage).toHaveBeenCalled();
+  });
+
+  it('renders responsive More menu button for compact screen reachability', () => {
+    render(<Toolbar {...baseProps} />);
+    const moreBtn = screen.getByRole('button', { name: 'More' });
+    expect(moreBtn).not.toBeNull();
+  });
 });

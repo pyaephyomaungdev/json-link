@@ -57,9 +57,10 @@ describe('SpreadsheetTable', () => {
     expect(cell.closest('td')).not.toBeNull();
   });
 
-  it('renders empty state when no items and triggers onOpenImport', () => {
+  it('renders empty grid state when no items and triggers onOpenImport', () => {
     render(<SpreadsheetTable {...defaultProps} items={[]} />);
-    expect(screen.getByRole('heading', { name: 'No translation spreadsheet loaded' })).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'Empty Translation Grid' })).not.toBeNull();
+    expect(screen.getByText('KEY')).not.toBeNull();
 
     const uploadBtn = screen.getByRole('button', { name: /Upload Translation Files/i });
     fireEvent.click(uploadBtn);
@@ -68,5 +69,13 @@ describe('SpreadsheetTable', () => {
     const addFirstBtn = screen.getByRole('button', { name: /Add First Key/i });
     fireEvent.click(addFirstBtn);
     expect(defaultProps.onAddRow).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onOpenAddLanguage from empty grid when provided', () => {
+    const onOpenAddLanguage = vi.fn();
+    render(<SpreadsheetTable {...defaultProps} items={[]} onOpenAddLanguage={onOpenAddLanguage} />);
+    const addLangBtn = screen.getByRole('button', { name: /Add Language/i });
+    fireEvent.click(addLangBtn);
+    expect(onOpenAddLanguage).toHaveBeenCalledTimes(1);
   });
 });
