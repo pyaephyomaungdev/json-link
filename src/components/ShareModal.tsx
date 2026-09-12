@@ -142,7 +142,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-base text-foreground">
             Share &amp; Handoff Workspace
@@ -156,35 +156,39 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Tabs switch */}
           <div className="flex border-b border-border">
             <button
+              type="button"
               onClick={() => setActiveTab('url')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${activeTab === 'url'
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
+                activeTab === 'url'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
+              }`}
             >
-              <Link2 className="size-3.5" />
-              Instant URL Link
+              <Link2 className="size-3.5 shrink-0" />
+              <span>Instant URL Link</span>
               {isSafeLength ? (
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-normal">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-normal shrink-0">
                   Ready
                 </span>
               ) : (
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-normal">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-medium shrink-0">
                   Large
                 </span>
               )}
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('file')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${activeTab === 'file'
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${
+                activeTab === 'file'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
+              }`}
             >
-              <FileCode className="size-3.5" />
-              Team Handoff (.jsonlink)
+              <FileCode className="size-3.5 shrink-0" />
+              <span>Team Handoff (.jsonlink)</span>
               {!isSafeLength && (
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-primary/15 text-primary font-mono font-semibold">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-mono font-semibold shrink-0">
                   Recommended
                 </span>
               )}
