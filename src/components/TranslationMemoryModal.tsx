@@ -24,6 +24,7 @@ import {
   seedMemoryFromItems,
   clearTranslationMemory,
 } from '@/lib/translationMemory';
+import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 
 interface TranslationMemoryModalProps {
   isOpen: boolean;
@@ -62,6 +63,8 @@ export function TranslationMemoryModal({
     });
   }, [entries, search, selectedLang]);
 
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmDialogConfig | null>(null);
+
   const handleSeed = () => {
     const added = seedMemoryFromItems(items, 'en');
     setVersion(v => v + 1);
@@ -70,12 +73,20 @@ export function TranslationMemoryModal({
   };
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to clear all stored Translation Memory entries?')) {
-      clearTranslationMemory();
-      setVersion(v => v + 1);
-      setFeedback('Translation Memory cleared.');
-      setTimeout(() => setFeedback(null), 2500);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Clear Translation Memory',
+      description: 'Are you sure you want to clear all stored Translation Memory entries? This action cannot be undone.',
+      confirmLabel: 'Clear All',
+      cancelLabel: 'Cancel',
+      variant: 'destructive',
+      onConfirm: () => {
+        clearTranslationMemory();
+        setVersion(v => v + 1);
+        setFeedback('Translation Memory cleared.');
+        setTimeout(() => setFeedback(null), 2500);
+      },
+    });
   };
 
   const totalTranslations = useMemo(() => {
@@ -227,6 +238,11 @@ export function TranslationMemoryModal({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        config={confirmConfig}
+        onClose={() => setConfirmConfig(null)}
+      />
     </Dialog>
   );
 }

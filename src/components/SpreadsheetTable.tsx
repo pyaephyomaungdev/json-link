@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { TranslationItem, RowStatus } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { HorizontalScrollContainer } from '@/components/ui/horizontal-scroll-container';
 import {
   Copy,
@@ -149,6 +159,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [renameLangTarget, setRenameLangTarget] = useState<string | null>(null);
+  const [renameLangValue, setRenameLangValue] = useState<string>('');
+
+  const handleStartRenameLanguage = (lang: string) => {
+    setRenameLangTarget(lang);
+    setRenameLangValue(lang);
+  };
 
   const handleCellContextMenu = (
     e: React.MouseEvent,
@@ -1002,10 +1019,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           onDoubleClick={(e) => {
                             e.stopPropagation();
                             if (onRenameLanguage) {
-                              const newName = window.prompt(`Rename language column "${lang.toUpperCase()}":`, lang);
-                              if (newName && newName.trim() && newName.trim().toLowerCase() !== lang.toLowerCase()) {
-                                onRenameLanguage(lang, newName.trim().toLowerCase());
-                              }
+                              handleStartRenameLanguage(lang);
                             }
                           }}
                           className="font-bold text-foreground tracking-wide shrink-0 cursor-pointer hover:underline"
@@ -1084,12 +1098,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           <DropdownMenuLabel>Column: {lang.toUpperCase()}</DropdownMenuLabel>
                           {onRenameLanguage && (
                             <DropdownMenuItem
-                              onClick={() => {
-                                const newName = window.prompt(`Rename language column "${lang.toUpperCase()}":`, lang);
-                                if (newName && newName.trim() && newName.trim().toLowerCase() !== lang.toLowerCase()) {
-                                  onRenameLanguage(lang, newName.trim().toLowerCase());
-                                }
-                              }}
+                              onClick={() => handleStartRenameLanguage(lang)}
                               className="gap-2 cursor-pointer text-xs"
                             >
                               <Pencil className="size-3.5 text-primary" />
@@ -1977,6 +1986,79 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </span>
         </div>
       </HorizontalScrollContainer>
+
+      {/* Rename Language Column Modal */}
+      <Dialog
+        open={Boolean(renameLangTarget)}
+        onOpenChange={open => {
+          if (!open) setRenameLangTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Rename Language Column
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Change the column code for <code className="font-mono text-primary font-bold">{renameLangTarget?.toUpperCase()}</code> across the active project.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              const trimmed = renameLangValue.trim().toLowerCase();
+              if (
+                renameLangTarget &&
+                trimmed &&
+                trimmed !== renameLangTarget.toLowerCase()
+              ) {
+                onRenameLanguage?.(renameLangTarget, trimmed);
+              }
+              setRenameLangTarget(null);
+            }}
+          >
+            <DialogBody className="space-y-3 text-xs">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Language Code:
+                </label>
+                <Input
+                  value={renameLangValue}
+                  onChange={e => setRenameLangValue(e.target.value)}
+                  placeholder="e.g. es, fr, ja, th"
+                  className="h-8 text-xs font-mono"
+                  autoFocus
+                />
+              </div>
+            </DialogBody>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setRenameLangTarget(null)}
+                className="h-8 text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={
+                  !renameLangValue.trim() ||
+                  renameLangValue.trim().toLowerCase() ===
+                    renameLangTarget?.toLowerCase()
+                }
+                className="h-8 text-xs font-semibold cursor-pointer"
+              >
+                Rename Column
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

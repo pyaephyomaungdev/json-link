@@ -28,6 +28,7 @@ interface ErrorBoundaryState {
   copied: boolean;
   showDetails: boolean;
   isDark: boolean;
+  backupNotice: string | null;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -51,6 +52,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       copied: false,
       showDetails: false,
       isDark: Boolean(initialDark),
+      backupNotice: null,
     };
   }
 
@@ -136,7 +138,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         localStorage.getItem('jsonlink_current_project') ||
         localStorage.getItem('json-link-draft');
       if (!draft) {
-        alert('No draft data found in browser storage.');
+        this.setState({ backupNotice: 'No draft data found in browser storage.' });
+        setTimeout(() => this.setState({ backupNotice: null }), 3500);
         return;
       }
 
@@ -382,6 +385,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   </Button>
                 )}
               </div>
+
+              {this.state.backupNotice && (
+                <div className="p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
+                  {this.state.backupNotice}
+                </div>
+              )}
 
               <span className="text-[11px] text-muted-foreground">
                 JSON Link operates 100% client-side in your browser. No files or translation secrets were transmitted or compromised.
