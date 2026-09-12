@@ -78,6 +78,7 @@ import {
   FlaskConical,
   Info,
   ArrowLeft,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -107,8 +108,12 @@ export function App() {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
 
+  // Flag to guard against saving back state during Discard & Exit sequence
+  const isExitingRef = useRef<boolean>(false);
+
   // Auto-save draft to localStorage whenever spreadsheet data changes
   useEffect(() => {
+    if (isExitingRef.current) return;
     if (items.length > 0) {
       saveLocalDraft(projectName, items, languages);
     } else {
@@ -174,6 +179,22 @@ export function App() {
       return false;
     }
   });
+
+  // First-open coaching tip state
+  const [isCoachingDismissed, setIsCoachingDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('jsonlink_first_open_coaching_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissCoaching = () => {
+    setIsCoachingDismissed(true);
+    try {
+      localStorage.setItem('jsonlink_first_open_coaching_dismissed', 'true');
+    } catch {}
+  };
 
   const handleToggleAutoSync = (enabled: boolean) => {
     setAutoSync(enabled);
@@ -496,7 +517,11 @@ export function App() {
 
   // Reset to empty home screen when exit confirmed
   const handleConfirmExit = () => {
+    isExitingRef.current = true;
     clearLocalDraft();
+    try {
+      localStorage.removeItem('jsonlink_current_project');
+    } catch {}
     setItemsWithoutHistory([]);
     setLanguages(['en', 'my']);
     setProjectName('translations');
@@ -505,6 +530,12 @@ export function App() {
     setActiveFilter('all');
     setStatusFilter('all');
     setFilterMissingLang(null);
+
+    // Reset flag after state transition settles
+    setTimeout(() => {
+      clearLocalDraft();
+      isExitingRef.current = false;
+    }, 400);
   };
 
   // Helper to compute Diff between current items and incoming items
@@ -1630,6 +1661,38 @@ export function App() {
             onOpenDuplicateFinder={() => setIsDuplicateFinderOpen(true)}
             onOpenIcuTester={() => setIsIcuTesterOpen(true)}
           />
+
+          {/* First-Open Coaching Tip (one-time dismissible banner) */}
+          {!isCoachingDismissed && items.length > 0 && (
+            <div className="shrink-0 bg-primary/5 dark:bg-primary/10 border-b border-primary/20 px-3 sm:px-4 py-1.5 flex items-center justify-between gap-2 text-xs text-foreground transition-all">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="size-5 rounded bg-primary/15 text-primary flex items-center justify-center shrink-0 text-[11px] font-bold">
+                  💡
+                </span>
+                <p className="text-[11px] sm:text-xs text-muted-foreground truncate sm:text-clip">
+                  <strong className="text-foreground font-semibold">Private & In-Browser:</strong> Your spreadsheet changes are saved automatically in this browser. Use <span className="font-semibold text-primary">Export</span> or <span className="font-semibold text-emerald-600 dark:text-emerald-400">Save (.jsonlink)</span> to back up or hand off anytime.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDismissCoaching}
+                  className="text-[11px] font-medium text-primary hover:underline px-1.5 py-0.5 rounded cursor-pointer"
+                >
+                  Got it
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDismissCoaching}
+                  className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer hover:bg-primary/10 transition-colors"
+                  aria-label="Dismiss first-open tip"
+                  title="Dismiss tip"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Full-bleed Edge-to-Edge Spreadsheet Table */}
           <SpreadsheetTable

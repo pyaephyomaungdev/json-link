@@ -127,7 +127,7 @@ export function runLocalizationLinter(
           key: item.key,
           lang,
           category: 'length-expansion',
-          severity: 'info',
+          severity: 'warning',
           message: `Text expanded by ${Math.round((val.length / sourceVal.length) * 100)}% (${sourceVal.length} → ${val.length} chars)`,
           details: 'Potential risk of text clipping on small buttons or mobile screens.',
         });

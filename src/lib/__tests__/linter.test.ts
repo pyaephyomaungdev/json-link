@@ -69,7 +69,7 @@ describe('linter.ts', () => {
     const report = runLocalizationLinter(items, ['en', 'my']);
     const expansions = report.issues.filter(i => i.category === 'length-expansion');
     expect(expansions.length).toBe(1);
-    expect(expansions[0].severity).toBe('info');
+    expect(expansions[0].severity).toBe('warning');
   });
 
   it('does not flag length expansion when source is very short (< 5 chars)', () => {

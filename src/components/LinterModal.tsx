@@ -199,7 +199,7 @@ export const LinterModal: React.FC<LinterModalProps> = ({
               <div className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">
                 {report.warningsCount}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1">Missing & whitespace</div>
+              <div className="text-[10px] text-muted-foreground mt-1">Expansion, missing & space</div>
             </button>
 
             <button
@@ -217,7 +217,7 @@ export const LinterModal: React.FC<LinterModalProps> = ({
               <div className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                 {report.suggestionsCount}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1">Expansion & duplicates</div>
+              <div className="text-[10px] text-muted-foreground mt-1">Duplicate values</div>
             </button>
           </div>
 
