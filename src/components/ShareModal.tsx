@@ -155,11 +155,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div className="flex border-b border-border">
             <button
               onClick={() => setActiveTab('url')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
-                activeTab === 'url'
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${activeTab === 'url'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <Link2 className="size-3.5" />
               Instant URL Link
@@ -175,11 +174,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('file')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
-                activeTab === 'file'
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${activeTab === 'file'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <FileCode className="size-3.5" />
               Team Handoff (.jsonlink)
@@ -276,7 +274,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     ) : (
                       <>
                         <Send className="size-3.5" />
-                        Native Share (AirDrop / Chat)
+                        Native Share
                       </>
                     )}
                   </Button>
