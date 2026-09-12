@@ -19,6 +19,7 @@ import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { AboutPage } from '@/components/AboutPage';
+import { LandingPage } from '@/components/LandingPage';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { FolderSyncModal } from '@/components/FolderSyncModal';
 import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
@@ -56,11 +57,9 @@ import {
   Moon,
   Sun,
   Sparkles,
-  UploadCloud,
   Upload,
   Download,
   FileSpreadsheet,
-  FileCode,
   Plus,
   AlertCircle,
   Key,
@@ -70,7 +69,6 @@ import {
   Copy,
   Sliders,
   CheckCircle2,
-  Heart,
   Undo2,
   Redo2,
   Save,
@@ -432,9 +430,6 @@ export function App() {
     };
   }, [items, languages]);
 
-  // Drag and drop state on hero empty area
-  const [isHeroDragOver, setIsHeroDragOver] = useState(false);
-  const mainFileInputRef = useRef<HTMLInputElement>(null);
 
   // Theme toggle state with persistent localStorage storage
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -1734,135 +1729,18 @@ export function App() {
 
       {/* Main Content Area */}
       {!isWorkspaceActive && items.length === 0 ? (
-        // Empty Upload View
-        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
-          <div className="max-w-2xl md:max-w-3xl w-full flex flex-col gap-4 sm:gap-5 my-auto">
-            <div
-              onDragOver={e => {
-                e.preventDefault();
-                setIsHeroDragOver(true);
-              }}
-              onDragLeave={() => setIsHeroDragOver(false)}
-              onDrop={e => {
-                e.preventDefault();
-                setIsHeroDragOver(false);
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                  handleDirectFiles(e.dataTransfer.files);
-                }
-              }}
-              onClick={() => mainFileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl md:rounded-2xl p-5 sm:p-8 md:p-9 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 sm:gap-4 bg-card/60 ${isHeroDragOver
-                ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-                : 'border-border hover:border-primary/50 hover:bg-muted/30 shadow-xs'
-                }`}
-            >
-              <input
-                type="file"
-                ref={mainFileInputRef}
-                onChange={e => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    handleDirectFiles(e.target.files);
-                  }
-                }}
-                multiple
-                accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
-                className="hidden"
-              />
-
-              <div className="mb-1 sm:mb-2 shrink-0">
-                <Logo size="sm" showText={false} className="md:hidden" />
-                <Logo size="lg" showText={false} className="hidden md:block" />
-              </div>
-
-              <div>
-                <h2 className="text-[15px] sm:text-base md:text-lg font-bold tracking-tight text-foreground leading-snug">
-                  Private In-Browser Translation Workspace
-                </h2>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-1.5 max-w-xs sm:max-w-sm md:max-w-md leading-relaxed mx-auto">
-                  Drop translation files or browse to begin. Seamlessly link and edit JSON, Flutter ARB (<span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">.arb</span>), Excel, CSV, YAML, Android XML &amp; iOS Strings with 100% offline privacy.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 mt-1 w-full sm:w-auto">
-                <Button size="sm" className="gap-2 font-semibold shadow-xs h-9 sm:h-8 w-full sm:w-auto">
-                  <UploadCloud className="size-4" />
-                  Browse Files
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleStartEmptySheet();
-                  }}
-                  className="gap-1.5 h-9 sm:h-8 w-full sm:w-auto cursor-pointer"
-                >
-                  <Plus className="size-4" />
-                  Start Empty Sheet
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2 text-[10px] sm:text-[11px] md:text-xs pt-3 sm:pt-3.5 border-t border-border/60">
-                <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> Project (.jsonlink)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> JSON (.json)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3 sm:size-3.5" /> Excel (.xlsx)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">
-                  <FileSpreadsheet className="size-3 sm:size-3.5" /> CSV (.csv)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> YAML (.yaml)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> Flutter ARB (.arb)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> Android (.xml)
-                </span>
-                <span className="flex items-center gap-1 font-medium text-pink-600 dark:text-pink-400 whitespace-nowrap">
-                  <FileCode className="size-3 sm:size-3.5" /> iOS (.strings)
-                </span>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <button
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (isStartingEmptyRef.current || isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
-                  handleResetToSample();
-                }}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
-              >
-                <Sparkles className="size-3 text-primary" />
-                Or test with sample data (30 example keys)
-              </button>
-            </div>
-          </div>
-
-          {/* Footer with credit */}
-          <footer className="py-3 text-center text-xs text-muted-foreground flex flex-wrap items-center justify-center gap-1.5 border-t border-border/40 w-full mt-auto">
-            <span>Developed with</span>
-            <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
-            <span>by</span>
-            <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
-            <span className="px-1">·</span>
-            <button
-              onClick={openAbout}
-              className="inline-flex items-center gap-1 hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
-            >
-              <Info className="size-3" />
-              About JSON Link
-            </button>
-          </footer>
-        </main>
+        <LandingPage
+          onStartEmptySheet={handleStartEmptySheet}
+          onResetToSample={() => {
+            if (isStartingEmptyRef.current || isExitingRef.current || Date.now() < exitCooldownUntilRef.current) return;
+            handleResetToSample();
+          }}
+          onDirectFiles={handleDirectFiles}
+          onOpenAbout={openAbout}
+          onOpenDocs={openDocs}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+        />
       ) : (
         // Full-bleed MS Excel View: Zero outer padding, edge-to-edge spreadsheet!
         <div className="flex-1 flex flex-col w-full h-full min-h-0 overflow-hidden">
