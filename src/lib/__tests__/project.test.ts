@@ -92,7 +92,8 @@ describe('project.ts', () => {
     it('clears draft from localStorage', () => {
       saveLocalDraft('temp', [{ key: 'k', en: 'v' }], ['en']);
       clearLocalDraft();
-      expect(localStorage.removeItem).toHaveBeenCalled();
+      expect(localStorage.removeItem).toHaveBeenCalledWith('jsonlink_current_project');
+      expect(localStorage.removeItem).toHaveBeenCalledWith('json-link-draft');
       expect(loadLocalDraft()).toBeNull();
     });
 

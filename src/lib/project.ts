@@ -93,12 +93,22 @@ export function loadLocalDraft(): JsonLinkProject | null {
 }
 
 /**
- * Clears auto-saved project from browser localStorage
+ * Clears auto-saved project from browser localStorage and sessionStorage
  */
 export function clearLocalDraft(): void {
   try {
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      localStorage.removeItem('json-link-draft');
+      localStorage.removeItem('jsonlink_draft');
+    }
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(LOCAL_STORAGE_KEY);
+      sessionStorage.removeItem('json-link-draft');
+      sessionStorage.removeItem('jsonlink_draft');
+    }
   } catch (e) {
-    console.warn('Failed to clear draft from localStorage', e);
+    console.warn('Failed to clear draft from storage', e);
   }
 }
+

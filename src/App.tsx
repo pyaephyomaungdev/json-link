@@ -113,7 +113,10 @@ export function App() {
 
   // Auto-save draft to localStorage whenever spreadsheet data changes
   useEffect(() => {
-    if (isExitingRef.current) return;
+    if (isExitingRef.current) {
+      clearLocalDraft();
+      return;
+    }
     if (items.length > 0) {
       saveLocalDraft(projectName, items, languages);
     } else {
@@ -521,7 +524,30 @@ export function App() {
     clearLocalDraft();
     try {
       localStorage.removeItem('jsonlink_current_project');
+      localStorage.removeItem('json-link-draft');
     } catch {}
+
+    // Close all open dialogs & modals to prevent stale modal flashing
+    setIsExitConfirmOpen(false);
+    setIsSaveProjectOpen(false);
+    setIsImportOpen(false);
+    setIsExportOpen(false);
+    setIsAiTranslateOpen(false);
+    setIsDiffMergeOpen(false);
+    setPendingDiff(null);
+    setConfirmDialog(null);
+    setIsFindReplaceOpen(false);
+    setIsScorecardOpen(false);
+    setIsGlossaryOpen(false);
+    setIsLinterOpen(false);
+    setIsFolderSyncOpen(false);
+    setIsTranslationMemoryOpen(false);
+    setIsDuplicateFinderOpen(false);
+    setIsIcuTesterOpen(false);
+    setIsCommandPaletteOpen(false);
+    setIsAddKeyOpen(false);
+    setIsAddLanguageOpen(false);
+
     setItemsWithoutHistory([]);
     setLanguages(['en', 'my']);
     setProjectName('translations');
@@ -531,11 +557,12 @@ export function App() {
     setStatusFilter('all');
     setFilterMissingLang(null);
 
-    // Reset flag after state transition settles
+    // Keep exiting guard active across animation and render settle period,
+    // ensuring draft stays completely cleared and no click bleed-through restores sample data.
     setTimeout(() => {
       clearLocalDraft();
       isExitingRef.current = false;
-    }, 400);
+    }, 600);
   };
 
   // Helper to compute Diff between current items and incoming items
@@ -645,6 +672,7 @@ export function App() {
 
   // Direct file drop handler on hero area
   const handleDirectFiles = async (fileList: FileList | File[]) => {
+    isExitingRef.current = false;
     let incomingItems: TranslationItem[] = [];
     let incomingLanguages: string[] = [];
 
@@ -1055,6 +1083,7 @@ export function App() {
   };
 
   const handleImportComplete = (newItems: TranslationItem[], newLanguages: string[]) => {
+    isExitingRef.current = false;
     if (items.length === 0) {
       setItems(newItems);
       setLanguages(newLanguages);
@@ -1066,6 +1095,8 @@ export function App() {
   };
 
   const handleResetToSample = () => {
+    if (isExitingRef.current) return;
+    isExitingRef.current = false;
     const sample = getInitialTranslations();
     setItemsWithoutHistory(sample.items);
     setLanguages(sample.languages);

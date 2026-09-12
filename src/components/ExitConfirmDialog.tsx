@@ -39,21 +39,25 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
     }
   }, [defaultProjectName, open]);
 
-  const handleSaveAndExit = () => {
+  const handleSaveAndExit = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const filename = projectName.trim() || 'my-translations';
     exportProjectFile(filename, items, languages);
     onOpenChange(false);
     onConfirmExit();
   };
 
-  const handleDiscardAndExit = () => {
+  const handleDiscardAndExit = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     onOpenChange(false);
     onConfirmExit();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" onCloseAutoFocus={e => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-base text-foreground">
             Save Project Before Leaving?
@@ -97,7 +101,11 @@ export const ExitConfirmDialog: React.FC<ExitConfirmDialogProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onOpenChange(false)}
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenChange(false);
+              }}
               className="flex-1 text-xs gap-1.5 h-8 cursor-pointer"
             >
               <ArrowLeft className="size-3.5" />
