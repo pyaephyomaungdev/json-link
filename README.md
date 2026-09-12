@@ -239,6 +239,22 @@ A modern, high-performance web application designed for multilingual localizatio
 
 ---
 
+### Zero-Knowledge Workspace Sharing & Team Handoff (.jsonlink)
+- **Zero-Storage Instant URL Sharing (`#share=...`)**:
+  - Compresses entire multi-language workspace payloads in-browser using DEFLATE (`pako`) and packs them into the URL hash fragment.
+  - Zero server storage, zero database overhead, zero privacy exposure. Plaintext data never transits or resides on any backend.
+- **Client-Side AES-GCM 256-bit Password Encryption**:
+  - Optional password protection available for both Instant URLs and standalone `.jsonlink` project files.
+  - PBKDF2 key derivation using SHA-256 with 100,000 iterations, 16-byte random salt, and 12-byte initialization vector (IV).
+  - Strict input validation prevents accidental fallback to unencrypted links when password protection is enabled.
+- **Full Encryption Parity Across the App**:
+  - Available across all project export touchpoints: `ShareModal` (Team Handoff), `SaveProjectModal` (`File ▾` → Save Project), and `ExitConfirmDialog` (`← Home` save guard).
+- **Automated Decryption Dialog**:
+  - Visiting an encrypted share URL or uploading/dropping a password-protected `.jsonlink` file automatically triggers the `UnlockShareDialog`.
+  - Cryptographic authentication tag verification detects wrong passwords or tampered ciphertext with clear error feedback.
+
+---
+
 ### Bidirectional Import and Smart Diff / Merge
 - Supported Formats: `.jsonlink`, `.arb` (Flutter ARB), `.json`, `.xlsx`, `.csv`, `.yaml`, Android `.xml`, iOS `.strings`.
 - Smart Diff Inspection:
@@ -278,8 +294,10 @@ A modern, high-performance web application designed for multilingual localizatio
 Quality, stability, and zero-regression architecture are verified with an extensive automated test suite:
 
 - Testing Framework: Vitest (Vite-native runner) with `@testing-library/react`.
-- Test Coverage: 308 Automated Tests across 42 test files:
-  - 16 Core Library Test Suites (204 unit tests):
+- Test Coverage: 338 Automated Tests across 45 test files:
+  - 17 Core Library Test Suites (210 unit tests):
+    - `shareUrl.test.ts`: URL payload compression, base64url transcoding, PBKDF2 key derivation, URL share decryption.
+    - `project.test.ts`: .jsonlink serialization, AES-GCM 256 project container encryption, decryption with password, tamper rejection.
     - `linter.test.ts`: Whitespace detection, variable mismatch, length expansion, auto-fixer.
     - `findReplace.test.ts`: Search, scope filtering, whole-word matching, regex replacement.
     - `myanmarFont.test.ts`: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
@@ -291,21 +309,24 @@ Quality, stability, and zero-regression architecture are verified with an extens
     - `crypto.test.ts`: AES-GCM 256-bit encryption, decryption, and key derivation.
     - `variables.test.ts`: ICU, Mustache, Printf tokenization and validation.
     - `languages.test.ts`: ISO definitions, labels, and RTL language detection.
-    - `project.test.ts`: .jsonlink serialization and workspace restoration.
     - `fileSystem.test.ts`: File System Access API read/write operations and permission checks.
     - `translationMemory.test.ts`: Phrase pair caching, fuzzy matching, and memory import/export.
     - `duplicateFinder.test.ts`: Duplicate translation value group analysis.
     - `icuEvaluator.test.ts`: ICU plural, select, and nested argument parsing and evaluation.
-  - 26 UI Component Test Suites (104 component integration tests):
-    - `DocumentationModal.test.tsx`: User guide modal, visual annotations, tab navigation, search filtering.
+  - 28 UI Component Test Suites (128 component integration tests):
+    - `UnlockShareDialog.test.tsx`: Password unlock dialog, WebCrypto payload decryption, encrypted file unlocking, wrong password rejection.
+    - `ShareModal.test.tsx`: Instant URL sharing, Team Handoff (.jsonlink), password protection toggle, empty password validation.
+    - `SaveProjectModal.test.tsx`: Standalone project export with optional AES-256 password protection.
+    - `ExitConfirmDialog.test.tsx`: Home navigation guard, discard protection, password-encrypted project backup on exit.
+    - `DocsPage.test.tsx`: User guide modal, visual annotations, tab navigation, search filtering.
     - `SpreadsheetTable.test.tsx`: Grid headers, row keys, empty state, and column actions.
-    - `Toolbar.test.tsx`: Search, namespace, status, and semantic dropdown menus.
+    - `Toolbar.test.tsx`: Search, namespace, status, top-aligned menu icons, and semantic dropdowns.
     - `LinterModal.test.tsx`: QA issue categories, 1-click whitespace cleanup, jump-to-cell navigation.
     - `ScorecardModal.test.tsx`: Language health breakdown, completion progress, variable mismatch audit.
     - `AiTranslateModal.test.tsx`: OpenRouter BYOK validation, missing keys batch translation.
     - `GlossaryModal.test.tsx`: Termbase rule creation, editing, and persistence.
     - `ExportModal.test.tsx`: Flutter ARB, Excel, CSV, JSON, and full project bundle generation.
-    - `ImportModal.test.tsx`: File dropzone, format pills, and multi-file ingestion.
+    - `ImportModal.test.tsx`: File dropzone, format pills, encrypted file warning, and multi-file ingestion.
     - `FindReplaceModal.test.tsx`: Search & replace execution across languages and keys.
     - `CommandPalette.test.tsx`: Quick command navigation, keyboard shortcuts, and filtering.
     - `DiffMergeModal.test.tsx`: Smart import diff calculation and collision resolution.
@@ -315,8 +336,8 @@ Quality, stability, and zero-regression architecture are verified with an extens
     - `IcuTesterModal.test.tsx`: Live ICU message simulator and plural testing.
     - `PwaInstallButton.test.tsx`: PWA install prompt handler.
     - `AddKeyDialog.test.tsx` & `AddLanguageDialog.test.tsx`: Modal key and language addition workflows.
-    - `ConfirmDialog.test.tsx` & `ExitConfirmDialog.test.tsx`: Destructive action guards.
-    - `SaveProjectModal.test.tsx`, `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`, `ErrorBoundary.test.tsx`.
+    - `ConfirmDialog.test.tsx`: Destructive action guards.
+    - `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`, `ErrorBoundary.test.tsx`.
 - Continuous Integration: GitHub Actions workflow running typecheck and tests on every push and pull request.
 
 ---
