@@ -26,7 +26,8 @@ import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
 import { IcuTesterModal } from '@/components/IcuTesterModal';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
 import { ShareModal } from '@/components/ShareModal';
-import { decodeSharePayload } from '@/lib/shareUrl';
+import { UnlockShareDialog } from '@/components/UnlockShareDialog';
+import { decodeSharePayload, isPayloadEncrypted, ShareProjectData } from '@/lib/shareUrl';
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -179,6 +180,8 @@ export function App() {
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isSaveProjectOpen, setIsSaveProjectOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [pendingShareHash, setPendingShareHash] = useState<string | null>(null);
+  const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
 
   // New Feature Modals
   const [isAiTranslateOpen, setIsAiTranslateOpen] = useState(false);
@@ -241,18 +244,36 @@ export function App() {
     const hash = window.location.hash;
     if (hash && (hash.startsWith('#share=') || hash.startsWith('#/share='))) {
       const cleanHash = hash.replace(/^#\/?share=/, '');
-      decodeSharePayload(cleanHash).then(shared => {
-        if (shared && shared.items && shared.items.length > 0) {
-          setIsWorkspaceActive(true);
-          setItemsWithoutHistory(shared.items);
-          setLanguages(shared.languages);
-          setProjectName(shared.projectName);
-          // Clean up hash from address bar without reloading
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      });
+      if (isPayloadEncrypted(cleanHash)) {
+        // Encrypted workspace: prompt for decryption password
+        setPendingShareHash(cleanHash);
+        setIsUnlockDialogOpen(true);
+      } else {
+        decodeSharePayload(cleanHash).then(shared => {
+          if (shared && shared.items && shared.items.length > 0) {
+            setIsWorkspaceActive(true);
+            setItemsWithoutHistory(shared.items);
+            setLanguages(shared.languages);
+            setProjectName(shared.projectName);
+            // Clean up hash from address bar without reloading
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        });
+      }
     }
   }, [setItemsWithoutHistory]);
+
+  const handleShareUnlocked = (shared: ShareProjectData) => {
+    if (shared && shared.items && shared.items.length > 0) {
+      setIsWorkspaceActive(true);
+      setItemsWithoutHistory(shared.items);
+      setLanguages(shared.languages);
+      setProjectName(shared.projectName);
+      setIsUnlockDialogOpen(false);
+      setPendingShareHash(null);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -499,6 +520,8 @@ export function App() {
     isExportOpen ||
     isExitConfirmOpen ||
     isSaveProjectOpen ||
+    isShareModalOpen ||
+    isUnlockDialogOpen ||
     isAiTranslateOpen ||
     isCommandPaletteOpen ||
     isDiffMergeOpen ||
@@ -1933,6 +1956,17 @@ export function App() {
         items={items}
         languages={languages}
         projectName={projectName}
+      />
+
+      <UnlockShareDialog
+        open={isUnlockDialogOpen}
+        onOpenChange={setIsUnlockDialogOpen}
+        shareHash={pendingShareHash || ''}
+        onUnlocked={handleShareUnlocked}
+        onCancel={() => {
+          setPendingShareHash(null);
+          window.history.replaceState(null, '', window.location.pathname);
+        }}
       />
 
       {/* AI Auto-Translation Modal */}

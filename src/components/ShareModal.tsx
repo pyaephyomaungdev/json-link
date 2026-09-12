@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Share2,
   Copy,
   Check,
   Download,
@@ -20,6 +19,9 @@ import {
   Send,
   FileCode,
   Link2,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import { buildShareUrl } from '@/lib/shareUrl';
@@ -48,13 +50,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [nativeShared, setNativeShared] = useState<boolean>(false);
 
+  // Password Protection State
+  const [enablePassword, setEnablePassword] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   useEffect(() => {
     if (!open || items.length === 0) return;
 
     let isMounted = true;
     setIsGenerating(true);
 
-    buildShareUrl(projectName, items, languages)
+    const effectivePassword = enablePassword && password.trim() ? password.trim() : undefined;
+
+    buildShareUrl(projectName, items, languages, effectivePassword)
       .then(res => {
         if (isMounted) {
           setShareUrl(res.url);
@@ -75,7 +84,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [open, projectName, items, languages]);
+  }, [open, projectName, items, languages, enablePassword, password]);
 
   const handleCopy = () => {
     if (!shareUrl) return;
@@ -135,19 +144,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Share2 className="size-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-base text-foreground">
-                Share &amp; Handoff Workspace
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Share with teammates with zero server storage and 100% client-side privacy.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-base text-foreground">
+            Share &amp; Handoff Workspace
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Share with teammates with zero server storage and 100% client-side privacy.
+          </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="space-y-4 text-xs">
@@ -220,6 +222,67 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       </>
                     )}
                   </Button>
+                </div>
+
+                {/* Password Protection Section */}
+                <div className="pt-2.5 mt-2.5 border-t border-border/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={enablePassword}
+                        onChange={e => {
+                          setEnablePassword(e.target.checked);
+                          if (!e.target.checked) setPassword('');
+                        }}
+                        className="rounded border-border text-primary focus:ring-primary size-3.5 cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1.5">
+                        <Lock className="size-3 text-muted-foreground" />
+                        Protect with Password (Optional)
+                      </span>
+                    </label>
+                    {enablePassword && (
+                      <span className="text-[10px] text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded">
+                        AES-256
+                      </span>
+                    )}
+                  </div>
+
+                  {enablePassword && (
+                    <div className="space-y-2 pl-5.5">
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter link password..."
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          className="text-xs h-8 pr-8 bg-muted/20"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(p => !p)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-1"
+                          tabIndex={-1}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                        </button>
+                      </div>
+
+                      {/* No-Recovery Warning */}
+                      <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10.5px] text-amber-800 dark:text-amber-300 space-y-0.5">
+                        <div className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300">
+                          <AlertTriangle className="size-3 shrink-0" />
+                          <span>No Password Recovery</span>
+                        </div>
+                        <p className="leading-relaxed text-muted-foreground dark:text-amber-300/80">
+                          Encrypted 100% in-browser using AES-GCM 256. Passwords are never stored on any server. If forgotten, this link cannot be unlocked or recovered.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
