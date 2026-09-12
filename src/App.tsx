@@ -24,7 +24,6 @@ import { FolderSyncModal } from '@/components/FolderSyncModal';
 import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
 import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
 import { IcuTesterModal } from '@/components/IcuTesterModal';
-import { TreeView } from '@/components/TreeView';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
 import {
   storeDirectoryHandle,
@@ -64,7 +63,6 @@ import {
   Key,
   Globe,
   FolderSync,
-  FolderTree,
   Brain,
   Copy,
   Sliders,
@@ -156,25 +154,6 @@ export function App() {
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
-
-  // View mode: 'grid' (Spreadsheet table) vs 'tree' (Namespace hierarchy)
-  const [viewMode, setViewMode] = useState<'grid' | 'tree'>(() => {
-    try {
-      return (localStorage.getItem('jsonlink_view_mode') as 'grid' | 'tree') || 'grid';
-    } catch {
-      return 'grid';
-    }
-  });
-
-  const toggleViewMode = () => {
-    setViewMode(prev => {
-      const next = prev === 'grid' ? 'tree' : 'grid';
-      try {
-        localStorage.setItem('jsonlink_view_mode', next);
-      } catch {}
-      return next;
-    });
-  };
 
   // Modals for new productivity features
   const [isFolderSyncOpen, setIsFolderSyncOpen] = useState(false);
@@ -899,12 +878,6 @@ export function App() {
     );
   };
 
-  const handleUpdateDescription = (key: string, description: string) => {
-    setItems(
-      items.map(item => (item.key === key ? { ...item, description } : item))
-    );
-  };
-
   const handleUpdateKey = (oldKey: string, newKey: string) => {
     const trimmed = newKey.trim();
     if (!trimmed || trimmed === oldKey) return;
@@ -1118,14 +1091,6 @@ export function App() {
         action: () => setIsFolderSyncOpen(true),
       },
       {
-        id: 'toggle-view',
-        category: 'View',
-        title: viewMode === 'tree' ? 'Switch to Spreadsheet Grid' : 'Switch to Namespace Tree View',
-        description: 'Toggle between flat spreadsheet grid and collapsible key hierarchy tree',
-        icon: <FolderTree className="size-3.5" />,
-        action: toggleViewMode,
-      },
-      {
         id: 'translation-memory',
         category: 'AI',
         title: 'Translation Memory (TM Cache)',
@@ -1291,7 +1256,7 @@ export function App() {
         action: toggleTheme,
       },
     ],
-    [isDark, undo, redo, viewMode]
+    [isDark, undo, redo]
   );
 
   // Dedicated About page route (/about)
@@ -1652,47 +1617,33 @@ export function App() {
             onOpenGlossary={() => setIsGlossaryOpen(true)}
             linkedFolderName={linkedFolderName}
             onOpenFolderSync={() => setIsFolderSyncOpen(true)}
-            viewMode={viewMode}
-            onToggleViewMode={toggleViewMode}
             onOpenTranslationMemory={() => setIsTranslationMemoryOpen(true)}
             onOpenDuplicateFinder={() => setIsDuplicateFinderOpen(true)}
             onOpenIcuTester={() => setIsIcuTesterOpen(true)}
           />
 
-          {/* Full-bleed Edge-to-Edge Spreadsheet or Hierarchical Tree View */}
-          {viewMode === 'tree' ? (
-            <div className="flex-1 p-2 sm:p-3 overflow-hidden bg-muted/5 flex flex-col min-h-0">
-              <TreeView
-                items={filteredItems}
-                languages={languages}
-                onUpdateCell={handleUpdateCell}
-                onUpdateStatus={handleUpdateRowStatus}
-                onUpdateDescription={handleUpdateDescription}
-              />
-            </div>
-          ) : (
-            <SpreadsheetTable
-              items={filteredItems}
-              languages={languages}
-              onUpdateCell={handleUpdateCell}
-              onUpdateKey={handleUpdateKey}
-              onDeleteRow={handleDeleteRow}
-              onDuplicateRow={handleDuplicateRow}
-              onDeleteLanguage={handleDeleteLanguage}
-              onRenameLanguage={handleRenameLanguage}
-              onAddRow={() => setIsAddKeyOpen(true)}
-              onOpenImport={() => setIsImportOpen(true)}
-              onBatchUpdate={handleBatchUpdate}
-              onOpenAiTranslate={handleOpenAiTranslate}
-              onUpdateRowStatus={handleUpdateRowStatus}
-              filterMissingLang={filterMissingLang}
-              totalItemCount={items.length}
-              onClearFilters={handleClearFilters}
-              onToggleFilterMissingLang={(lang) => {
-                setFilterMissingLang(prev => (prev === lang ? null : lang));
-              }}
-            />
-          )}
+          {/* Full-bleed Edge-to-Edge Spreadsheet Table */}
+          <SpreadsheetTable
+            items={filteredItems}
+            languages={languages}
+            onUpdateCell={handleUpdateCell}
+            onUpdateKey={handleUpdateKey}
+            onDeleteRow={handleDeleteRow}
+            onDuplicateRow={handleDuplicateRow}
+            onDeleteLanguage={handleDeleteLanguage}
+            onRenameLanguage={handleRenameLanguage}
+            onAddRow={() => setIsAddKeyOpen(true)}
+            onOpenImport={() => setIsImportOpen(true)}
+            onBatchUpdate={handleBatchUpdate}
+            onOpenAiTranslate={handleOpenAiTranslate}
+            onUpdateRowStatus={handleUpdateRowStatus}
+            filterMissingLang={filterMissingLang}
+            totalItemCount={items.length}
+            onClearFilters={handleClearFilters}
+            onToggleFilterMissingLang={(lang) => {
+              setFilterMissingLang(prev => (prev === lang ? null : lang));
+            }}
+          />
 
             {/* Primary actions always within reach on narrow viewports
                 (complements the ⋯ overflow menu; hidden ≥ sm) */}

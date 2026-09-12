@@ -23,8 +23,6 @@ import {
   Activity,
   BookOpen,
   FolderSync,
-  Table2,
-  FolderTree,
   Brain,
   Copy,
   Sliders,
@@ -70,8 +68,6 @@ interface ToolbarProps {
   onOpenGlossary?: () => void;
   linkedFolderName?: string | null;
   onOpenFolderSync?: () => void;
-  viewMode?: 'grid' | 'tree';
-  onToggleViewMode?: () => void;
   onOpenTranslationMemory?: () => void;
   onOpenDuplicateFinder?: () => void;
   onOpenIcuTester?: () => void;
@@ -107,8 +103,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenGlossary,
   linkedFolderName,
   onOpenFolderSync,
-  viewMode = 'grid',
-  onToggleViewMode,
   onOpenTranslationMemory,
   onOpenDuplicateFinder,
   onOpenIcuTester,
@@ -369,27 +363,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <span className="hidden sm:inline">Lang</span>
         </Button>
 
-        {onToggleViewMode && hasItems && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onToggleViewMode}
-            className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0"
-            title={viewMode === 'tree' ? 'Switch to Spreadsheet Grid' : 'Switch to Namespace Tree View'}
-          >
-            {viewMode === 'tree' ? (
-              <>
-                <Table2 className="size-3 text-emerald-500" />
-                <span className="hidden md:inline">Grid View</span>
-              </>
-            ) : (
-              <>
-                <FolderTree className="size-3 text-amber-500" />
-                <span className="hidden md:inline">Tree View</span>
-              </>
-            )}
-          </Button>
-        )}
+
 
         {onOpenFolderSync && (
           <Button
