@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "mcp:build": "tsc -p mcp/tsconfig.json",
     "mcp:start": "node mcp/dist/index.js",
-    "plugin:build": "tsc -p packages/vite-plugin/tsconfig.json",
+    "plugin:copy-client": "mkdir -p packages/vite-plugin/client && cp -r dist/* packages/vite-plugin/client/",
+    "plugin:build": "tsc -p packages/vite-plugin/tsconfig.json && npm run plugin:copy-client",
     "plugin:test": "vitest run packages/vite-plugin"
   },
   "dependencies": {

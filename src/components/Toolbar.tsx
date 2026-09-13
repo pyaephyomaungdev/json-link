@@ -77,6 +77,11 @@ interface ToolbarProps {
   onOpenIcuTester?: () => void;
   filterMissingLang?: string | null;
   onClearFilterMissingLang?: () => void;
+  isDevMode?: boolean;
+  onSaveToDevDisk?: () => void;
+  isDevDiskDirty?: boolean;
+  isSavingToDevDisk?: boolean;
+  localesDir?: string;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -116,6 +121,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenIcuTester,
   filterMissingLang,
   onClearFilterMissingLang,
+  isDevMode,
+  onSaveToDevDisk,
+  isDevDiskDirty,
+  isSavingToDevDisk,
+  localesDir: _localesDir,
 }) => {
   // Local search query for zero-latency keystrokes + 150ms debounce to parent
   const [localSearch, setLocalSearch] = useState(searchQuery);
@@ -764,6 +774,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           >
             <Share2 className="size-3 text-muted-foreground" />
             <span>Share</span>
+          </Button>
+        )}
+
+        {/* Dev Mode Direct Disk Sync Save Button */}
+        {isDevMode && onSaveToDevDisk && (
+          <Button
+            size="sm"
+            onClick={onSaveToDevDisk}
+            disabled={isSavingToDevDisk}
+            className={`gap-1.5 text-xs h-7 px-3 font-semibold shadow-xs shrink-0 cursor-pointer transition-all ${
+              isDevDiskDirty
+                ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+            title={isDevDiskDirty ? 'Unsaved changes to src/locales! Click or press ⌘S to save.' : 'All changes saved to disk with instant Vite HMR'}
+          >
+            <Save className="size-3.5" />
+            <span>{isSavingToDevDisk ? 'Saving...' : isDevDiskDirty ? 'Save to Disk' : 'Saved to Disk'}</span>
           </Button>
         )}
 

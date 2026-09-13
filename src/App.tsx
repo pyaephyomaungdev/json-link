@@ -111,9 +111,21 @@ export function App() {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
 
+  const isDevMode = typeof window !== 'undefined' && Boolean(
+    (window as any).__JSONLINK_DEV_MODE__ ||
+    window.location.pathname.startsWith('/__jsonlink')
+  );
+
+  const [isDevDiskDirty, setIsDevDiskDirty] = useState(false);
+  const [isSavingToDevDisk, setIsSavingToDevDisk] = useState(false);
+  const isInitialDevLoadRef = useRef(true);
+
   // Workspace active status (tracks whether user has entered an empty sheet or loaded data)
   const [isWorkspaceActive, setIsWorkspaceActive] = useState<boolean>(() => {
     try {
+      if (typeof window !== 'undefined' && ((window as any).__JSONLINK_DEV_MODE__ || window.location.pathname.startsWith('/__jsonlink'))) {
+        return true;
+      }
       if (initialDraft && Array.isArray(initialDraft.items) && initialDraft.items.length > 0) {
         return true;
       }
@@ -132,6 +144,101 @@ export function App() {
       }
     } catch {}
   }, [isWorkspaceActive]);
+
+  // Dev mode: auto-fetch local project translations from Vite dev server middleware
+  useEffect(() => {
+    if (!isDevMode) return;
+    setIsWorkspaceActive(true);
+
+    const devConfig = (window as any).__JSONLINK_DEV_MODE__;
+    const apiBase = devConfig?.apiBase || `${window.location.pathname.replace(/\/$/, '')}/api/locales`;
+
+    fetch(apiBase)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (Array.isArray(data.languages) && data.languages.length > 0) {
+            setLanguages(data.languages);
+          }
+          if (Array.isArray(data.records)) {
+            const loadedItems: TranslationItem[] = data.records.map((r: any) => {
+              const item: TranslationItem = {
+                key: r.key,
+                status: 'approved',
+              };
+              if (Array.isArray(data.languages)) {
+                for (const l of data.languages) {
+                  item[l] = r[l] ?? '';
+                }
+              }
+              return item;
+            });
+            setItemsWithoutHistory(loadedItems);
+          }
+          if (data.localesDir) {
+            setProjectName(data.localesDir);
+          }
+          setIsDevDiskDirty(false);
+          setTimeout(() => {
+            isInitialDevLoadRef.current = false;
+          }, 300);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load locales from Vite dev server:', err);
+      });
+  }, [isDevMode]);
+
+  // Track dev mode unsaved changes to disk
+  useEffect(() => {
+    if (isDevMode && !isInitialDevLoadRef.current && items.length > 0) {
+      setIsDevDiskDirty(true);
+    }
+  }, [items, languages, isDevMode]);
+
+  const handleSaveToDevDisk = useCallback(async () => {
+    if (!isDevMode) return;
+    setIsSavingToDevDisk(true);
+    try {
+      const devConfig = (window as any).__JSONLINK_DEV_MODE__;
+      const apiBase = devConfig?.apiBase || `${window.location.pathname.replace(/\/$/, '')}/api/locales`;
+
+      const records = items.map(item => {
+        const rec: Record<string, string> = { key: item.key };
+        for (const lang of languages) {
+          rec[lang] = item[lang] ?? '';
+        }
+        return rec;
+      });
+
+      const res = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records, languages }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsDevDiskDirty(false);
+      }
+    } catch (err) {
+      console.error('Error saving to dev disk:', err);
+    } finally {
+      setIsSavingToDevDisk(false);
+    }
+  }, [isDevMode, items, languages]);
+
+  // Dev mode: Cmd+S / Ctrl+S saves directly to disk
+  useEffect(() => {
+    if (!isDevMode) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveToDevDisk();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDevMode, handleSaveToDevDisk]);
 
   // Flag to guard against saving back state during Discard & Exit sequence
   const isExitingRef = useRef<boolean>(false);
@@ -1590,6 +1697,13 @@ export function App() {
             </Button>
           )}
 
+          {isDevMode && (
+            <div className="hidden xs:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[10px] font-mono font-bold select-none shrink-0">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Dev HMR</span>
+            </div>
+          )}
+
           {/* Editable Project Name or Subtitle */}
           {(items.length > 0 || isWorkspaceActive) ? (
             <div className="flex items-center gap-1 min-w-0 pl-1.5 sm:pl-2.5 border-l border-border">
@@ -1791,6 +1905,10 @@ export function App() {
             onOpenTranslationMemory={() => setIsTranslationMemoryOpen(true)}
             onOpenDuplicateFinder={() => setIsDuplicateFinderOpen(true)}
             onOpenIcuTester={() => setIsIcuTesterOpen(true)}
+            isDevMode={isDevMode}
+            onSaveToDevDisk={handleSaveToDevDisk}
+            isDevDiskDirty={isDevDiskDirty}
+            isSavingToDevDisk={isSavingToDevDisk}
           />
 
           {/* First-Open Coaching Tip (one-time dismissible banner) */}

@@ -18,6 +18,7 @@
   },
   "files": [
     "dist",
+    "client",
     "bin",
     "README.md"
   ],
