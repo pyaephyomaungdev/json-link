@@ -1010,7 +1010,7 @@ function ExportersSection() {
           <span>React + Vite i18n Starter Kit &amp; Agent Skill</span>
         </h3>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Export an instant, ready-to-run React + Vite starter kit (Tested Golden Stack: <strong>React 19.0</strong> • <strong>Vite 6.0</strong> • <strong>TypeScript 5.7</strong>), or drop the <code className="font-mono text-[10px] text-amber-600 dark:text-amber-400">src/locales/</code> directory directly into your existing React project:
+          Export an instant, ready-to-run React + Vite starter kit (Tested Golden Stack: <strong>React 19.0.0</strong> • <strong>Vite 6.0.0</strong> • <strong>TypeScript 5.7.2</strong>), or drop the <code className="font-mono text-[10px] text-amber-600 dark:text-amber-400">src/locales/</code> directory directly into your existing React project:
         </p>
         <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside">
           <li><strong>Zero-Dependency Client Loader:</strong> Includes <code className="font-mono text-[10px]">i18n.ts</code> (~120 lines, 0 dependencies) providing a reactive <code className="font-mono text-[10px]">useTranslation()</code> hook, parameter interpolation, and language switching.</li>

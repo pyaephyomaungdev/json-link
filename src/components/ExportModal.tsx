@@ -318,7 +318,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       Recommended for Web
                     </span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-muted text-muted-foreground border border-border/60">
-                      Tested Stack: React 19 • Vite 6 • TS 5
+                      Tested Stack: React 19.0.0 • Vite 6.0.0 • TypeScript 5.7.2
                     </span>
                   </div>
                 </div>

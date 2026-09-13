@@ -37,7 +37,7 @@ A modern, high-performance web application designed for multilingual localizatio
 ---
 
 ### React + Vite Starter & Developer Integration
-- **First-Class Vite Starter (ZIP)**: Export your translation project as a ready-to-run React + Vite application archive with one click (Tested Golden Stack: **React 19.0** • **Vite 6.0** • **TypeScript 5.7**).
+- **First-Class Vite Starter (ZIP)**: Export your translation project as a ready-to-run React + Vite application archive with one click (Tested Golden Stack: **React 19.0.0** • **Vite 6.0.0** • **TypeScript 5.7.2**).
 - **Zero-Daemon Drop-in Workflow (3 Steps)**:
   1. Export or copy `/src/locales/` into your existing React / Vite project.
   2. Import `{ useTranslation } from './locales/i18n'`.

@@ -59,7 +59,7 @@ const highlights = [
     badgeText: 'Formats',
     title: '11+ Formats & Vite Starter',
     description:
-      'Roundtrip nested & flat JSON, Flutter ARB (with @key metadata and single-file download), one-click Vite React i18n starter with HMR, Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
+      'Two-way roundtrip for nested & flat JSON, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects. Plus one-click export for React + Vite i18n starters.',
   },
   {
     icon: <Sparkles className="size-4 text-violet-500" />,
