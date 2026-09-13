@@ -22,6 +22,7 @@ import { AboutPage } from '@/components/AboutPage';
 import { LandingPage } from '@/components/LandingPage';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { FolderSyncModal } from '@/components/FolderSyncModal';
+import { GitHubSyncModal } from '@/components/GitHubSyncModal';
 import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
 import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
 import { IcuTesterModal } from '@/components/IcuTesterModal';
@@ -199,6 +200,7 @@ export function App() {
 
   // Modals for new productivity features
   const [isFolderSyncOpen, setIsFolderSyncOpen] = useState(false);
+  const [isGitHubSyncOpen, setIsGitHubSyncOpen] = useState(false);
   const [isTranslationMemoryOpen, setIsTranslationMemoryOpen] = useState(false);
   const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
   const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
@@ -535,6 +537,7 @@ export function App() {
     isGlossaryOpen ||
     isLinterOpen ||
     isFolderSyncOpen ||
+    isGitHubSyncOpen ||
     isTranslationMemoryOpen ||
     isDuplicateFinderOpen ||
     isIcuTesterOpen;
@@ -1783,6 +1786,7 @@ export function App() {
             onOpenGlossary={() => setIsGlossaryOpen(true)}
             linkedFolderName={linkedFolderName}
             onOpenFolderSync={() => setIsFolderSyncOpen(true)}
+            onOpenGitHubSync={() => setIsGitHubSyncOpen(true)}
             onOpenTranslationMemory={() => setIsTranslationMemoryOpen(true)}
             onOpenDuplicateFinder={() => setIsDuplicateFinderOpen(true)}
             onOpenIcuTester={() => setIsIcuTesterOpen(true)}
@@ -2043,6 +2047,15 @@ export function App() {
         onReloadFromDisk={handleReloadFromDisk}
         onDisconnectFolder={handleDisconnectFolder}
         isSyncing={isSyncing}
+      />
+
+      {/* GitHub Localization Sync & Pull Request Modal */}
+      <GitHubSyncModal
+        isOpen={isGitHubSyncOpen}
+        onClose={() => setIsGitHubSyncOpen(false)}
+        items={items}
+        languages={languages}
+        onImportTranslations={handleImportComplete}
       />
 
       {/* Translation Memory (TM Cache) Modal */}

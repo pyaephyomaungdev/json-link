@@ -69,6 +69,15 @@ describe('DocsPage', () => {
     expect(screen.getByText('BYOK Privacy & AES-GCM 256-bit Encryption')).not.toBeNull();
   });
 
+  it('switches to GitHub Sync section and shows security guardrail', () => {
+    render(<DocsPage {...baseProps} />);
+    const githubTopic = screen.getByText('GitHub Sync & PRs');
+    fireEvent.click(githubTopic);
+
+    expect(screen.getByText('GitHub Localization Sync & Automated Pull Requests')).not.toBeNull();
+    expect(screen.getByText('Strict Locales-Only Safety Guardrail')).not.toBeNull();
+  });
+
   it('switches to Keyboard Shortcuts section and shows shortcut list', () => {
     render(<DocsPage {...baseProps} />);
     const shortcutsTopic = screen.getByText('Shortcuts & Power Tips');

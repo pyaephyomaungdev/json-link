@@ -30,6 +30,7 @@ import {
   AlertCircle,
   Layers,
   Globe,
+  GitPullRequest,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -55,6 +56,7 @@ type DocSectionId =
   | 'ai-translation'
   | 'linter-scorecard'
   | 'exporters'
+  | 'github-sync'
   | 'keyboard-shortcuts';
 
 interface DocSection {
@@ -102,9 +104,15 @@ const SECTIONS: DocSection[] = [
     icon: <Download className="size-4" />,
   },
   {
+    id: 'github-sync',
+    title: 'GitHub Sync & PRs',
+    badge: 'Step 7',
+    icon: <GitPullRequest className="size-4" />,
+  },
+  {
     id: 'keyboard-shortcuts',
     title: 'Shortcuts & Power Tips',
-    badge: 'Step 7',
+    badge: 'Step 8',
     icon: <Keyboard className="size-4" />,
   },
 ];
@@ -467,6 +475,7 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
           {activeSection === 'ai-translation' && <AiTranslationSection />}
           {activeSection === 'linter-scorecard' && <LinterScorecardSection />}
           {activeSection === 'exporters' && <ExportersSection />}
+          {activeSection === 'github-sync' && <GitHubSyncSection />}
           {activeSection === 'keyboard-shortcuts' && <ShortcutsSection />}
 
           {/* Apple-style Step Navigation Footer */}
@@ -737,79 +746,79 @@ function ContextMenuSection({
       {/* Menu Actions Explanation Table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         <div className="hidden sm:grid sm:grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
-          <span className="col-span-4 sm:col-span-3">Action</span>
-          <span className="col-span-8 sm:col-span-9">Description & Workflow</span>
+          <span className="sm:col-span-4">Action</span>
+          <span className="sm:col-span-8">Description & Workflow</span>
         </div>
 
         <div className="divide-y divide-border/60 text-xs">
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <MousePointerClick className="size-3.5 text-muted-foreground" />
               </span>
               <span>Edit Cell</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Immediately activates the inline text input or Formula Bar for the selected cell.
             </span>
           </div>
 
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <Copy className="size-3.5 text-muted-foreground" />
               </span>
               <span>Copy & Paste</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Copies text to the system clipboard or pastes external content directly into the targeted cell.
             </span>
           </div>
 
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <Undo2 className="size-3.5 text-muted-foreground" />
               </span>
               <span>1-Click Revert</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               If a cell was accidentally edited or translated, restores the cell back to its original loaded file value.
             </span>
           </div>
 
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <Globe className="size-3.5 text-muted-foreground" />
               </span>
               <span>Zawgyi ⇄ Unicode</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Real-time heuristic detects legacy Zawgyi text and losslessly converts to standard Unicode via the Rabbit engine without altering interpolation variables.
             </span>
           </div>
 
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <Sparkles className="size-3.5 text-muted-foreground" />
               </span>
               <span>AI Translate Row</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Translates just the active row across missing target languages using your configured OpenRouter model.
             </span>
           </div>
 
           <div className="p-3 sm:px-4 sm:py-2.5 flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors">
-            <span className="sm:col-span-4 sm:col-span-3 font-semibold text-foreground flex items-center gap-2">
+            <span className="sm:col-span-4 font-semibold text-foreground flex items-center gap-2">
               <span className="size-6 sm:size-auto rounded-md bg-muted/60 sm:bg-transparent flex items-center justify-center shrink-0">
                 <CheckCircle2 className="size-3.5 text-muted-foreground" />
               </span>
               <span>Review Statuses</span>
             </span>
-            <span className="sm:col-span-8 sm:col-span-9 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
+            <span className="sm:col-span-8 text-muted-foreground text-[11px] sm:text-xs leading-relaxed pl-8 sm:pl-0">
               Tag rows as Approved (emerald), Needs Review (amber), or Draft (gray) for human QA signoff.
             </span>
           </div>
@@ -1011,7 +1020,85 @@ function ExportersSection() {
 }
 
 /* =========================================================================
-   Section 7: Keyboard Shortcuts & Power Tips
+   Section 7: GitHub Localization Sync & Automated PRs
+   ========================================================================= */
+function GitHubSyncSection() {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="space-y-1.5">
+        <div>
+          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs">
+            Step 7
+          </Badge>
+        </div>
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          GitHub Localization Sync &amp; Automated Pull Requests
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Pull translation files directly from any public or private GitHub repository, edit or auto-translate side-by-side in the spreadsheet, and open automated Pull Requests directly from your browser.
+        </p>
+      </div>
+
+      {/* Locales-Only Safety Guardrail */}
+      <div className="p-4 rounded-xl border border-emerald-500/25 bg-emerald-500/5 space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <ShieldCheck className="size-4" />
+          <span>Strict Locales-Only Safety Guardrail</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          To prevent accidental codebase disruption, the synchronization engine enforces an atomic client-side security policy. Access to source code (<code className="font-mono text-[10px]">src/</code>), dependencies (<code className="font-mono text-[10px]">node_modules</code>), CI workflows (<code className="font-mono text-[10px]">.github/workflows</code>), configurations (<code className="font-mono text-[10px]">package.json</code>, <code className="font-mono text-[10px]">tsconfig.json</code>), and secrets (<code className="font-mono text-[10px]">.env*</code>) is permanently blocked. Only authorized localization files (<code className="font-mono text-[10px]">.json</code>, <code className="font-mono text-[10px]">.arb</code>, <code className="font-mono text-[10px]">.yaml</code>, <code className="font-mono text-[10px]">.xml</code>, <code className="font-mono text-[10px]">.strings</code>) can be read or modified.
+        </p>
+      </div>
+
+      {/* 3 Step Workflow Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+          <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+            <span className="size-5 rounded-full bg-primary/10 text-primary text-[11px] font-mono flex items-center justify-center font-bold">1</span>
+            Connect Token
+          </h4>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Provide a GitHub Personal Access Token (classic with <code className="font-mono text-[10px]">repo</code> scope, or fine-grained PAT with Contents &amp; Pull requests read/write). Tokens are stored purely in browser <code className="font-mono text-[10px]">localStorage</code>.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+          <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+            <span className="size-5 rounded-full bg-primary/10 text-primary text-[11px] font-mono flex items-center justify-center font-bold">2</span>
+            Discover &amp; Pull
+          </h4>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            The Git Trees scanner automatically identifies locale files across common conventions (<code className="font-mono text-[10px]">locales/</code>, <code className="font-mono text-[10px]">i18n/</code>). Select the files you wish to load into your spreadsheet workspace.
+          </p>
+        </div>
+
+        <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+          <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+            <span className="size-5 rounded-full bg-primary/10 text-primary text-[11px] font-mono flex items-center justify-center font-bold">3</span>
+            Push &amp; Open PR
+          </h4>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Packages edited translations into Git blobs, branches to a dedicated feature branch (<code className="font-mono text-[10px]">jsonlink/translations-...</code>), and creates a ready-to-merge Pull Request with an automated change summary.
+          </p>
+        </div>
+      </div>
+
+      {/* PR Summary & Watermark */}
+      <div className="p-4 rounded-xl border border-border bg-card space-y-2.5">
+        <h3 className="text-xs font-bold text-foreground flex items-center gap-2">
+          <GitPullRequest className="size-4 text-primary" />
+          <span>Automated PR Descriptions &amp; Watermarks</span>
+        </h3>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Every Pull Request generated includes a comprehensive Markdown summary of affected languages, total translation keys, modified file paths, and security verification, along with a <code className="font-mono text-[10px]">Co-worked by JSON Link</code> watermark. You can inspect or edit the PR description directly before submitting.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================================
+   Section 8: Keyboard Shortcuts & Power Tips
    ========================================================================= */
 function ShortcutsSection() {
   const shortcuts = [
@@ -1032,7 +1119,7 @@ function ShortcutsSection() {
       <div className="space-y-1.5">
         <div>
           <Badge variant="outline" className="bg-cyan-500/10 text-cyan-600 border-cyan-500/20 text-xs">
-            Step 7
+            Step 8
           </Badge>
         </div>
         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
@@ -1045,9 +1132,9 @@ function ShortcutsSection() {
 
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         <div className="hidden sm:grid sm:grid-cols-12 bg-muted/60 px-4 py-2 text-xs font-bold text-muted-foreground border-b border-border">
-          <span className="col-span-4 sm:col-span-3">Shortcut</span>
-          <span className="col-span-6 sm:col-span-7">Action</span>
-          <span className="col-span-2 text-right">Category</span>
+          <span className="sm:col-span-3">Shortcut</span>
+          <span className="sm:col-span-7">Action</span>
+          <span className="sm:col-span-2 text-right">Category</span>
         </div>
 
         <div className="divide-y divide-border/60">
@@ -1056,7 +1143,7 @@ function ShortcutsSection() {
               key={s.key}
               className="p-3 sm:px-4 sm:py-2.5 text-xs flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-0 sm:items-center hover:bg-muted/20 transition-colors"
             >
-              <div className="sm:col-span-4 sm:col-span-3 flex items-center justify-between sm:justify-start">
+              <div className="sm:col-span-3 flex items-center justify-between sm:justify-start">
                 <kbd className="px-2 py-1 rounded bg-muted border border-border font-mono text-[11px] font-semibold text-foreground shadow-2xs">
                   {s.key}
                 </kbd>
@@ -1064,7 +1151,7 @@ function ShortcutsSection() {
                   {s.category}
                 </span>
               </div>
-              <span className="sm:col-span-6 sm:col-span-7 text-foreground font-medium text-[11px] sm:text-xs">
+              <span className="sm:col-span-7 text-foreground font-medium text-[11px] sm:text-xs">
                 {s.action}
               </span>
               <span className="hidden sm:block sm:col-span-2 text-right text-[11px] text-muted-foreground">

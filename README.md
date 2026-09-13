@@ -26,6 +26,16 @@ A modern, high-performance web application designed for multilingual localizatio
 
 ---
 
+### GitHub Localization Sync & Automated Pull Requests
+- **Zero-Setup In-Browser Sync**: Connect to any public or private GitHub repository using a Personal Access Token (PAT). Tokens are stored exclusively in client-side `localStorage` with zero intermediary backend storage.
+- **Tree-Scanning Locales Discovery**: Recursively scans repository branches via GitHub Git Trees API to auto-detect translation files across standard conventions (`locales/`, `i18n/`, `lang/`, `values-*/`, `l10n/`, etc.).
+- **Selective Pull & Spreadsheet Load**: Select specific localization files from the branch to load directly into the spreadsheet workspace with schema validation.
+- **Automated Feature Branch & PR Workflow**: Packages updated translations into Git blobs, patches the tree onto a dedicated feature branch (`jsonlink/translations-...`), and opens a Pull Request with a markdown summary of affected files, key counts, and Co-worked by JSON Link watermark.
+- **Direct Commit Mode**: Option to commit translations directly to the selected branch for repository owners and maintainers.
+- **Locales-Only Safety Guardrail**: Multi-tier security enforcement permanently blocks read and write operations to source code (`src/`), dependencies (`node_modules`), CI/CD pipelines (`.github/workflows`), configurations (`package.json`, `tsconfig.json`), and secrets (`.env*`).
+
+---
+
 ### Cell Right-Click Context Menu
 - Right-Click Action Trigger: Right-click any translation cell to open a dedicated context menu:
   - Copy cell value directly to the clipboard (`Cmd+C` / `Ctrl+C`).
@@ -336,7 +346,8 @@ Quality, stability, and zero-regression architecture are verified with an extens
     - `IcuTesterModal.test.tsx`: Live ICU message simulator and plural testing.
     - `PwaInstallButton.test.tsx`: PWA install prompt handler.
     - `AddKeyDialog.test.tsx` & `AddLanguageDialog.test.tsx`: Modal key and language addition workflows.
-    - `ConfirmDialog.test.tsx`: Destructive action guards.
+    - `GitHubSyncModal.test.tsx`: Modal rendering, tab navigation, locales discovery, and PR creation workflow.
+    - `github.test.ts`: Security guardrail path validation, Base64 UTF-8 encoding, Git Data API mocking, and PR body formatting.
     - `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`, `ErrorBoundary.test.tsx`.
 - Continuous Integration: GitHub Actions workflow running typecheck and tests on every push and pull request.
 

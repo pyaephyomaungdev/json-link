@@ -177,34 +177,34 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogBody className="space-y-4 text-xs">
+        <DialogBody className="space-y-4 text-xs overflow-x-hidden">
           {/* Tabs switch: Team Handoff as Primary/Default */}
-          <div className="flex border-b border-border">
+          <div className="grid grid-cols-2 border-b border-border w-full">
             <button
               type="button"
               onClick={() => switchTab('file')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'file'
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer text-center min-w-0 ${activeTab === 'file'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
             >
               <FileCode className="size-3.5 shrink-0" />
-              <span>Team Handoff (.jsonlink)</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-mono font-semibold shrink-0">
+              <span className="truncate">Team Handoff (.jsonlink)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-primary/15 text-primary font-mono font-semibold shrink-0 hidden sm:inline">
                 Recommended
               </span>
             </button>
             <button
               type="button"
               onClick={() => switchTab('url')}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'url'
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer text-center min-w-0 ${activeTab === 'url'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
             >
               <Link2 className="size-3.5 shrink-0" />
-              <span>Instant URL Link</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono shrink-0 ${isSafeLength
+              <span className="truncate">Instant URL Link</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono shrink-0 hidden sm:inline ${isSafeLength
                 ? 'bg-muted text-muted-foreground font-normal'
                 : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium'
                 }`}>
@@ -385,7 +385,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   Anyone who opens this link will load your spreadsheet instantly in their browser.
                 </p>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full min-w-0">
                   <Input
                     readOnly
                     value={
@@ -395,7 +395,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           ? 'Generating compressed link...'
                           : shareUrl
                     }
-                    className="font-mono text-[11px] h-9 bg-muted/30 select-all"
+                    className="font-mono text-[11px] h-9 bg-muted/30 select-all min-w-0 flex-1"
                   />
                   <Button
                     onClick={handleCopy}

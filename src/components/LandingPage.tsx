@@ -15,6 +15,7 @@ import {
   Layers,
   Star,
   ChevronDown,
+  GitPullRequest,
 } from 'lucide-react';
 
 // Official ecosystem format logos
@@ -647,6 +648,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Use standard Model Context Protocol (stdio JSON-RPC 2.0) to lint missing keys, validate translations, and update locales directly from your IDE prompt.
             </CardContent>
           </Card>
+
+          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="size-9 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-2">
+                <GitPullRequest className="size-5" />
+              </div>
+              <CardTitle className="text-base">GitHub Localization Sync &amp; PR</CardTitle>
+              <CardDescription className="text-xs">Direct repo sync with locales-only safety lock</CardDescription>
+            </CardHeader>
+            <CardContent className="text-xs text-muted-foreground leading-relaxed">
+              Pull translations directly from any repository branch, edit in the spreadsheet, and open automated Pull Requests. Protected by client-side guardrails that permanently block non-locale files.
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -762,6 +776,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               {
                 q: 'How do I use the Stdio MCP Server in Claude Desktop or Cursor?',
                 a: 'JSON Link includes a standalone MCP (Model Context Protocol) package. Run it with your project path via npx to give Claude or Cursor direct tools to inspect, lint, and add translation keys directly from your coding prompt.',
+              },
+              {
+                q: 'How does GitHub Sync work, and is it safe to use my Personal Access Token?',
+                a: 'GitHub Sync operates 100% client-side directly within your browser using official GitHub REST & Git Data APIs. Your Personal Access Token (PAT) is stored exclusively in your browser\'s localStorage and never touches any intermediate servers. Furthermore, JSON Link enforces a strict "Locales-Only Safety Guard" that permanently blocks source code, dependencies, and workflows—allowing modifications only to authorized localization files (.json, .arb, .yaml, .xml, .strings).',
               },
             ].map((faq, idx) => {
               const isOpen = openFaq === idx;

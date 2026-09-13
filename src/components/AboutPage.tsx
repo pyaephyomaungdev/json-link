@@ -24,6 +24,7 @@ import {
   Table2,
   MousePointerClick,
   Layers,
+  GitPullRequest,
 } from 'lucide-react';
 
 interface AboutPageProps {
@@ -87,6 +88,13 @@ const highlights = [
     description:
       'No account, no server, no cloud storage. Share projects instantly via compressed URL hash (#share=...) or portable .jsonlink handoff files.',
   },
+  {
+    icon: <GitPullRequest className="size-4 text-emerald-500" />,
+    badgeText: 'GitHub Sync',
+    title: 'GitHub Sync & Automated PRs',
+    description:
+      'Connect any repo with a Personal Access Token to pull translation files, edit in spreadsheet, and open automated Pull Requests. Protected by a strict locales-only safety lock.',
+  },
 ];
 
 const developerFeatures = [
@@ -119,6 +127,11 @@ const developerFeatures = [
     icon: <BookOpen className="size-4 text-primary" />,
     title: 'Glossary & Termbase Safeguards',
     description: 'Brand names and technical terms with "keep original" or custom target rules strictly enforced during batch AI translation.',
+  },
+  {
+    icon: <GitPullRequest className="size-4 text-primary" />,
+    title: 'Direct GitHub PRs & Locales Guard',
+    description: 'Pull locale files from feature branches and push updates as automated Pull Requests without leaving the web browser, protected by atomic path validators.',
   },
 ];
 
@@ -202,7 +215,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
               <Badge variant="success">Free & Open Source</Badge>
               <Badge variant="secondary">MIT License</Badge>
-              <Badge variant="warning">300+ Automated Tests</Badge>
+              <Badge variant="warning">370+ Automated Tests</Badge>
               <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <Lock className="size-3 text-emerald-500" /> 100% Client-Side &amp; Offline
               </Badge>
