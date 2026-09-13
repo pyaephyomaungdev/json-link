@@ -25,8 +25,8 @@ export function getDashboardHtml(baseRoute: string, localesDirName: string): str
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
-      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Noto Sans Myanmar", sans-serif;
-      --font-mono: "JetBrains Mono", monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Noto Sans Myanmar', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
       --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
@@ -803,299 +803,297 @@ export function getDashboardHtml(baseRoute: string, localesDirName: string): str
     </div>
   </div>
 
-  <!-- Script Logic -->
   <script>
-    const API_BASE = "${baseRoute}/api/locales";
-    let languages = [];
-    let records = [];
-    let isDirty = false;
-    let currentFilter = "all";
 
-    function getColLetter(colIdx) {
-      let letter = "";
-      while (colIdx >= 0) {
-        letter = String.fromCharCode((colIdx % 26) + 65) + letter;
-        colIdx = Math.floor(colIdx / 26) - 1;
-      }
-      return letter;
+  const API_BASE = "${baseRoute}/api/locales";
+  let languages = [];
+  let records = [];
+  let isDirty = false;
+  let currentFilter = "all";
+
+  function getColLetter(colIdx) {
+    let letter = "";
+    while (colIdx >= 0) {
+      letter = String.fromCharCode((colIdx % 26) + 65) + letter;
+      colIdx = Math.floor(colIdx / 26) - 1;
     }
+    return letter;
+  }
 
-    async function loadData() {
-      try {
-        const res = await fetch(API_BASE);
-        const data = await res.json();
-        if (data.success) {
-          languages = data.languages || [];
-          records = data.records || [];
-          renderTable();
-          updateStats();
-        }
-      } catch (err) {
-        document.getElementById("statusMsg").innerText = "Error loading locales: " + err.message;
-      }
-    }
-
-    function setFilter(filter) {
-      currentFilter = filter;
-      document.getElementById("tabAll").classList.toggle("active", filter === "all");
-      document.getElementById("tabMissing").classList.toggle("active", filter === "missing");
-      renderTable();
-    }
-
-    function renderTable() {
-      const query = document.getElementById("searchInput").value.toLowerCase().trim();
-      const head = document.getElementById("tableHead");
-      const body = document.getElementById("tableBody");
-      const emptyView = document.getElementById("emptyView");
-
-      // Build Head
-      let headHtml = "<tr><th style="width: 50px; text-align: center;">#</th>";
-      headHtml += "<th style="width: 260px;"><div class="th-content"><div class="col-header-left"><span class="col-letter">A</span><span style="font-weight: 700;">Translation Key</span></div></div></th>";
-      
-      languages.forEach(function(lang, idx) {
-        const colLetter = getColLetter(idx + 1);
-        headHtml += "<th><div class="th-content"><div class="col-header-left"><span class="col-letter">" + colLetter + "</span><span class="lang-badge">" + escapeHtml(lang.toUpperCase()) + "</span></div>" +
-          (languages.length > 1 ? "<button class="th-btn" onclick="deleteLanguage('" + escapeHtml(lang) + "')" title="Delete " + lang.toUpperCase() + " locale"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>" : "") +
-          "</div></th>";
-      });
-
-      headHtml += "<th style="width: 70px; text-align: center;">Actions</th></tr>";
-      head.innerHTML = headHtml;
-
-      // Filter rows
-      const filtered = records.filter(function(r) {
-        if (currentFilter === "missing") {
-          const hasMissing = languages.some(function(l) { return !r[l] || r[l].trim() === ""; });
-          if (!hasMissing) return false;
-        }
-        if (!query) return true;
-        if (r.key.toLowerCase().includes(query)) return true;
-        return languages.some(function(l) { return (r[l] || "").toLowerCase().includes(query); });
-      });
-
-      if (filtered.length === 0) {
-        body.innerHTML = "";
-        emptyView.style.display = "block";
-        return;
-      }
-
-      emptyView.style.display = "none";
-
-      // Build Body
-      let bodyHtml = "";
-      filtered.forEach(function(r, idx) {
-        const originalIndex = records.indexOf(r);
-        bodyHtml += "<tr><td class="row-index-cell">" + (idx + 1) + "</td>" +
-          "<td class="key-cell"><input class="key-input" value="" + escapeHtml(r.key) + "" onchange="updateKey(" + originalIndex + ", this.value)" placeholder="key.name" spellcheck="false" /></td>";
-        
-        languages.forEach(function(lang) {
-          bodyHtml += "<td class="val-cell"><textarea class="val-textarea" oninput="autoGrow(this); updateVal(" + originalIndex + ", '" + escapeHtml(lang) + "', this.value)" placeholder="Empty translation..." rows="1">" + escapeHtml(r[lang] || "") + "</textarea></td>";
-        });
-
-        bodyHtml += "<td class="actions-cell"><div class="row-actions-wrap">" +
-          "<button class="action-icon-btn" onclick="copyKey('" + escapeHtml(r.key) + "', this)" title="Copy Key"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>" +
-          "<button class="action-icon-btn delete" onclick="deleteRow(" + originalIndex + ")" title="Delete Key"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>" +
-          "</div></td></tr>";
-      });
-
-      body.innerHTML = bodyHtml;
-
-      // Auto-grow textareas
-      document.querySelectorAll(".val-textarea").forEach(function(el) { autoGrow(el); });
-    }
-
-    function autoGrow(element) {
-      element.style.height = "auto";
-      element.style.height = Math.max(32, element.scrollHeight) + "px";
-    }
-
-    function escapeHtml(str) {
-      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-
-    window.updateKey = function(idx, newKey) {
-      const clean = newKey.trim();
-      if (!clean) return;
-      records[idx].key = clean;
-      markDirty();
-      updateStats();
-    };
-
-    window.updateVal = function(idx, lang, val) {
-      records[idx][lang] = val;
-      markDirty();
-      updateStats();
-    };
-
-    window.deleteRow = function(idx) {
-      const keyName = records[idx] ? records[idx].key : "";
-      if (confirm("Delete translation key \\"" + keyName + "\\"?")) {
-        records.splice(idx, 1);
-        markDirty();
+  async function loadData() {
+    try {
+      const res = await fetch(API_BASE);
+      const data = await res.json();
+      if (data.success) {
+        languages = data.languages || [];
+        records = data.records || [];
         renderTable();
         updateStats();
       }
-    };
-
-    window.deleteLanguage = function(lang) {
-      if (confirm("Delete language \\"" + lang.toUpperCase() + "\\" and its file?")) {
-        languages = languages.filter(function(l) { return l !== lang; });
-        records.forEach(function(r) { delete r[lang]; });
-        markDirty();
-        renderTable();
-        updateStats();
-      }
-    };
-
-    window.copyKey = function(key, btn) {
-      if (navigator.clipboard) navigator.clipboard.writeText(key);
-      const original = btn.innerHTML;
-      btn.innerHTML = "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>";
-      setTimeout(function() { btn.innerHTML = original; }, 1500);
-    };
-
-    function markDirty() {
-      isDirty = true;
-      const btn = document.getElementById("saveBtn");
-      btn.classList.add("dirty");
-      btn.classList.remove("saved");
-      document.getElementById("saveBtnText").innerText = "● Save Changes";
-      document.getElementById("statusDot").classList.add("dirty");
-      document.getElementById("statusMsg").innerText = "Unsaved changes (writing to disk on save)";
+    } catch (err) {
+      document.getElementById("statusMsg").innerText = "Error loading locales: " + err.message;
     }
+  }
 
-    async function saveToDisk() {
-      const btn = document.getElementById("saveBtn");
-      const text = document.getElementById("saveBtnText");
-      text.innerText = "Saving...";
-      try {
-        const res = await fetch(API_BASE, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ records: records, languages: languages })
-        });
-        const result = await res.json();
-        if (result.success) {
-          isDirty = false;
-          btn.classList.remove("dirty");
-          btn.classList.add("saved");
-          text.innerText = "✓ Saved to Disk";
-          document.getElementById("statusDot").classList.remove("dirty");
-          document.getElementById("statusMsg").innerText = "✓ Saved " + records.length + " keys to disk at " + new Date().toLocaleTimeString();
-          setTimeout(function() {
-            btn.classList.remove("saved");
-            text.innerText = "Save to Disk";
-          }, 2000);
-        } else {
-          alert("Save failed: " + result.error);
-          text.innerText = "Save to Disk";
-        }
-      } catch (err) {
-        alert("Save error: " + err.message);
-        text.innerText = "Save to Disk";
-      }
-    }
+  function setFilter(filter) {
+    currentFilter = filter;
+    document.getElementById("tabAll").classList.toggle("active", filter === "all");
+    document.getElementById("tabMissing").classList.toggle("active", filter === "missing");
+    renderTable();
+  }
 
-    document.getElementById("saveBtn").onclick = saveToDisk;
+  function renderTable() {
+    const query = document.getElementById("searchInput").value.toLowerCase().trim();
+    const head = document.getElementById("tableHead");
+    const body = document.getElementById("tableBody");
+    const emptyView = document.getElementById("emptyView");
 
-    // Modal controls
-    function openModal(id) {
-      document.getElementById(id).classList.add("open");
-      const input = document.getElementById(id).querySelector("input");
-      if (input) {
-        input.value = "";
-        setTimeout(function() { input.focus(); }, 50);
-      }
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove("open");
-    }
-
-    window.closeModal = closeModal;
-
-    document.getElementById("openAddKeyBtn").onclick = function() { openModal("addKeyModal"); };
-    document.getElementById("openAddLangBtn").onclick = function() { openModal("addLangModal"); };
-
-    function submitAddKey() {
-      const input = document.getElementById("newKeyInput");
-      const keyName = input.value.trim();
-      if (keyName) {
-        records.unshift({ key: keyName });
-        markDirty();
-        renderTable();
-        updateStats();
-        closeModal("addKeyModal");
-      }
-    }
-    window.submitAddKey = submitAddKey;
-
-    function submitAddLang() {
-      const input = document.getElementById("newLangInput");
-      const code = input.value.trim().toLowerCase();
-      if (code && !languages.includes(code)) {
-        languages.push(code);
-        markDirty();
-        renderTable();
-        updateStats();
-        closeModal("addLangModal");
-      }
-    }
-    window.submitAddLang = submitAddLang;
-
-    window.pickLang = function(code) {
-      document.getElementById("newLangInput").value = code;
-      submitAddLang();
-    };
-
-    // Keyboard bindings
-    window.addEventListener("keydown", function(e) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        saveToDisk();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        document.getElementById("searchInput").focus();
-      }
-      if (e.key === "Escape") {
-        closeModal("addKeyModal");
-        closeModal("addLangModal");
-      }
-      if (e.key === "Enter") {
-        if (document.getElementById("addKeyModal").classList.contains("open")) {
-          submitAddKey();
-        } else if (document.getElementById("addLangModal").classList.contains("open")) {
-          submitAddLang();
-        }
-      }
+    // Build Head
+    let headHtml = "<tr><th style=\\"width: 50px; text-align: center;\\">#</th>";
+    headHtml += "<th style=\\"width: 260px;\\"><div class=\\"th-content\\"><div class=\\"col-header-left\\"><span class=\\"col-letter\\">A</span><span style=\\"font-weight: 700;\\">Translation Key</span></div></div></th>";
+    
+    languages.forEach(function(lang, idx) {
+      const colLetter = getColLetter(idx + 1);
+      headHtml += "<th><div class=\\"th-content\\"><div class=\\"col-header-left\\"><span class=\\"col-letter\\">" + colLetter + "</span><span class=\\"lang-badge\\">" + escapeHtml(lang.toUpperCase()) + "</span></div>" +
+        (languages.length > 1 ? "<button class=\\"th-btn\\" onclick=\\"deleteLanguage('" + escapeHtml(lang) + "')\\" title=\\"Delete " + lang.toUpperCase() + " locale\\"><svg width=\\"12\\" height=\\"12\\" viewBox=\\"0 0 24 24\\" fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\"><line x1=\\"18\\" y1=\\"6\\" x2=\\"6\\" y2=\\"18\\"></line><line x1=\\"6\\" y1=\\"6\\" x2=\\"18\\" y2=\\"18\\"></line></svg></button>" : "") +
+        "</div></th>";
     });
 
-    document.getElementById("searchInput").oninput = renderTable;
+    headHtml += "<th style=\\"width: 70px; text-align: center;\\">Actions</th></tr>";
+    head.innerHTML = headHtml;
 
-    // Theme toggle
-    const themeBtn = document.getElementById("themeToggle");
-    const darkIcon = document.getElementById("themeIconDark");
-    const lightIcon = document.getElementById("themeIconLight");
+    // Filter rows
+    const filtered = records.filter(function(r) {
+      if (currentFilter === "missing") {
+        const hasMissing = languages.some(function(l) { return !r[l] || r[l].trim() === ""; });
+        if (!hasMissing) return false;
+      }
+      if (!query) return true;
+      if (r.key.toLowerCase().includes(query)) return true;
+      return languages.some(function(l) { return (r[l] || "").toLowerCase().includes(query); });
+    });
 
-    themeBtn.onclick = function() {
-      const isDark = document.documentElement.classList.toggle("dark");
-      darkIcon.style.display = isDark ? "inline" : "none";
-      lightIcon.style.display = isDark ? "none" : "inline";
-    };
-
-    function updateStats() {
-      const missingCount = records.filter(function(r) {
-        return languages.some(function(l) { return !r[l] || r[l].trim() === ""; });
-      }).length;
-      document.getElementById("countAll").innerText = records.length;
-      document.getElementById("countMissing").innerText = missingCount;
-
-      document.getElementById("statsInfo").innerText = 
-        records.length + " keys across " + languages.length + " languages (" + languages.map(function(l) { return l.toUpperCase(); }).join(", ") + ")";
+    if (filtered.length === 0) {
+      body.innerHTML = "";
+      emptyView.style.display = "block";
+      return;
     }
 
-    loadData();
+    emptyView.style.display = "none";
+
+    // Build Body
+    let bodyHtml = "";
+    filtered.forEach(function(r, idx) {
+      const originalIndex = records.indexOf(r);
+      bodyHtml += "<tr><td class=\\"row-index-cell\\">" + (idx + 1) + "</td>" +
+        "<td class=\\"key-cell\\"><input class=\\"key-input\\" value=\\"" + escapeHtml(r.key) + "\\" onchange=\\"updateKey(" + originalIndex + ", this.value)\\" placeholder=\\"key.name\\" spellcheck=\\"false\\" /></td>";
+      
+      languages.forEach(function(lang) {
+        bodyHtml += "<td class=\\"val-cell\\"><textarea class=\\"val-textarea\\" oninput=\\"autoGrow(this); updateVal(" + originalIndex + ", '" + escapeHtml(lang) + "', this.value)\\" placeholder=\\"Empty translation...\\" rows=\\"1\\">" + escapeHtml(r[lang] || "") + "</textarea></td>";
+      });
+
+      bodyHtml += "<td class=\\"actions-cell\\"><div class=\\"row-actions-wrap\\">" +
+        "<button class=\\"action-icon-btn\\" onclick=\\"copyKey('" + escapeHtml(r.key) + "', this)\\" title=\\"Copy Key\\"><svg width=\\"13\\" height=\\"13\\" viewBox=\\"0 0 24 24\\" fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\"><rect x=\\"9\\" y=\\"9\\" width=\\"13\\" height=\\"13\\" rx=\\"2\\" ry=\\"2\\"></rect><path d=\\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\\"></path></svg></button>" +
+        "<button class=\\"action-icon-btn delete\\" onclick=\\"deleteRow(" + originalIndex + ")\\" title=\\"Delete Key\\"><svg width=\\"13\\" height=\\"13\\" viewBox=\\"0 0 24 24\\" fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\"><polyline points=\\"3 6 5 6 21 6\\"></polyline><path d=\\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\\"></path></svg></button>" +
+        "</div></td></tr>";
+    });
+
+    body.innerHTML = bodyHtml;
+
+    // Auto-grow textareas
+    document.querySelectorAll(".val-textarea").forEach(function(el) { autoGrow(el); });
+  }
+
+  function autoGrow(element) {
+    element.style.height = "auto";
+    element.style.height = Math.max(32, element.scrollHeight) + "px";
+  }
+
+  function escapeHtml(str) {
+    return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  window.updateKey = function(idx, newKey) {
+    const clean = newKey.trim();
+    if (!clean) return;
+    records[idx].key = clean;
+    markDirty();
+    updateStats();
+  };
+
+  window.updateVal = function(idx, lang, val) {
+    records[idx][lang] = val;
+    markDirty();
+    updateStats();
+  };
+
+  window.deleteRow = function(idx) {
+    const keyName = records[idx] ? records[idx].key : "";
+    if (confirm("Delete translation key \\"" + keyName + "\\"?")) {
+      records.splice(idx, 1);
+      markDirty();
+      renderTable();
+      updateStats();
+    }
+  };
+
+  window.deleteLanguage = function(lang) {
+    if (confirm("Delete language \\"" + lang.toUpperCase() + "\\" and its file?")) {
+      languages = languages.filter(function(l) { return l !== lang; });
+      records.forEach(function(r) { delete r[lang]; });
+      markDirty();
+      renderTable();
+      updateStats();
+    }
+  };
+
+  window.copyKey = function(key, btn) {
+    if (navigator.clipboard) navigator.clipboard.writeText(key);
+    const original = btn.innerHTML;
+    btn.innerHTML = "<svg width=\\"13\\" height=\\"13\\" viewBox=\\"0 0 24 24\\" fill=\\"none\\" stroke=\\"#10b981\\" stroke-width=\\"2.5\\"><polyline points=\\"20 6 9 17 4 12\\"></polyline></svg>";
+    setTimeout(function() { btn.innerHTML = original; }, 1500);
+  };
+
+  function markDirty() {
+    isDirty = true;
+    const btn = document.getElementById("saveBtn");
+    btn.classList.add("dirty");
+    btn.classList.remove("saved");
+    document.getElementById("saveBtnText").innerText = "● Save Changes";
+    document.getElementById("statusDot").classList.add("dirty");
+    document.getElementById("statusMsg").innerText = "Unsaved changes (writing to disk on save)";
+  }
+
+  async function saveToDisk() {
+    const btn = document.getElementById("saveBtn");
+    const text = document.getElementById("saveBtnText");
+    text.innerText = "Saving...";
+    try {
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ records: records, languages: languages })
+      });
+      const result = await res.json();
+      if (result.success) {
+        isDirty = false;
+        btn.classList.remove("dirty");
+        btn.classList.add("saved");
+        text.innerText = "✓ Saved to Disk";
+        document.getElementById("statusDot").classList.remove("dirty");
+        document.getElementById("statusMsg").innerText = "✓ Saved " + records.length + " keys to disk at " + new Date().toLocaleTimeString();
+        setTimeout(function() {
+          btn.classList.remove("saved");
+          text.innerText = "Save to Disk";
+        }, 2000);
+      } else {
+        alert("Save failed: " + result.error);
+        text.innerText = "Save to Disk";
+      }
+    } catch (err) {
+      alert("Save error: " + err.message);
+      text.innerText = "Save to Disk";
+    }
+  }
+
+  document.getElementById("saveBtn").onclick = saveToDisk;
+
+  function openModal(id) {
+    document.getElementById(id).classList.add("open");
+    const input = document.getElementById(id).querySelector("input");
+    if (input) {
+      input.value = "";
+      setTimeout(function() { input.focus(); }, 50);
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+  }
+
+  window.closeModal = closeModal;
+
+  document.getElementById("openAddKeyBtn").onclick = function() { openModal("addKeyModal"); };
+  document.getElementById("openAddLangBtn").onclick = function() { openModal("addLangModal"); };
+
+  function submitAddKey() {
+    const input = document.getElementById("newKeyInput");
+    const keyName = input.value.trim();
+    if (keyName) {
+      records.unshift({ key: keyName });
+      markDirty();
+      renderTable();
+      updateStats();
+      closeModal("addKeyModal");
+    }
+  }
+  window.submitAddKey = submitAddKey;
+
+  function submitAddLang() {
+    const input = document.getElementById("newLangInput");
+    const code = input.value.trim().toLowerCase();
+    if (code && !languages.includes(code)) {
+      languages.push(code);
+      markDirty();
+      renderTable();
+      updateStats();
+      closeModal("addLangModal");
+    }
+  }
+  window.submitAddLang = submitAddLang;
+
+  window.pickLang = function(code) {
+    document.getElementById("newLangInput").value = code;
+    submitAddLang();
+  };
+
+  window.addEventListener("keydown", function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      saveToDisk();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      document.getElementById("searchInput").focus();
+    }
+    if (e.key === "Escape") {
+      closeModal("addKeyModal");
+      closeModal("addLangModal");
+    }
+    if (e.key === "Enter") {
+      if (document.getElementById("addKeyModal").classList.contains("open")) {
+        submitAddKey();
+      } else if (document.getElementById("addLangModal").classList.contains("open")) {
+        submitAddLang();
+      }
+    }
+  });
+
+  document.getElementById("searchInput").oninput = renderTable;
+
+  const themeBtn = document.getElementById("themeToggle");
+  const darkIcon = document.getElementById("themeIconDark");
+  const lightIcon = document.getElementById("themeIconLight");
+
+  themeBtn.onclick = function() {
+    const isDark = document.documentElement.classList.toggle("dark");
+    darkIcon.style.display = isDark ? "inline" : "none";
+    lightIcon.style.display = isDark ? "none" : "inline";
+  };
+
+  function updateStats() {
+    const missingCount = records.filter(function(r) {
+      return languages.some(function(l) { return !r[l] || r[l].trim() === ""; });
+    }).length;
+    document.getElementById("countAll").innerText = records.length;
+    document.getElementById("countMissing").innerText = missingCount;
+
+    document.getElementById("statsInfo").innerText = 
+      records.length + " keys across " + languages.length + " languages (" + languages.map(function(l) { return l.toUpperCase(); }).join(", ") + ")";
+  }
+
+  loadData();
+
   </script>
 </body>
 </html>`;
