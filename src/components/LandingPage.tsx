@@ -17,6 +17,8 @@ import {
   ChevronDown,
   GitPullRequest,
   Zap,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 // Official ecosystem format logos
@@ -200,7 +202,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [copiedCmd, setCopiedCmd] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCopyCmd = () => {
+    navigator.clipboard?.writeText('npx json-link init');
+    setCopiedCmd(true);
+    setTimeout(() => setCopiedCmd(false), 2000);
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -340,9 +349,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Terminal Command Quickstart */}
-            <div className="mt-5 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground shadow-2xs hover:border-primary/40 transition-colors">
+            <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground shadow-2xs hover:border-primary/40 transition-colors">
               <span className="text-primary font-bold select-none">$</span>
               <span className="text-foreground font-semibold select-all">npx json-link init</span>
+              <button
+                type="button"
+                onClick={handleCopyCmd}
+                title={copiedCmd ? 'Copied to clipboard' : 'Copy command'}
+                className="p-1 -mr-1 rounded text-muted-foreground hover:text-foreground hover:bg-background/80 transition-all cursor-pointer inline-flex items-center justify-center"
+              >
+                {copiedCmd ? (
+                  <Check className="size-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="size-3.5 hover:text-primary transition-colors" />
+                )}
+              </button>
               <span className="text-[10px] text-muted-foreground hidden sm:inline select-none">•</span>
               <span className="text-[11px] text-muted-foreground hidden sm:inline select-none">
                 Embedded dev dashboard on <code className="text-primary font-semibold">localhost:5173/__jsonlink</code>

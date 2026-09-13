@@ -973,6 +973,14 @@ function LinterScorecardSection() {
    Section 6: Universal Exporters & Flutter ARB
    ========================================================================= */
 function ExportersSection() {
+  const [copiedCli, setCopiedCli] = useState(false);
+
+  const handleCopyCli = () => {
+    navigator.clipboard?.writeText('npx json-link init');
+    setCopiedCli(true);
+    setTimeout(() => setCopiedCli(false), 2000);
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="space-y-1.5">
@@ -1018,7 +1026,25 @@ function ExportersSection() {
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           Transform any React + Vite codebase into an integrated localization workspace with a single command:
         </p>
-        <div className="p-3 rounded-lg bg-background/90 border border-border/80 font-mono text-[11px] text-foreground space-y-1 select-all">
+        <div className="p-3 rounded-lg bg-background/90 border border-border/80 font-mono text-[11px] text-foreground space-y-1 relative select-all">
+          <button
+            type="button"
+            onClick={handleCopyCli}
+            title={copiedCli ? 'Copied' : 'Copy command'}
+            className="absolute top-2.5 right-2.5 p-1 rounded hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all cursor-pointer inline-flex items-center gap-1 text-[10px]"
+          >
+            {copiedCli ? (
+              <>
+                <Check className="size-3 text-emerald-500" />
+                <span className="text-emerald-600 dark:text-emerald-400 font-sans">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="size-3" />
+                <span className="font-sans">Copy</span>
+              </>
+            )}
+          </button>
           <p className="text-muted-foreground"># 1. Run automatic initializer in your Vite project root</p>
           <p className="text-primary font-bold">npx json-link init</p>
           <p className="text-muted-foreground pt-1"># 2. Start your regular Vite development server</p>
