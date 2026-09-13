@@ -126,7 +126,7 @@ export function NotFoundPage({
           </div>
 
           {/* Quick Navigation Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+          <div className={`grid grid-cols-1 ${onOpenAbout ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 text-left`}>
             {/* Workspace Card */}
             <div
               onClick={onBack}
@@ -164,22 +164,24 @@ export function NotFoundPage({
             </div>
 
             {/* About Card */}
-            <div
-              onClick={onOpenAbout ? onOpenAbout : onBack}
-              className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
-            >
-              <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Info className="size-4" />
+            {onOpenAbout && (
+              <div
+                onClick={onOpenAbout}
+                className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+              >
+                <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Info className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    About JSON Link
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
+                    Read about offline privacy, architecture & highlights.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                  About JSON Link
-                </h3>
-                <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                  Read about offline privacy, architecture & highlights.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Primary Action & Shortcuts */}

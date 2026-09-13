@@ -720,8 +720,9 @@ export function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [undo, redo, isAnyModalOpen]);
 
-  // When clicking logo, if user has data in table or active workspace, prompt to save/exit
+  // When clicking logo, if user has data in table or active workspace, prompt to save/exit (regular web only)
   const handleLogoClick = () => {
+    if (isDevMode) return;
     if (items.length > 0 || isWorkspaceActive) {
       setIsExitConfirmOpen(true);
     }
@@ -1651,14 +1652,18 @@ export function App() {
         icon: <BookOpen className="size-3.5" />,
         action: openDocs,
       },
-      {
-        id: 'about',
-        category: 'Help',
-        title: 'About JSON Link',
-        description: 'Learn about the project, privacy, and tech stack',
-        icon: <Info className="size-3.5" />,
-        action: openAbout,
-      },
+      ...(!isDevMode
+        ? [
+            {
+              id: 'about',
+              category: 'Help' as const,
+              title: 'About JSON Link',
+              description: 'Learn about the project, privacy, and tech stack',
+              icon: <Info className="size-3.5" />,
+              action: openAbout,
+            },
+          ]
+        : []),
       {
         id: 'toggle-theme',
         category: 'View',
@@ -1667,11 +1672,11 @@ export function App() {
         action: toggleTheme,
       },
     ],
-    [isDark, undo, redo]
+    [isDark, undo, redo, isDevMode]
   );
 
-  // Dedicated About page route (/about)
-  if (route === 'about') {
+  // Dedicated About page route (/about) - only on regular web, not in devtool
+  if (!isDevMode && route === 'about') {
     return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} onOpenDocs={openDocs} />;
   }
 
@@ -1688,7 +1693,7 @@ export function App() {
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onOpenDocs={openDocs}
-        onOpenAbout={openAbout}
+        onOpenAbout={!isDevMode ? openAbout : undefined}
       />
     );
   }
@@ -1701,13 +1706,14 @@ export function App() {
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
-            title={(items.length > 0 || isWorkspaceActive) ? "Return to Landing (with Save prompt)" : "JSON Link"}
+            title={(!isDevMode && (items.length > 0 || isWorkspaceActive)) ? "Return to Landing (with Save prompt)" : "JSON Link"}
           >
             <Logo size="md" showText={false} className="sm:hidden" />
             <Logo size="md" showText={true} className="hidden sm:flex" />
           </button>
 
-          {(items.length > 0 || isWorkspaceActive) && (
+          {/* Back to Home button: Only on regular web, NOT in devtool */}
+          {!isDevMode && (items.length > 0 || isWorkspaceActive) && (
             <Button
               variant="ghost"
               size="sm"
@@ -1869,7 +1875,7 @@ export function App() {
       </header>
 
       {/* Main Content Area */}
-      {!isWorkspaceActive && items.length === 0 ? (
+      {!isDevMode && !isWorkspaceActive && items.length === 0 ? (
         <LandingPage
           onStartEmptySheet={handleStartEmptySheet}
           onResetToSample={() => {
