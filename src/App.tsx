@@ -572,58 +572,81 @@ export function App() {
     setIsDark(prev => !prev);
   };
 
-  // Simple path-based routing: /about, /docs render dedicated pages (SPA fallback served by host)
-  const [route, setRoute] = useState<'app' | 'about' | 'docs' | 'not-found'>(() => {
-    const path = window.location.pathname.replace(/\/+$/, '');
+  // Helper to get dev base route (e.g. /__jsonlink) when running via Vite dev plugin
+  const getDevBase = (): string => {
+    if (typeof window === 'undefined') return '';
+    const devConfig = (window as any).__JSONLINK_DEV_MODE__;
+    if (devConfig?.route) return devConfig.route.replace(/\/+$/, '');
+    if (window.location.pathname.startsWith('/__jsonlink')) return '/__jsonlink';
+    return '';
+  };
+
+  // Helper to determine the logical route from the URL pathname
+  const resolveRouteFromPath = (pathname: string): 'app' | 'about' | 'docs' | 'not-found' => {
+    const devBase = getDevBase();
+    let path = pathname.replace(/\/+$/, '');
+    if (devBase && (path === devBase || path.startsWith(`${devBase}/`))) {
+      path = path.slice(devBase.length).replace(/\/+$/, '');
+    }
     if (path === '/about') return 'about';
     if (path === '/docs') return 'docs';
     if (path === '' || path === '/') return 'app';
-    // Any unrecognised path → 404
     return 'not-found';
+  };
+
+  // Simple path-based routing: /about, /docs render dedicated pages (SPA fallback served by host)
+  const [route, setRoute] = useState<'app' | 'about' | 'docs' | 'not-found'>(() => {
+    return resolveRouteFromPath(typeof window !== 'undefined' ? window.location.pathname : '/');
   });
 
   useEffect(() => {
     const onPopState = () => {
-      const path = window.location.pathname.replace(/\/+$/, '');
-      if (path === '/about') setRoute('about');
-      else if (path === '/docs') setRoute('docs');
-      else if (path === '' || path === '/') setRoute('app');
-      else setRoute('not-found');
+      setRoute(resolveRouteFromPath(window.location.pathname));
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const openAbout = () => {
-    if (window.location.pathname !== '/about') {
-      window.history.pushState({}, '', '/about');
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/about` : '/about';
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
     }
     setRoute('about');
   };
 
   const closeAbout = () => {
-    if (window.location.pathname === '/about') {
-      window.history.pushState({}, '', '/');
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/` : '/';
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
     }
     setRoute('app');
   };
 
   const openDocs = () => {
-    if (window.location.pathname !== '/docs') {
-      window.history.pushState({}, '', '/docs');
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/docs` : '/docs';
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
     }
     setRoute('docs');
   };
 
   const closeDocs = () => {
-    if (window.location.pathname === '/docs') {
-      window.history.pushState({}, '', '/');
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/` : '/';
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
     }
     setRoute('app');
   };
 
   const closeNotFound = () => {
-    window.history.pushState({}, '', '/');
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/` : '/';
+    window.history.pushState({}, '', target);
     setRoute('app');
   };
 

@@ -110,7 +110,13 @@ export function jsonLink(options: JsonLinkPluginOptions = {}): Plugin {
         const clientDir = findClientDir(rootDir);
 
         // 4. Serve Dashboard UI (Full SPA index.html or fallback)
-        if (url === `${route}/` || url === `${route}/index.html`) {
+        // Matches `${route}/`, `${route}/index.html`, or client subroutes (e.g. `${route}/docs`)
+        const isClientPageRequest =
+          url === `${route}/` ||
+          url === `${route}/index.html` ||
+          (url.startsWith(`${route}/`) && !path.extname(url.split('?')[0]));
+
+        if (isClientPageRequest) {
           if (clientDir) {
             const htmlPath = path.join(clientDir, 'index.html');
             let html = fs.readFileSync(htmlPath, 'utf-8');
