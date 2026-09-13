@@ -9,10 +9,12 @@ dist-ssr/
 build/
 *.tsbuildinfo
 
-# AI & Agent artifacts (Explicitly ignored per user instruction)
-.agents/
+# AI & Agent artifacts (Explicitly ignored per user instruction except public skills)
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/jsonlink-vite-i18n/
 .agent/
-.agents
 .agent
 .gemini/
 .claude/

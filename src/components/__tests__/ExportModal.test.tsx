@@ -15,6 +15,7 @@ vi.mock('@/lib/exporter', () => ({
   exportToArbZip: vi.fn().mockResolvedValue(undefined),
   exportToTypeScriptDts: vi.fn().mockResolvedValue(undefined),
   exportAllAsProjectBundle: vi.fn().mockResolvedValue(undefined),
+  exportToViteStarterZip: vi.fn().mockResolvedValue(undefined),
   generateLanguageJsonData: vi.fn(() => ({ hello: 'Hello' })),
   generateArbData: vi.fn(() => ({ hello: 'Hello' })),
   objectToYaml: vi.fn(() => 'hello: Hello'),
@@ -79,6 +80,28 @@ describe('ExportModal', () => {
 
     await waitFor(() => {
       expect(exporterLib.exportAllAsProjectBundle).toHaveBeenCalled();
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('switches to Vite Starter and triggers exportToViteStarterZip', async () => {
+    render(<ExportModal {...defaultProps} />);
+    const viteTab = screen.getByRole('button', { name: /Vite Starter/i });
+    fireEvent.click(viteTab);
+
+    expect(screen.getByText(/React \+ Vite i18n Starter Kit/i)).not.toBeNull();
+    expect(screen.getByText(/Option A: Drop Into Existing Project/i)).not.toBeNull();
+
+    const downloadBtn = screen.getByRole('button', { name: /Download VITE STARTER \(ZIP\)/i });
+    fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(exporterLib.exportToViteStarterZip).toHaveBeenCalledWith(
+        defaultProps.items,
+        defaultProps.languages,
+        expect.objectContaining({ format: 'vite-starter' }),
+        'test_translations_vite_starter.zip'
+      );
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
     });
   });

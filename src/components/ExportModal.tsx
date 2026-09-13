@@ -27,6 +27,7 @@ import {
   Smartphone,
   Layers,
   Package,
+  Zap,
 } from 'lucide-react';
 import { TranslationItem, ExportOptions, ExportFormat } from '@/types';
 import {
@@ -40,6 +41,7 @@ import {
   exportToArbZip,
   exportToTypeScriptDts,
   exportAllAsProjectBundle,
+  exportToViteStarterZip,
   generateLanguageJsonData,
   generateArbData,
   objectToYaml,
@@ -64,7 +66,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const saved = localStorage.getItem('jsonlink_last_export_format') as ExportFormat;
     const validFormats: ExportFormat[] = [
       'excel', 'csv', 'json-zip', 'json-combined', 'yaml-zip',
-      'android-xml', 'ios-strings', 'arb-zip', 'typescript-dts', 'project-bundle'
+      'android-xml', 'ios-strings', 'arb-zip', 'typescript-dts', 'project-bundle', 'vite-starter'
     ];
     return validFormats.includes(saved) ? saved : 'excel';
   });
@@ -94,6 +96,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   // Live preview text for code-based formats
   const previewText = useMemo(() => {
     const sampleItems = items.slice(0, 10);
+
+    if (activeTab === 'vite-starter') {
+      const sampleKey = sampleItems[0]?.key || 'app.title';
+      return `// 1. Drop into any React component:\n` +
+        `import { useTranslation } from './locales/i18n';\n` +
+        `import { JsonLinkDevtools } from './locales/devtools';\n\n` +
+        `export function App() {\n` +
+        `  const { t, language, setLanguage, languages } = useTranslation();\n\n` +
+        `  return (\n` +
+        `    <div>\n` +
+        `      <h1>{t('${sampleKey}')}</h1>\n` +
+        `      <select value={language} onChange={e => setLanguage(e.target.value as any)}>\n` +
+        `        {languages.map(lang => (\n` +
+        `          <option key={lang} value={lang}>{lang.toUpperCase()}</option>\n` +
+        `        ))}\n` +
+        `      </select>\n\n` +
+        `      {/* Live In-App Devtools Drawer */}\n` +
+        `      <JsonLinkDevtools />\n` +
+        `    </div>\n` +
+        `  );\n` +
+        `}`;
+    }
 
     if (activeTab === 'json-combined') {
       const combined: Record<string, any> = {};
@@ -156,7 +180,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       filename,
     };
 
-    if (activeTab === 'project-bundle') {
+    if (activeTab === 'vite-starter') {
+      await exportToViteStarterZip(items, languages, options, `${filename}_vite_starter.zip`);
+    } else if (activeTab === 'project-bundle') {
       await exportAllAsProjectBundle(items, languages, options, 'all-in-one', `${filename}_all_locales_bundle.zip`);
     } else if (activeTab === 'excel') {
       exportToExcel(items, languages, `${filename}.xlsx`);
@@ -195,17 +221,18 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     isRecommended?: boolean;
     icon: React.ReactNode;
   }[] = [
-    { id: 'project-bundle', label: 'Full Bundle (ZIP)', shortLabel: 'Full Bundle', category: 'bundles', isRecommended: true, icon: <Package className="size-3.5 text-indigo-500 shrink-0" /> },
-    { id: 'json-zip', label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', category: 'bundles', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
-    { id: 'json-combined', label: 'Single JSON', shortLabel: 'Single JSON', category: 'bundles', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
-    { id: 'arb-zip', label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', category: 'platform', isRecommended: true, icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
-    { id: 'android-xml', label: 'Android (strings.xml)', shortLabel: 'Android XML', category: 'platform', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
-    { id: 'ios-strings', label: 'iOS (.strings)', shortLabel: 'iOS Strings', category: 'platform', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
-    { id: 'typescript-dts', label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', category: 'platform', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
-    { id: 'excel', label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', category: 'data', isRecommended: true, icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
-    { id: 'csv', label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', category: 'data', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
-    { id: 'yaml-zip', label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', category: 'data', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
-  ];
+      { id: 'vite-starter', label: 'Vite Starter (React)', shortLabel: 'Vite Starter', category: 'bundles', isRecommended: true, icon: <Zap className="size-3.5 text-amber-500 shrink-0" /> },
+      { id: 'project-bundle', label: 'Full Bundle (ZIP)', shortLabel: 'Full Bundle', category: 'bundles', isRecommended: true, icon: <Package className="size-3.5 text-indigo-500 shrink-0" /> },
+      { id: 'json-zip', label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', category: 'bundles', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
+      { id: 'json-combined', label: 'Single JSON', shortLabel: 'Single JSON', category: 'bundles', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
+      { id: 'arb-zip', label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', category: 'platform', isRecommended: true, icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
+      { id: 'android-xml', label: 'Android (strings.xml)', shortLabel: 'Android XML', category: 'platform', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
+      { id: 'ios-strings', label: 'iOS (.strings)', shortLabel: 'iOS Strings', category: 'platform', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
+      { id: 'typescript-dts', label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', category: 'platform', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },
+      { id: 'excel', label: 'Excel (.xlsx)', shortLabel: 'Excel (.xlsx)', category: 'data', isRecommended: true, icon: <FileSpreadsheet className="size-3.5 text-emerald-600 shrink-0" /> },
+      { id: 'csv', label: 'CSV (.csv)', shortLabel: 'CSV (.csv)', category: 'data', icon: <FileText className="size-3.5 text-blue-500 shrink-0" /> },
+      { id: 'yaml-zip', label: 'YAML (.yaml)', shortLabel: 'YAML (.yaml)', category: 'data', icon: <Layers className="size-3.5 text-rose-500 shrink-0" /> },
+    ];
 
   const categories: { id: 'all' | 'bundles' | 'platform' | 'data'; label: string; count: number }[] = [
     { id: 'all', label: 'All Formats', count: formatButtons.length },
@@ -236,18 +263,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer text-center sm:text-left ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 bg-muted/30 sm:bg-transparent'
-                }`}
+                className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer text-center sm:text-left ${selectedCategory === cat.id
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 bg-muted/30 sm:bg-transparent'
+                  }`}
               >
                 <span>{cat.label}</span>
-                <span className={`text-[10px] px-1 py-0.2 rounded-full font-semibold ${
-                  selectedCategory === cat.id
-                    ? 'bg-primary-foreground/20 text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
+                <span className={`text-[10px] px-1 py-0.2 rounded-full font-semibold ${selectedCategory === cat.id
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+                  }`}>
                   {cat.count}
                 </span>
               </button>
@@ -261,11 +286,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 key={fmt.id}
                 type="button"
                 onClick={() => handleSelectTab(fmt.id)}
-                className={`relative flex items-center justify-between gap-1.5 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${
-                  activeTab === fmt.id
-                    ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
-                    : 'border-border hover:bg-muted/50 text-foreground'
-                }`}
+                className={`relative flex items-center justify-between gap-1.5 p-2 rounded-lg border text-xs cursor-pointer transition-all text-left ${activeTab === fmt.id
+                  ? 'border-primary bg-primary/10 text-primary font-semibold shadow-2xs'
+                  : 'border-border hover:bg-muted/50 text-foreground'
+                  }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   {fmt.icon}
@@ -280,170 +304,200 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             ))}
           </div>
 
-        {/* Description Banner per Format */}
-        <div className="p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border text-xs">
-          {activeTab === 'project-bundle' && (
-            <p className="text-muted-foreground">
-              ⚡ <strong>One-Click Project Bundle</strong>: Generates an organized <code className="font-mono">.zip</code> containing pre-structured directories for Web (<code className="font-mono">web-locales/</code>), Flutter (<code className="font-mono">flutter-l10n/</code>), iOS (<code className="font-mono">ios-strings/</code>), Android (<code className="font-mono">android-res/</code>), and TypeScript declarations.
-            </p>
-          )}
-          {activeTab === 'excel' && (
-            <p className="text-muted-foreground">
-              Multi-column spreadsheet with columns for Key and languages ({languages.join(', ')}). Formatted with styled header and auto column width.
-            </p>
-          )}
-          {activeTab === 'csv' && (
-            <p className="text-muted-foreground">
-              Comma-Separated Values embedded with UTF-8 BOM so Myanmar Unicode never turns into question marks in Excel or Google Sheets.
-            </p>
-          )}
-          {activeTab === 'json-zip' && (
-            <p className="text-muted-foreground">
-              Creates a <code className="font-mono">.zip</code> containing individual JSON files: {languages.map(l => `${l}.json`).join(', ')}.
-            </p>
-          )}
-          {activeTab === 'json-combined' && (
-            <p className="text-muted-foreground">
-              Combines all languages into a single unified JSON object (e.g. <code className="font-mono">{`{ "en": {...}, "my": {...} }`}</code>).
-            </p>
-          )}
-          {activeTab === 'yaml-zip' && (
-            <p className="text-muted-foreground">
-              Export YAML files (<code className="font-mono">en.yaml</code>, <code className="font-mono">my.yaml</code>) for Flutter, Ruby on Rails, or Symfony.
-            </p>
-          )}
-          {activeTab === 'android-xml' && (
-            <p className="text-muted-foreground">
-              Creates Android-ready folder structure (<code className="font-mono">res/values/strings.xml</code>, <code className="font-mono">res/values-my/strings.xml</code>) with XML-escaped entities.
-            </p>
-          )}
-          {activeTab === 'ios-strings' && (
-            <p className="text-muted-foreground">
-              Creates Apple Xcode localization folders (<code className="font-mono">en.lproj/Localizable.strings</code>, <code className="font-mono">my.lproj/Localizable.strings</code>).
-            </p>
-          )}
-          {activeTab === 'arb-zip' && (
-            <p className="text-muted-foreground">
-              Flutter Application Resource Bundle (<code className="font-mono">app_en.arb</code>, <code className="font-mono">app_my.arb</code>) with <code className="font-mono">@@locale</code> and <code className="font-mono">@key</code> descriptions.
-            </p>
-          )}
-          {activeTab === 'typescript-dts' && (
-            <p className="text-muted-foreground">
-              Generates strongly-typed TypeScript definitions (<code className="font-mono">translations.d.ts</code>) for full compile-time autocomplete of all translation keys.
-            </p>
-          )}
-        </div>
-
-        {/* Options & Filename */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 border-t border-border pt-3 text-xs">
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-foreground">File Name:</label>
-            <Input
-              value={filename}
-              onChange={e => setFilename(e.target.value)}
-              placeholder="translations"
-              className="text-xs h-8"
-            />
-          </div>
-
-          {(activeTab === 'json-zip' || activeTab === 'json-combined' || activeTab === 'yaml-zip' || activeTab === 'arb-zip') && (
-            <div className="flex flex-col gap-1">
-              <label className="font-semibold text-foreground">Structure & Indent:</label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNested(false)}
-                  className={`px-2 py-1 rounded border text-xs cursor-pointer transition-colors ${
-                    !nested ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'
-                  }`}
-                >
-                  Flat
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNested(true)}
-                  className={`px-2 py-1 rounded border text-xs cursor-pointer transition-colors ${
-                    nested ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'
-                  }`}
-                >
-                  Nested
-                </button>
-                <div className="flex items-center gap-1 ml-auto">
-                  <span className="text-muted-foreground text-[11px]">Indent:</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="bg-muted border border-border rounded px-2 py-0.5 text-xs cursor-pointer flex items-center gap-1 hover:bg-accent">
-                        {indent} sp
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-24">
-                      <DropdownMenuItem onClick={() => setIndent(2)} className="text-xs cursor-pointer">
-                        2 spaces
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setIndent(4)} className="text-xs cursor-pointer">
-                        4 spaces
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          {/* Description Banner per Format */}
+          <div className="p-2.5 sm:p-3 rounded-lg bg-muted/40 border border-border text-xs">
+            {activeTab === 'vite-starter' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="font-semibold text-foreground flex items-center gap-1.5">
+                    <Zap className="size-3.5 text-amber-500 shrink-0" />
+                    React + Vite i18n Starter Kit (Zero Daemon &amp; Native HMR)
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-primary/15 text-primary font-bold">
+                    Recommended for Web
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  A production-ready starter kit containing your exported locales, autogenerated <code className="font-mono">translations.d.ts</code>, an ultra-lightweight client loader (<code className="font-mono">i18n.ts</code>), and an embedded Devtools Drawer (<code className="font-mono">&lt;JsonLinkDevtools /&gt;</code>) for live in-app copy tweaking.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-border/50 text-[11px]">
+                  <div className="bg-background/80 border border-border/80 rounded-md p-2">
+                    <strong className="text-foreground block mb-0.5">Option A: Drop Into Existing Project</strong>
+                    <span className="text-muted-foreground">Copy <code className="font-mono text-primary font-semibold">src/locales/</code> into your project + 3 lines of loader code. Zero lock-in.</span>
+                  </div>
+                  <div className="bg-background/80 border border-border/80 rounded-md p-2">
+                    <strong className="text-foreground block mb-0.5">Option B: Standalone Starter Repo</strong>
+                    <span className="text-muted-foreground">Extract zip and run <code className="font-mono text-primary font-semibold">npm i &amp;&amp; npm run dev</code> for a real-time localized app demo.</span>
+                  </div>
+                </div>
+                <div className="items-center gap-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-foreground flex items-center gap-1 shrink-0">
+                    <span className="text-amber-500">⚡</span> Live Devtools:
+                  </span>
+                  <span>Includes <code className="font-mono text-primary font-semibold">&lt;JsonLinkDevtools /&gt;</code> drawer for in-browser key search and live in-memory copy updates.</span>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+            {activeTab === 'project-bundle' && (
+              <p className="text-muted-foreground">
+                ⚡ <strong>One-Click Project Bundle</strong>: Generates an organized <code className="font-mono">.zip</code> containing pre-structured directories for Web (<code className="font-mono">web-locales/</code>), Flutter (<code className="font-mono">flutter-l10n/</code>), iOS (<code className="font-mono">ios-strings/</code>), Android (<code className="font-mono">android-res/</code>), and TypeScript declarations.
+              </p>
+            )}
+            {activeTab === 'excel' && (
+              <p className="text-muted-foreground">
+                Multi-column spreadsheet with columns for Key and languages ({languages.join(', ')}). Formatted with styled header and auto column width.
+              </p>
+            )}
+            {activeTab === 'csv' && (
+              <p className="text-muted-foreground">
+                Comma-Separated Values embedded with UTF-8 BOM so Myanmar Unicode never turns into question marks in Excel or Google Sheets.
+              </p>
+            )}
+            {activeTab === 'json-zip' && (
+              <p className="text-muted-foreground">
+                Creates a <code className="font-mono">.zip</code> containing individual JSON files: {languages.map(l => `${l}.json`).join(', ')}.
+              </p>
+            )}
+            {activeTab === 'json-combined' && (
+              <p className="text-muted-foreground">
+                Combines all languages into a single unified JSON object (e.g. <code className="font-mono">{`{ "en": {...}, "my": {...} }`}</code>).
+              </p>
+            )}
+            {activeTab === 'yaml-zip' && (
+              <p className="text-muted-foreground">
+                Export YAML files (<code className="font-mono">en.yaml</code>, <code className="font-mono">my.yaml</code>) for Flutter, Ruby on Rails, or Symfony.
+              </p>
+            )}
+            {activeTab === 'android-xml' && (
+              <p className="text-muted-foreground">
+                Creates Android-ready folder structure (<code className="font-mono">res/values/strings.xml</code>, <code className="font-mono">res/values-my/strings.xml</code>) with XML-escaped entities.
+              </p>
+            )}
+            {activeTab === 'ios-strings' && (
+              <p className="text-muted-foreground">
+                Creates Apple Xcode localization folders (<code className="font-mono">en.lproj/Localizable.strings</code>, <code className="font-mono">my.lproj/Localizable.strings</code>).
+              </p>
+            )}
+            {activeTab === 'arb-zip' && (
+              <p className="text-muted-foreground">
+                Flutter Application Resource Bundle (<code className="font-mono">app_en.arb</code>, <code className="font-mono">app_my.arb</code>) with <code className="font-mono">@@locale</code> and <code className="font-mono">@key</code> descriptions.
+              </p>
+            )}
+            {activeTab === 'typescript-dts' && (
+              <p className="text-muted-foreground">
+                Generates strongly-typed TypeScript definitions (<code className="font-mono">translations.d.ts</code>) for full compile-time autocomplete of all translation keys.
+              </p>
+            )}
+          </div>
 
-        {/* Live Code Preview */}
-        {previewText && (
-          <div className="flex flex-col gap-1 border-t border-border pt-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-muted-foreground">Preview</span>
-                {(activeTab === 'json-zip' || activeTab === 'yaml-zip' || activeTab === 'android-xml' || activeTab === 'ios-strings' || activeTab === 'arb-zip') && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="bg-muted border border-border rounded px-2 py-0.5 text-xs font-mono uppercase cursor-pointer flex items-center gap-1 hover:bg-accent">
-                        {previewLang}
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-28">
-                      {languages.map(l => (
-                        <DropdownMenuItem
-                          key={l}
-                          onClick={() => setPreviewLang(l)}
-                          className="text-xs font-mono uppercase cursor-pointer"
-                        >
-                          {l}
+          {/* Options & Filename */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 border-t border-border pt-3 text-xs">
+            <div className="flex flex-col gap-1">
+              <label className="font-semibold text-foreground">File Name:</label>
+              <Input
+                value={filename}
+                onChange={e => setFilename(e.target.value)}
+                placeholder="translations"
+                className="text-xs h-8"
+              />
+            </div>
+
+            {(activeTab === 'json-zip' || activeTab === 'json-combined' || activeTab === 'yaml-zip' || activeTab === 'arb-zip') && (
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-foreground">Structure & Indent:</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNested(false)}
+                    className={`px-2 py-1 rounded border text-xs cursor-pointer transition-colors ${!nested ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'
+                      }`}
+                  >
+                    Flat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNested(true)}
+                    className={`px-2 py-1 rounded border text-xs cursor-pointer transition-colors ${nested ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-accent'
+                      }`}
+                  >
+                    Nested
+                  </button>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <span className="text-muted-foreground text-[11px]">Indent:</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="bg-muted border border-border rounded px-2 py-0.5 text-xs cursor-pointer flex items-center gap-1 hover:bg-accent">
+                          {indent} sp
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-24">
+                        <DropdownMenuItem onClick={() => setIndent(2)} className="text-xs cursor-pointer">
+                          2 spaces
                         </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                <span className="text-[10px] text-muted-foreground">(Sample)</span>
+                        <DropdownMenuItem onClick={() => setIndent(4)} className="text-xs cursor-pointer">
+                          4 spaces
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Live Code Preview */}
+          {previewText && (
+            <div className="flex flex-col gap-1 border-t border-border pt-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-muted-foreground">Preview</span>
+                  {(activeTab === 'json-zip' || activeTab === 'yaml-zip' || activeTab === 'android-xml' || activeTab === 'ios-strings' || activeTab === 'arb-zip') && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="bg-muted border border-border rounded px-2 py-0.5 text-xs font-mono uppercase cursor-pointer flex items-center gap-1 hover:bg-accent">
+                          {previewLang}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-28">
+                        {languages.map(l => (
+                          <DropdownMenuItem
+                            key={l}
+                            onClick={() => setPreviewLang(l)}
+                            className="text-xs font-mono uppercase cursor-pointer"
+                          >
+                            {l}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  <span className="text-[10px] text-muted-foreground">(Sample)</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCopyPreview}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="size-3 text-emerald-500" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCopyPreview}
-                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {copied ? (
-                  <>
-                    <Check className="size-3 text-emerald-500" />
-                    <span>Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3" />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
+              <pre className="p-2 sm:p-2.5 bg-muted/60 border border-border rounded-lg text-[10.5px] sm:text-[11px] font-mono max-h-24 sm:max-h-32 overflow-y-auto leading-tight text-foreground select-all">
+                {previewText}
+              </pre>
             </div>
-
-            <pre className="p-2 sm:p-2.5 bg-muted/60 border border-border rounded-lg text-[10.5px] sm:text-[11px] font-mono max-h-24 sm:max-h-32 overflow-y-auto leading-tight text-foreground select-all">
-              {previewText}
-            </pre>
-          </div>
-        )}
+          )}
         </DialogBody>
 
         <DialogFooter>
@@ -461,7 +515,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             className="flex-1 sm:flex-none gap-1.5 text-xs h-8 shadow-xs font-semibold cursor-pointer"
           >
             <Download className="size-3.5" />
-            <span>Download {activeTab === 'typescript-dts' ? 'TYPESCRIPT' : activeTab.replace('-', ' ').toUpperCase()}</span>
+            <span>Download {activeTab === 'typescript-dts' ? 'TYPESCRIPT' : activeTab === 'vite-starter' ? 'VITE STARTER (ZIP)' : activeTab.replace('-', ' ').toUpperCase()}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

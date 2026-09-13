@@ -25,6 +25,7 @@ import {
   MousePointerClick,
   Layers,
   GitPullRequest,
+  Zap,
 } from 'lucide-react';
 
 interface AboutPageProps {
@@ -56,9 +57,9 @@ const highlights = [
   {
     icon: <FileSpreadsheet className="size-4 text-blue-500" />,
     badgeText: 'Formats',
-    title: '10+ Formats & Flutter ARB',
+    title: '11+ Formats & Vite Starter',
     description:
-      'Roundtrip nested & flat JSON, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
+      'Roundtrip nested & flat JSON, Vite React i18n starter with HMR, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
   },
   {
     icon: <Sparkles className="size-4 text-violet-500" />,
@@ -95,6 +96,13 @@ const highlights = [
     description:
       'Connect any repo with a Personal Access Token to pull translation files, edit in spreadsheet, and open automated Pull Requests. Protected by a strict locales-only safety lock.',
   },
+  {
+    icon: <Zap className="size-4 text-amber-500" />,
+    badgeText: 'React Starter',
+    title: 'React + Vite Starter & Drop-In i18n',
+    description:
+      'One-click export to a production-ready Vite starter kit or drop /src/locales into your existing stack with typed translations.d.ts, a 50-line reactive client loader (i18n.ts), and native HMR.',
+  },
 ];
 
 const developerFeatures = [
@@ -102,6 +110,11 @@ const developerFeatures = [
     icon: <Terminal className="size-4 text-primary" />,
     title: 'MCP Server for AI IDEs',
     description: 'Connect Zawgyi converter, linter, parsers, and exporters to Claude Desktop or Cursor via stdio JSON-RPC 2.0.',
+  },
+  {
+    icon: <Zap className="size-4 text-primary" />,
+    title: 'Vite Client Loader & Devtools Drawer',
+    description: 'Zero-overhead client loader (< 50 lines) with reactive useTranslation(), embedded in-app Devtools drawer for live copy tweaking, and instant Vite HMR. Bundled with the official jsonlink-vite-i18n agent skill.',
   },
   {
     icon: <Keyboard className="size-4 text-primary" />,

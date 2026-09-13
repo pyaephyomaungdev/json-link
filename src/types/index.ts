@@ -25,7 +25,8 @@ export type ExportFormat =
   | 'ios-strings'
   | 'arb-zip'
   | 'typescript-dts'
-  | 'project-bundle';
+  | 'project-bundle'
+  | 'vite-starter';
 
 export interface ExportOptions {
   format: ExportFormat;

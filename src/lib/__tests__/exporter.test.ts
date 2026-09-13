@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import JSZip from 'jszip';
 import {
   generateLanguageJsonData,
   objectToYaml,
@@ -13,6 +14,7 @@ import {
   generateIosStrings,
   generateArbData,
   exportAllAsProjectBundle,
+  exportToViteStarterZip,
 } from '../exporter';
 import { TranslationItem } from '@/types';
 
@@ -238,6 +240,84 @@ describe('exporter.ts', () => {
       expect(arb['@appTitle']).toEqual({ description: 'Application Title' });
       expect(arb['btnSubmit']).toBe('Submit');
       expect(arb['@btnSubmit']).toBeUndefined();
+    });
+  });
+
+  describe('exportToViteStarterZip', () => {
+    it('creates and downloads a complete Vite starter ZIP with package.json, i18n.ts, devtools.tsx, and locales', async () => {
+      await exportToViteStarterZip(sampleItems, languages, { nested: false }, 'my_starter.zip');
+
+      const mockCreateObjectURL = vi.mocked(URL.createObjectURL);
+      expect(mockCreateObjectURL).toHaveBeenCalled();
+
+      // Retrieve the generated Blob passed to downloadBlob
+      const blob = mockCreateObjectURL.mock.calls[0][0] as Blob;
+      expect(blob).toBeInstanceOf(Blob);
+
+      // Unpack the ZIP archive to verify files and content
+      const unzipped = await JSZip.loadAsync(blob);
+      expect(unzipped.file('package.json')).not.toBeNull();
+      expect(unzipped.file('vite.config.ts')).not.toBeNull();
+      expect(unzipped.file('tsconfig.json')).not.toBeNull();
+      expect(unzipped.file('index.html')).not.toBeNull();
+      expect(unzipped.file('src/locales/en.json')).not.toBeNull();
+      expect(unzipped.file('src/locales/my.json')).not.toBeNull();
+      expect(unzipped.file('src/locales/translations.d.ts')).not.toBeNull();
+
+      // Verify i18n.ts contains updateTranslation for reactive updates
+      const i18nContent = await unzipped.file('src/locales/i18n.ts')?.async('text');
+      expect(i18nContent).toContain('export function updateTranslation');
+      expect(i18nContent).toContain('export function useTranslation');
+
+      // Verify devtools.tsx contains JsonLinkDevtools drawer component
+      const devtoolsContent = await unzipped.file('src/locales/devtools.tsx')?.async('text');
+      expect(devtoolsContent).toContain('export function JsonLinkDevtools');
+      expect(devtoolsContent).toContain('updateTranslation');
+
+      // Verify App.tsx mounts JsonLinkDevtools
+      const appContent = await unzipped.file('src/App.tsx')?.async('text');
+      expect(appContent).toContain('JsonLinkDevtools');
+    });
+
+    it('generates a starter kit that compiles cleanly with TypeScript tsc', async () => {
+      await exportToViteStarterZip(sampleItems, languages, { nested: false }, 'tsc_test.zip');
+      const mockCreateObjectURL = vi.mocked(URL.createObjectURL);
+      const blob = mockCreateObjectURL.mock.calls[mockCreateObjectURL.mock.calls.length - 1][0] as Blob;
+      const unzipped = await JSZip.loadAsync(blob);
+
+      const fs = await import('fs');
+      const path = await import('path');
+      const { execSync } = await import('child_process');
+
+      const tempDir = path.join(process.cwd(), 'node_modules', '.tmp_starter_tsc_' + Date.now());
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      try {
+        for (const [filename, file] of Object.entries(unzipped.files)) {
+          if (file.dir) {
+            fs.mkdirSync(path.join(tempDir, filename), { recursive: true });
+          } else {
+            const fullPath = path.join(tempDir, filename);
+            fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+            const content = await file.async('nodebuffer');
+            fs.writeFileSync(fullPath, content);
+          }
+        }
+
+        // Link node_modules
+        fs.symlinkSync(path.join(process.cwd(), 'node_modules'), path.join(tempDir, 'node_modules'), 'junction');
+
+        // Compile with starter's own tsconfig.json
+        try {
+          const output = execSync('npx tsc --noEmit -p tsconfig.json', { cwd: tempDir, encoding: 'utf-8' });
+          expect(output).toBe('');
+        } catch (err: any) {
+          console.error("TSC ERRORS:\n", err.stdout?.toString());
+          throw err;
+        }
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
     });
   });
 });
