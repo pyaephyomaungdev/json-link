@@ -263,20 +263,22 @@ describe('exporter.ts', () => {
       expect(unzipped.file('src/locales/en.json')).not.toBeNull();
       expect(unzipped.file('src/locales/my.json')).not.toBeNull();
       expect(unzipped.file('src/locales/translations.d.ts')).not.toBeNull();
+      expect(unzipped.file('.agents/skills/jsonlink-vite-i18n/SKILL.md')).not.toBeNull();
 
       // Verify i18n.ts contains updateTranslation for reactive updates
       const i18nContent = await unzipped.file('src/locales/i18n.ts')?.async('text');
       expect(i18nContent).toContain('export function updateTranslation');
       expect(i18nContent).toContain('export function useTranslation');
 
-      // Verify devtools.tsx contains JsonLinkDevtools drawer component
+      // Verify devtools.tsx contains JsonLinkDevtools drawer component and Download JSON button
       const devtoolsContent = await unzipped.file('src/locales/devtools.tsx')?.async('text');
       expect(devtoolsContent).toContain('export function JsonLinkDevtools');
       expect(devtoolsContent).toContain('updateTranslation');
+      expect(devtoolsContent).toContain('Download JSON');
 
-      // Verify App.tsx mounts JsonLinkDevtools
+      // Verify App.tsx mounts JsonLinkDevtools gated with import.meta.env.DEV
       const appContent = await unzipped.file('src/App.tsx')?.async('text');
-      expect(appContent).toContain('JsonLinkDevtools');
+      expect(appContent).toContain('import.meta.env.DEV && <JsonLinkDevtools />');
     });
 
     it('generates a starter kit that compiles cleanly with TypeScript tsc', async () => {

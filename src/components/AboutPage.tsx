@@ -59,7 +59,7 @@ const highlights = [
     badgeText: 'Formats',
     title: '11+ Formats & Vite Starter',
     description:
-      'Roundtrip nested & flat JSON, Vite React i18n starter with HMR, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
+      'Roundtrip nested & flat JSON, Flutter ARB (with @key metadata and single-file download), one-click Vite React i18n starter with HMR, Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects.',
   },
   {
     icon: <Sparkles className="size-4 text-violet-500" />,
@@ -101,7 +101,7 @@ const highlights = [
     badgeText: 'React Starter',
     title: 'React + Vite Starter & Drop-In i18n',
     description:
-      'One-click export to a production-ready Vite starter kit or drop /src/locales into your existing stack with typed translations.d.ts, a 50-line reactive client loader (i18n.ts), and native HMR.',
+      'One-click export to a production-ready Vite starter kit or drop /src/locales into your existing stack with typed translations.d.ts, a lightweight reactive client loader (i18n.ts, ~120 lines), and native HMR.',
   },
 ];
 
@@ -114,7 +114,7 @@ const developerFeatures = [
   {
     icon: <Zap className="size-4 text-primary" />,
     title: 'Vite Client Loader & Devtools Drawer',
-    description: 'Zero-overhead client loader (< 50 lines) with reactive useTranslation(), embedded in-app Devtools drawer for live copy tweaking, and instant Vite HMR. Bundled with the official jsonlink-vite-i18n agent skill.',
+    description: 'Zero-dependency client loader (~120 lines) with reactive useTranslation(), embedded in-app Devtools drawer for live copy tweaking, and instant Vite HMR. Bundled with the official jsonlink-vite-i18n agent skill in the ZIP.',
   },
   {
     icon: <Keyboard className="size-4 text-primary" />,

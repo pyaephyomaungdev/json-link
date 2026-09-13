@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { TranslationItem, ExportOptions } from '@/types';
 import { unflattenObject } from './parser';
+import { VITE_STARTER_AI_SKILL_MD } from './skillTemplate';
 
 /**
  * Downloads a Blob directly in the browser
@@ -622,7 +623,9 @@ export default defineConfig({
 
 Exported from [JSON Link](https://json-link.pages.dev) on ${new Date().toISOString().split('T')[0]}.
 
-This starter kit includes your exported translations, strongly-typed TypeScript definitions, and an ultra-lightweight, zero-dependency client loader (\`src/locales/i18n.ts\`) with native Vite HMR.
+Tested Golden Stack: **React 19.0.0** • **Vite 6.0.0** • **TypeScript 5.7.2**
+
+This starter kit includes your exported translations, strongly-typed TypeScript definitions (\`translations.d.ts\`), an ultra-lightweight client loader (\`src/locales/i18n.ts\`, ~120 lines, zero external dependencies) with native Vite HMR, and the embedded live Devtools drawer (\`<JsonLinkDevtools />\`).
 
 ---
 
@@ -636,7 +639,7 @@ npm install
 npm run dev
 \`\`\`
 
-Open your browser at \`http://localhost:5173\` to see real-time language switching and HMR live updates.
+Open your browser at \`http://localhost:5173\` to see real-time language switching, live copy tweaking via Devtools, and HMR updates.
 
 ---
 
@@ -688,6 +691,9 @@ export function App() {
 }
 \`\`\`
 Click the floating **⚡ JSON Link Devtools** pill in the bottom corner to search keys, live-tweak copy strings directly inside the running browser tab, and 1-click download or copy updated JSON dictionaries!
+
+### Step 5: Official AI Skill Bundled
+This starter kit includes \`.agents/skills/jsonlink-vite-i18n/SKILL.md\` directly in the archive. AI coding tools (Cursor, Claude Desktop, Antigravity) will automatically discover it to help you add new keys, wire up translations, or configure persistence with zero prompt setup.
 `;
   zip.file('README.md', readmeMd);
 
@@ -1258,7 +1264,7 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
                   cursor: 'pointer',
                 }}
               >
-                💾 Save JSON
+                💾 Download JSON
               </button>
             </div>
           </div>
@@ -1406,13 +1412,15 @@ export default function App() {
         </ol>
       </div>
 
-      {/* Devtools Prompt */}
-      <div style={{ textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
-        💡 Click the <strong style={{ color: '#10b981' }}>⚡ JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
-      </div>
+      {/* Devtools Prompt (DEV mode only) */}
+      {import.meta.env.DEV && (
+        <div style={{ textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+          💡 In local dev mode (<code>import.meta.env.DEV</code>), click the <strong style={{ color: '#10b981' }}>⚡ JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
+        </div>
+      )}
 
-      {/* Embedded In-App Devtools Drawer */}
-      <JsonLinkDevtools />
+      {/* Embedded In-App Devtools Drawer (Gated via import.meta.env.DEV) */}
+      {import.meta.env.DEV && <JsonLinkDevtools />}
     </div>
   );
 }
@@ -1432,6 +1440,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 `;
   zip.file('src/main.tsx', mainTsx);
+
+  // 10. .agents/skills/jsonlink-vite-i18n/SKILL.md (Official AI Agent Skill)
+  zip.file('.agents/skills/jsonlink-vite-i18n/SKILL.md', VITE_STARTER_AI_SKILL_MD);
 
   const blob = await zip.generateAsync({ type: 'blob' });
   downloadBlob(blob, zipFilename.endsWith('.zip') ? zipFilename : `${zipFilename}.zip`);
