@@ -529,13 +529,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const formulaInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus input when entering edit mode
+  // Auto-focus and select input ONLY once when entering edit mode for a cell,
+  // preventing re-selection on every keystroke/character delete
+  const activeEditId = editingCell ? `${editingCell.key}:${editingCell.field}` : null;
+  const prevActiveEditIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (activeEditId && activeEditId !== prevActiveEditIdRef.current) {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.select();
+      }
     }
-  }, [editingCell]);
+    prevActiveEditIdRef.current = activeEditId;
+  }, [activeEditId]);
 
   const handleStartEdit = (key: string, field: string, currentValue: string) => {
     setEditingCell({ key, field, value: currentValue });

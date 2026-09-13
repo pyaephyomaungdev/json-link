@@ -159,4 +159,31 @@ describe('SpreadsheetTable', () => {
     fireEvent.click(deselectBtn);
     expect(screen.queryByTestId('bulk-actions-bar')).toBeNull();
   });
+
+  it('selects cell text once on start edit, but does not re-select on subsequent keystrokes/deletions', () => {
+    const selectSpy = vi.spyOn(HTMLTextAreaElement.prototype, 'select');
+    const { container } = render(<SpreadsheetTable {...defaultProps} />);
+
+    // Double click 'Sign In' cell to start editing
+    const cell = screen.getByText('Sign In');
+    fireEvent.doubleClick(cell);
+
+    // Textarea should appear in the table cell and be selected initially
+    const textarea = container.querySelector('table textarea') as HTMLTextAreaElement;
+    expect(textarea).not.toBeNull();
+    expect(textarea.value).toBe('Sign In');
+    expect(selectSpy).toHaveBeenCalledTimes(1);
+
+    // Simulate deleting a character in the middle (typing / backspace)
+    fireEvent.change(textarea, { target: { value: 'Sig In' } });
+    expect(textarea.value).toBe('Sig In');
+
+    // select() should NOT have been called again on change
+    expect(selectSpy).toHaveBeenCalledTimes(1);
+
+    // Simulate deleting another character
+    fireEvent.change(textarea, { target: { value: 'Si In' } });
+    expect(selectSpy).toHaveBeenCalledTimes(1);
+  });
 });
+
