@@ -693,7 +693,7 @@ export function App() {
   );
 }
 \`\`\`
-Click the floating **⚡ JSON Link Devtools** pill in the bottom corner to search keys, live-tweak copy strings directly inside the running browser tab, and 1-click download or copy updated JSON dictionaries!
+Click the floating **JSON Link Devtools** pill in the bottom corner to search keys, live-tweak copy strings directly inside the running browser tab, and 1-click download or copy updated JSON dictionaries!
 
 ### Step 5: Official AI Skill Bundled
 This starter kit includes \`.agents/skills/jsonlink-vite-i18n/SKILL.md\` directly in the archive. AI coding tools (Cursor, Claude Desktop, Antigravity) will automatically discover it to help you add new keys, wire up translations, or configure persistence with zero prompt setup.
@@ -894,6 +894,50 @@ interface KeyEditorRowProps {
   onUpdate: (key: string, val: string) => void;
 }
 
+function ZapIcon({ size = 13, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+    </svg>
+  );
+}
+
+function CopyIcon({ size = 12, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function DownloadIcon({ size = 12, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
+  );
+}
+
+function CheckIcon({ size = 12, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function XIcon({ size = 14, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
 function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditorRowProps) {
   const [val, setVal] = useState(initialValue);
 
@@ -937,9 +981,11 @@ function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditor
             color: 'hsl(var(--muted-foreground))',
             padding: '2px 4px',
             borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          📋
+          <CopyIcon size={12} />
         </button>
       </div>
       <textarea
@@ -1046,7 +1092,9 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
           }}
           title="Open JSON Link Devtools"
         >
-          <span style={{ color: 'hsl(var(--primary))' }}>⚡</span>
+          <span style={{ color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center' }}>
+            <ZapIcon size={13} />
+          </span>
           <span>JSON Link Devtools</span>
           <span
             style={{
@@ -1111,7 +1159,9 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: 'hsl(var(--primary))', fontSize: '14px', fontWeight: 800 }}>⚡</span>
+              <span style={{ color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center' }}>
+                <ZapIcon size={14} />
+              </span>
               <span style={{ color: 'hsl(var(--foreground))', fontSize: '13px', fontWeight: 700 }}>
                 JSON Link Devtools
               </span>
@@ -1138,13 +1188,15 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
                 border: 'none',
                 color: 'hsl(var(--muted-foreground))',
                 cursor: 'pointer',
-                fontSize: '16px',
                 padding: '4px',
-                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
               }}
               title="Close drawer"
             >
-              ✕
+              <XIcon size={15} />
             </button>
           </div>
 
@@ -1264,9 +1316,22 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                {copied ? '✓ Copied' : '📋 Copy JSON'}
+                {copied ? (
+                  <>
+                    <CheckIcon size={12} />
+                    <span>Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon size={12} />
+                    <span>Copy JSON</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
@@ -1281,9 +1346,13 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                💾 Download JSON
+                <DownloadIcon size={12} />
+                <span>Download JSON</span>
               </button>
             </div>
           </div>
@@ -1376,8 +1445,38 @@ code {
   const sampleKey = items[0]?.key || 'app.title';
   const sampleKey2 = items[1]?.key || items[0]?.key || 'app.description';
 
-  const appTsx = `import { useTranslation } from './locales/i18n';
+  const appTsx = `import type React from 'react';
+import { useTranslation } from './locales/i18n';
 import { JsonLinkDevtools } from './locales/devtools';
+
+function RocketIcon({ size = 15, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </svg>
+  );
+}
+
+function LightbulbIcon({ size = 14, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+    </svg>
+  );
+}
+
+function ZapIcon({ size = 12, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+    </svg>
+  );
+}
 
 export default function App() {
   const { t, language, setLanguage, languages } = useTranslation();
@@ -1515,8 +1614,8 @@ export default function App() {
         padding: '18px 20px',
         marginBottom: '20px',
       }}>
-        <div style={{ fontWeight: 600, color: 'hsl(var(--foreground))', marginBottom: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>🚀</span>
+        <div style={{ fontWeight: 600, color: 'hsl(var(--foreground))', marginBottom: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <RocketIcon size={15} style={{ color: 'hsl(var(--primary))', flexShrink: 0 }} />
           <span>Drop into your existing React / Vite project:</span>
         </div>
         <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.8, fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>
@@ -1529,15 +1628,22 @@ export default function App() {
       {/* Devtools Prompt (DEV mode only) */}
       {import.meta.env.DEV && (
         <div style={{
-          textAlign: 'center',
           fontSize: '12px',
           color: 'hsl(var(--muted-foreground))',
           backgroundColor: 'hsl(var(--primary) / 0.06)',
           border: '1px solid hsl(var(--primary) / 0.15)',
           borderRadius: '8px',
           padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          lineHeight: 1.5,
         }}>
-          💡 In local dev mode (<code>import.meta.env.DEV</code>), click the <strong style={{ color: 'hsl(var(--primary))' }}>⚡ JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
+          <LightbulbIcon size={14} style={{ color: 'hsl(var(--primary))', flexShrink: 0 }} />
+          <span>
+            In local dev mode (<code>import.meta.env.DEV</code>), click the <strong style={{ color: 'hsl(var(--primary))', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><ZapIcon size={12} />JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
+          </span>
         </div>
       )}
 

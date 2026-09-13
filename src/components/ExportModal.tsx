@@ -160,7 +160,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }
 
     if (activeTab === 'project-bundle') {
-      return `📦 Complete Multi-Framework Bundle:\n\n` +
+      return `Complete Multi-Framework Bundle:\n\n` +
         `├── web-locales/ (${languages.map(l => `${l}.json`).join(', ')})\n` +
         `├── flutter-l10n/ (${languages.map(l => `app_${l}.arb`).join(', ')})\n` +
         `├── ios-strings/ (${languages.map(l => `${l}.lproj/Localizable.strings`).join(', ')})\n` +
@@ -347,8 +347,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               </div>
             )}
             {activeTab === 'project-bundle' && (
-              <p className="text-muted-foreground">
-                ⚡ <strong>One-Click Project Bundle</strong>: Generates an organized <code className="font-mono">.zip</code> containing pre-structured directories for Web (<code className="font-mono">web-locales/</code>), Flutter (<code className="font-mono">flutter-l10n/</code>), iOS (<code className="font-mono">ios-strings/</code>), Android (<code className="font-mono">android-res/</code>), and TypeScript declarations.
+              <p className="text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                <Zap className="size-3.5 text-amber-500 shrink-0" />
+                <strong>One-Click Project Bundle</strong>: Generates an organized <code className="font-mono">.zip</code> containing pre-structured directories for Web (<code className="font-mono">web-locales/</code>), Flutter (<code className="font-mono">flutter-l10n/</code>), iOS (<code className="font-mono">ios-strings/</code>), Android (<code className="font-mono">android-res/</code>), and TypeScript declarations.
               </p>
             )}
             {activeTab === 'excel' && (

@@ -81,6 +81,7 @@ import {
   Info,
   ArrowLeft,
   X,
+  Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -1796,8 +1797,8 @@ export function App() {
           {!isCoachingDismissed && items.length > 0 && (
             <div className="shrink-0 bg-primary/5 dark:bg-primary/10 border-b border-primary/20 px-3 sm:px-4 py-1.5 flex items-center justify-between gap-2 text-xs text-foreground transition-all">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="size-5 rounded bg-primary/15 text-primary flex items-center justify-center shrink-0 text-[11px] font-bold">
-                  💡
+                <span className="size-5 rounded bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Lightbulb className="size-3 text-primary" />
                 </span>
                 <p className="text-[11px] sm:text-xs text-muted-foreground truncate sm:text-clip">
                   <strong className="text-foreground font-semibold">Private & In-Browser:</strong> Your spreadsheet changes are saved automatically in this browser. Use <span className="font-semibold text-primary">Share</span> or <span className="font-semibold text-emerald-600 dark:text-emerald-400">Save (.jsonlink)</span> to back up or hand off anytime.

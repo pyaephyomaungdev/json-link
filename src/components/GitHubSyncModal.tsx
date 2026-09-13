@@ -27,6 +27,8 @@ import {
   Check,
   FileCode2,
   Download,
+  Lightbulb,
+  AlertTriangle,
 } from 'lucide-react';
 import { TranslationItem } from '@/types';
 import {
@@ -556,14 +558,17 @@ export function GitHubSyncModal({
                 {/* Token Scope & Privacy Guidance Note */}
                 <div className="p-3 rounded-lg bg-muted/50 border border-border/60 text-[11px] text-muted-foreground leading-relaxed flex flex-col gap-2 mt-0.5">
                   <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                    <span className="text-xs">💡</span>
+                    <Lightbulb className="size-3.5 text-primary shrink-0" />
                     <span>PAT Scope vs. App Filter</span>
                   </div>
                   <p>
                     GitHub tokens require <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground font-semibold">repo</code> scope (classic) or a fine-grained PAT with <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Contents</code> &amp; <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Pull requests</code> (read/write). While the token grant technically gives repository-level access on GitHub, <strong>JSON Link's client-side app filter strictly restricts all operations to translation files only</strong>.
                   </p>
-                  <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] leading-relaxed">
-                    <strong>⚠️ Local Storage Notice:</strong> Your token is stored in your browser's <code className="font-mono text-[10px]">localStorage</code> for convenience and communicated directly with GitHub's REST API (zero intermediary servers). We recommend using a fine-grained PAT with minimal repository scope and short expiration. Click "Disconnect Token" when finished or on shared computers.
+                  <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] leading-relaxed flex items-start gap-1.5">
+                    <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>Local Storage Notice:</strong> Your token is stored in your browser's <code className="font-mono text-[10px]">localStorage</code> for convenience and communicated directly with GitHub's REST API (zero intermediary servers). We recommend using a fine-grained PAT with minimal repository scope and short expiration. Click "Disconnect Token" when finished or on shared computers.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -739,7 +744,7 @@ export function GitHubSyncModal({
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-3">
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                     <CheckCircle2 className="size-5" />
-                    <span>Pull Request Created Successfully! 🎉</span>
+                    <span>Pull Request Created Successfully!</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Your translations have been committed to branch <code className="font-mono font-semibold text-foreground">{prResult.branchName}</code> and Pull Request <strong>#{prResult.pullRequestNumber}</strong> is ready on GitHub.

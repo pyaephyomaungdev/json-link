@@ -66,11 +66,11 @@ A clean, zero-dependency client loader that exposes:
 
 ### 3. `devtools.tsx` (In-App Devtools Drawer)
 Self-contained React component (`<JsonLinkDevtools />`) providing:
-- Floating launcher button (`⚡ JSON Link Devtools`) at the bottom corner.
+- Floating launcher button (`JSON Link Devtools`) at the bottom corner.
 - Slide-over inspection drawer with live search filter across all translation keys.
 - Language switching tabs to compare translations side-by-side.
 - Live in-memory copy editing with zero backend/daemons required.
-- 1-click clipboard copy (`📋 Copy JSON`) and direct file download (`💾 Download JSON`).
+- 1-click clipboard copy (`Copy JSON`) and direct file download (`Download JSON`).
 
 ---
 
@@ -155,11 +155,11 @@ When developers or QA want to inspect, search, and tweak copy directly inside th
    ```
 
 2. **In-Browser Inspection & Tweaking**:
-   - Click the floating **⚡ JSON Link Devtools** button in the bottom corner.
+   - Click the floating **JSON Link Devtools** button in the bottom corner.
    - Filter translation keys by key name or copy content in real time.
    - Switch language tabs (e.g. `EN`, `MY`, `JA`) to review translations side-by-side.
    - Edit any string in the textarea: `updateTranslation()` updates the in-memory dictionary and dispatches to `useTranslation()` subscribers, immediately re-rendering the running app's UI.
-   - Click **📋 Copy JSON** or **💾 Download JSON** to export updated dictionaries back into your project.
+   - Click **Copy JSON** or **Download JSON** to export updated dictionaries back into your project.
 
 ### Recipe 5: Adding a New Language Manually or via Agent
 
