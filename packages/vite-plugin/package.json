@@ -1,0 +1,39 @@
+{
+  "name": "@jsonlink/vite-plugin",
+  "version": "1.0.0",
+  "description": "Official JSON Link Vite Plugin & CLI for local development dashboard and two-way file synchronization",
+  "author": "JSON Link Team",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "json-link": "./bin/json-link.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "vite": ">=5.0.0"
+  },
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "json-link",
+    "i18n",
+    "localization",
+    "translation",
+    "devtools"
+  ]
+}

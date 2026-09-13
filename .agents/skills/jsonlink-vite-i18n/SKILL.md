@@ -76,9 +76,17 @@ Self-contained React component (`<JsonLinkDevtools />`) providing:
 
 ## Agent Integration Recipes
 
+### Recipe 0: Automated Setup via `npx json-link init` (1-Command)
+
+In any existing React + Vite project, run:
+```bash
+npx json-link init
+```
+This automatically configures `@jsonlink/vite-plugin` in `vite.config.ts`, creates `src/locales/` (`en.json`, `my.json`, `translations.d.ts`, `i18n.ts`), and mounts the interactive spreadsheet dashboard at `http://localhost:5173/__jsonlink` with direct two-way disk saving and instant HMR.
+
 ### Recipe 1: Dropping into an Existing React + Vite Project
 
-When asked to add localization or connect JSON Link to an existing React project:
+When asked to add localization or connect JSON Link to an existing React project manually:
 
 1. **Verify or create `src/locales/`**:
    Ensure `src/locales/` exists and contains the exported `.json` files and `i18n.ts`.

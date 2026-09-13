@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mcp:build": "tsc -p mcp/tsconfig.json",
-    "mcp:start": "node mcp/dist/index.js"
+    "mcp:start": "node mcp/dist/index.js",
+    "plugin:build": "tsc -p packages/vite-plugin/tsconfig.json",
+    "plugin:test": "vitest run packages/vite-plugin"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.11",
