@@ -215,7 +215,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth">
+    <div className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth relative">
+      {/* Screen-wide Ambient Background Aura (Screen အပြည့် ဖြန့်ကျက်ထားသော သဘာဝကျသည့် Gradient Glow) */}
+      <div className="absolute top-0 left-0 right-0 w-full h-[640px] pointer-events-none overflow-hidden select-none z-0">
+        <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-screen min-w-[1000px] max-w-[1920px] h-[600px] bg-gradient-to-b from-primary/12 via-teal-500/5 to-transparent blur-3xl rounded-full" />
+      </div>
+
       {/* Hidden File Input */}
       <input
         type="file"
@@ -230,20 +235,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         className="hidden"
       />
 
-
-
       {/* 2. Hero Section */}
-      <section className="relative w-full max-w-7xl mx-auto pt-8 pb-12 sm:pt-14 sm:pb-16 px-4 sm:px-6 flex flex-col items-center overflow-x-clip">
-        {/* Subtle Ambient Aura */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-[600px] sm:max-w-[700px] h-[320px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
-
+      <section className="relative z-10 w-full max-w-7xl mx-auto pt-8 pb-12 sm:pt-14 sm:pb-16 px-4 sm:px-6 flex flex-col items-center">
         {/* Hero Flanking Layout */}
         <div className="w-full max-w-full min-w-0 flex items-center justify-between gap-4 xl:gap-8">
           {/* Left Flank - Pure Floating Official Brand Logos (No Background Box, Larger Size, Glow Aura) */}
           <div className="hidden lg:flex flex-col items-center justify-center gap-6 xl:gap-8 w-28 xl:w-36 shrink-0 relative py-4 select-none">
-            {/* Ambient Background Aura */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-sky-500/15 via-emerald-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
-
             {leftFormats.map((f, i) => {
               const offsets = ['translate-x-4', '-translate-x-3', 'translate-x-5', '-translate-x-2'];
               return (
@@ -332,9 +329,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Right Flank - Pure Floating Official Brand Logos (No Background Box, Larger Size, Glow Aura) */}
           <div className="hidden lg:flex flex-col items-center justify-center gap-6 xl:gap-8 w-28 xl:w-36 shrink-0 relative py-4 select-none">
-            {/* Ambient Background Aura */}
-            <div className="absolute inset-0 bg-gradient-to-tl from-amber-500/15 via-rose-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
-
             {rightFormats.map((f, i) => {
               const offsets = ['-translate-x-4', 'translate-x-3', '-translate-x-5', 'translate-x-2'];
               return (
