@@ -449,7 +449,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <td className="py-2 px-3.5 text-foreground border-r border-border/40">
                       Welcome back, <span className="text-primary font-semibold font-mono">{'{user}'}</span>!
                     </td>
-                    <td className="py-2 px-3.5 text-foreground border-r border-border/40 leading-relaxed font-sans">
+                    <td className="py-2 px-3.5 text-foreground border-r border-border/40 leading-relaxed font-sans font-myanmar">
                       ပြန်လည်ကြိုဆိုပါသည် <span className="text-primary font-semibold font-mono">{'{user}'}</span>!
                     </td>
                     <td className="py-2 px-3.5 text-foreground">
@@ -462,7 +462,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 font-mono">
                       {'{count, plural, one{# item} other{# items}}'}
                     </td>
-                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans">
+                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans font-myanmar">
                       ပစ္စည်း <span className="font-mono text-foreground font-semibold">{'{count}'}</span> ခု
                     </td>
                     <td className="py-2 px-3.5 text-muted-foreground">
