@@ -454,7 +454,7 @@ export function GitHubSyncModal({
           <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-start gap-2.5">
             <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
             <div className="text-[11px] leading-relaxed">
-              <strong>Strict Locales-Only Safety Guard:</strong> This tool only accesses authorized translation files (<code className="font-mono text-xs">.json</code>, <code className="font-mono text-xs">.arb</code>, <code className="font-mono text-xs">.yaml</code>, <code className="font-mono text-xs">.xml</code>, <code className="font-mono text-xs">.strings</code>). Source code, configs, workflows, and secret files are permanently blocked from reading or writing.
+              <strong>Strict Locales-Only Safety Guard:</strong> JSON Link enforces a strict client-side path filter that only accesses authorized translation files (<code className="font-mono text-xs">.json</code>, <code className="font-mono text-xs">.arb</code>, <code className="font-mono text-xs">.yaml</code>, <code className="font-mono text-xs">.xml</code>, <code className="font-mono text-xs">.strings</code>). Non-localization files (source code, configs, CI workflows, secrets) are permanently blocked by the app filter from being read or written.
             </div>
           </div>
 
@@ -554,17 +554,17 @@ export function GitHubSyncModal({
                 </div>
 
                 {/* Token Scope & Privacy Guidance Note */}
-                <div className="p-2.5 rounded-lg bg-muted/50 border border-border/60 text-[11px] text-muted-foreground leading-relaxed flex flex-col gap-1 mt-0.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-foreground/90">
+                <div className="p-3 rounded-lg bg-muted/50 border border-border/60 text-[11px] text-muted-foreground leading-relaxed flex flex-col gap-2 mt-0.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
                     <span className="text-xs">💡</span>
-                    <span>Token Scope Recommendation</span>
+                    <span>PAT Scope vs. App Filter</span>
                   </div>
                   <p>
-                    Please create a classic token with <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground font-semibold">repo</code> scope (or a fine-grained PAT with <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Contents</code> &amp; <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Pull requests</code> read/write) so JSON Link can read locale files and open PRs.
+                    GitHub tokens require <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground font-semibold">repo</code> scope (classic) or a fine-grained PAT with <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Contents</code> &amp; <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Pull requests</code> (read/write). While the token grant technically gives repository-level access on GitHub, <strong>JSON Link's client-side app filter strictly restricts all operations to translation files only</strong>.
                   </p>
-                  <p className="text-[10px] text-muted-foreground/75">
-                    Your token is stored purely in your browser's <code className="font-mono text-[10px]">localStorage</code> and is never sent to any intermediary server.
-                  </p>
+                  <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] leading-relaxed">
+                    <strong>⚠️ Local Storage Notice:</strong> Your token is stored in your browser's <code className="font-mono text-[10px]">localStorage</code> for convenience and communicated directly with GitHub's REST API (zero intermediary servers). We recommend using a fine-grained PAT with minimal repository scope and short expiration. Click "Disconnect Token" when finished or on shared computers.
+                  </div>
                 </div>
               </div>
 

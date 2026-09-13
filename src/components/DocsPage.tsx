@@ -1065,7 +1065,7 @@ function GitHubSyncSection() {
           <span>Strict Locales-Only Safety Guardrail</span>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          To prevent accidental codebase disruption, the synchronization engine enforces an atomic client-side security policy. Access to source code (<code className="font-mono text-[10px]">src/</code>), dependencies (<code className="font-mono text-[10px]">node_modules</code>), CI workflows (<code className="font-mono text-[10px]">.github/workflows</code>), configurations (<code className="font-mono text-[10px]">package.json</code>, <code className="font-mono text-[10px]">tsconfig.json</code>), and secrets (<code className="font-mono text-[10px]">.env*</code>) is permanently blocked. Only authorized localization files (<code className="font-mono text-[10px]">.json</code>, <code className="font-mono text-[10px]">.arb</code>, <code className="font-mono text-[10px]">.yaml</code>, <code className="font-mono text-[10px]">.xml</code>, <code className="font-mono text-[10px]">.strings</code>) can be read or modified.
+          While GitHub tokens grant repository-level access on the API level, JSON Link's synchronization engine enforces an in-app client-side security policy. Access to non-localization files—source code (<code className="font-mono text-[10px]">src/</code>), dependencies (<code className="font-mono text-[10px]">node_modules</code>), CI workflows (<code className="font-mono text-[10px]">.github/workflows</code>), configurations (<code className="font-mono text-[10px]">package.json</code>, <code className="font-mono text-[10px]">tsconfig.json</code>), and secrets (<code className="font-mono text-[10px]">.env*</code>)—is permanently blocked by the client-side app filter. Only authorized localization files (<code className="font-mono text-[10px]">.json</code>, <code className="font-mono text-[10px]">.arb</code>, <code className="font-mono text-[10px]">.yaml</code>, <code className="font-mono text-[10px]">.xml</code>, <code className="font-mono text-[10px]">.strings</code>) can be read or modified.
         </p>
       </div>
 
@@ -1077,7 +1077,7 @@ function GitHubSyncSection() {
             Connect Token
           </h4>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Provide a GitHub Personal Access Token (classic with <code className="font-mono text-[10px]">repo</code> scope, or fine-grained PAT with Contents &amp; Pull requests read/write). Tokens are stored purely in browser <code className="font-mono text-[10px]">localStorage</code>.
+            Provide a GitHub Personal Access Token (classic with <code className="font-mono text-[10px]">repo</code> scope, or fine-grained PAT with Contents &amp; Pull requests read/write). Tokens are stored in browser <code className="font-mono text-[10px]">localStorage</code> for local convenience and sent directly to GitHub's official API. Disconnect anytime on shared devices.
           </p>
         </div>
 

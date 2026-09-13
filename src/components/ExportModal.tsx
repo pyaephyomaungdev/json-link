@@ -112,8 +112,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         `          <option key={lang} value={lang}>{lang.toUpperCase()}</option>\n` +
         `        ))}\n` +
         `      </select>\n\n` +
-        `      {/* Live In-App Devtools Drawer */}\n` +
-        `      <JsonLinkDevtools />\n` +
+        `      {/* Live In-App Devtools Drawer (DEV mode only) */}\n` +
+        `      {import.meta.env.DEV && <JsonLinkDevtools />}\n` +
         `    </div>\n` +
         `  );\n` +
         `}`;

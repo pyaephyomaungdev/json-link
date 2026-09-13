@@ -779,7 +779,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {[
               {
                 q: 'Does any translation data ever touch your servers?',
-                a: 'Never. JSON Link is strictly 100% client-side. All parsing, validation, AES-256 encryption, and file generation take place entirely inside your browser tab through Web Workers and Web Crypto.',
+                a: 'Never. JSON Link has zero backend servers, zero databases, and zero tracking. All parsing, validation, AES-256 encryption, and export generation take place 100% inside your browser tab via Web Workers and Web Crypto. (The only external network requests occur if you explicitly opt-in: direct BYOK calls to OpenRouter for AI translation, or direct calls to GitHub’s official REST API for repository sync).',
               },
               {
                 q: 'How does zero-knowledge encrypted sharing work without a database?',
@@ -799,7 +799,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: 'How does GitHub Sync work, and is it safe to use my Personal Access Token?',
-                a: 'GitHub Sync operates 100% client-side directly within your browser using official GitHub REST & Git Data APIs. Your Personal Access Token (PAT) is stored exclusively in your browser\'s localStorage and never touches any intermediate servers. Furthermore, JSON Link enforces a strict "Locales-Only Safety Guard" that permanently blocks source code, dependencies, and workflows—allowing modifications only to authorized localization files (.json, .arb, .yaml, .xml, .strings).',
+                a: 'GitHub Sync operates 100% client-side directly within your browser using official GitHub REST and Git Data APIs with zero intermediary servers. Your PAT is stored locally in your browser\'s localStorage for convenience (we recommend fine-grained tokens with minimal repo access and short expiry). While GitHub tokens grant technical repository permissions, JSON Link\'s client-side app filter strictly blocks non-locales paths—ensuring only authorized localization files (.json, .arb, .yaml, .xml, .strings) can ever be read or committed.',
               },
               {
                 q: 'Can I drop JSON Link exports directly into my existing React + Vite project?',
