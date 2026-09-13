@@ -1016,7 +1016,7 @@ function ExportersSection() {
           </Badge>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Transform any React + Vite codebase into an integrated localization workspace (like Storybook or Prisma Studio) with a single command:
+          Transform any React + Vite codebase into an integrated localization workspace with a single command:
         </p>
         <div className="p-3 rounded-lg bg-background/90 border border-border/80 font-mono text-[11px] text-foreground space-y-1 select-all">
           <p className="text-muted-foreground"># 1. Run automatic initializer in your Vite project root</p>

@@ -345,7 +345,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span className="text-foreground font-semibold select-all">npx json-link init</span>
               <span className="text-[10px] text-muted-foreground hidden sm:inline select-none">•</span>
               <span className="text-[11px] text-muted-foreground hidden sm:inline select-none">
-                Storybook-style dev dashboard on <code className="text-primary font-semibold">localhost:5173/__jsonlink</code>
+                Embedded dev dashboard on <code className="text-primary font-semibold">localhost:5173/__jsonlink</code>
               </span>
             </div>
           </div>
@@ -569,68 +569,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div>
             <p className="text-2xl sm:text-3xl font-extrabold text-foreground">Stdio MCP</p>
             <p className="text-xs text-muted-foreground mt-1 font-medium">Claude & Cursor Integration</p>
-          </div>
-        </div>
-      </section>
-
-      {/* 4.5. The Storybook for Localization: In-Project Dev Dashboard Showcase */}
-      <section id="dev-experience" className="w-full py-16 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-background p-6 sm:p-10 shadow-sm relative overflow-hidden">
-          <div className="max-w-3xl">
-            <Badge variant="outline" className="mb-3 text-xs font-mono text-primary border-primary/30 bg-primary/10">
-              Developer Experience (DX)
-            </Badge>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              The Storybook for Software Localization
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
-              Use JSON Link directly inside your existing React + Vite codebase. Run a single command to mount an interactive spreadsheet dashboard on localhost with direct two-way disk saving and instant HMR.
-            </p>
-
-            {/* 3 Simple Ways to Use JSON Link Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-              {/* Way 1: In-Project Devtool */}
-              <div className="p-4 rounded-xl border border-primary/40 bg-card/90 space-y-2.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                  <Zap className="size-4" />
-                  <span>1. In-Project Devtool</span>
-                </div>
-                <div className="p-2 rounded bg-muted/60 font-mono text-[11px] text-foreground select-all">
-                  npx json-link init
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Mounts at <code className="font-mono text-[10px] text-primary">localhost:5173/__jsonlink</code> with zero extra ports. Edits save directly to <code className="font-mono text-[10px]">src/locales/*.json</code> with instant HMR.
-                </p>
-              </div>
-
-              {/* Way 2: Web Workspace */}
-              <div className="p-4 rounded-xl border border-border/80 bg-card/90 space-y-2.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <UploadCloud className="size-4 text-emerald-500" />
-                  <span>2. Web Studio Workspace</span>
-                </div>
-                <div className="p-2 rounded bg-muted/60 font-mono text-[11px] text-foreground">
-                  json-link.pages.dev
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Drag and drop any translation files (.json, .arb, .xlsx, .csv, .strings). Zero server, 100% private in-browser spreadsheet with Chrome Folder Sync.
-                </p>
-              </div>
-
-              {/* Way 3: Drop-in Starter Kit */}
-              <div className="p-4 rounded-xl border border-border/80 bg-card/90 space-y-2.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Layers className="size-4 text-amber-500" />
-                  <span>3. Turnkey Drop-in Kit</span>
-                </div>
-                <div className="p-2 rounded bg-muted/60 font-mono text-[11px] text-foreground">
-                  src/locales/i18n.ts
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Export pre-structured <code className="font-mono text-[10px]">src/locales/</code> with an ultra-lightweight client loader (&lt;120 lines, 0 dependencies) and full TypeScript key autocomplete.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -878,7 +816,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 a: 'Yes. The Vite Starter export includes autogenerated TypeScript definitions (translations.d.ts), an ultra-lightweight client loader (i18n.ts, ~120 lines, zero dependencies), and the bundled AI Skill (.agents/skills/). Simply copy the /src/locales directory into your project, import useTranslation(), and enjoy instant Vite HMR whenever locale files update.',
               },
               {
-                q: 'How do I run JSON Link as a local dev tool inside my existing project like Storybook or Prisma Studio?',
+                q: 'How do I run JSON Link as an embedded dev tool inside my existing Vite project?',
                 a: 'Run `npx json-link init` in your Vite project root. It auto-configures `@jsonlink/vite-plugin` in your vite.config.ts and scaffolds `src/locales/`. When you run `npm run dev`, open `http://localhost:5173/__jsonlink`. You get the complete spreadsheet workspace embedded inside your dev server with zero extra ports. Any edits or AI translations you make are written directly to your local JSON files on disk, triggering instant Vite HMR in your running app!',
               },
             ].map((faq, idx) => {
