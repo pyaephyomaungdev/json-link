@@ -66,9 +66,15 @@ describe('Vite Plugin fsUtils & Middleware', () => {
       const languages = ['en', 'my'];
 
       const { updatedFiles } = writeLocalesToDisk(localesDir, records, languages, false, 2);
-      expect(updatedFiles.length).toBe(2);
+      expect(updatedFiles.length).toBe(3); // en.json, my.json, translations.d.ts
       expect(fs.existsSync(path.join(localesDir, 'en.json'))).toBe(true);
       expect(fs.existsSync(path.join(localesDir, 'my.json'))).toBe(true);
+      expect(fs.existsSync(path.join(localesDir, 'translations.d.ts'))).toBe(true);
+
+      const dtsContent = fs.readFileSync(path.join(localesDir, 'translations.d.ts'), 'utf-8');
+      expect(dtsContent).toContain('"app.title"');
+      expect(dtsContent).toContain('"btn.save"');
+      expect(dtsContent).toContain('"en" | "my"');
 
       const readBack = readLocalesFromDisk(localesDir, false);
       expect(readBack.languages.sort()).toEqual(['en', 'my'].sort());
@@ -77,6 +83,32 @@ describe('Vite Plugin fsUtils & Middleware', () => {
       const titleRecord = readBack.records.find(r => r.key === 'app.title');
       expect(titleRecord?.en).toBe('App');
       expect(titleRecord?.my).toBe('အက်ပ်');
+    });
+
+    it('updates translations.d.ts when a key or language is removed/edited', () => {
+      const localesDir = path.join(tempDir, 'locales-edit');
+      const initialRecords = [
+        { key: 'app.title', en: 'App', my: 'အက်ပ်' },
+        { key: 'auth.welcome', en: 'Welcome', my: 'ကြိုဆိုပါတယ်' },
+      ];
+      writeLocalesToDisk(localesDir, initialRecords, ['en', 'my'], false, 2);
+
+      // Now simulate user deleting auth.welcome and adding ja
+      const updatedRecords = [
+        { key: 'app.title', en: 'App Updated', ja: 'アプリ' },
+      ];
+      writeLocalesToDisk(localesDir, updatedRecords, ['en', 'ja'], false, 2);
+
+      // Verify my.json was removed from disk because 'my' is no longer in languages
+      expect(fs.existsSync(path.join(localesDir, 'my.json'))).toBe(false);
+      expect(fs.existsSync(path.join(localesDir, 'ja.json'))).toBe(true);
+
+      // Verify translations.d.ts has new key, removed old key, and new language union
+      const dtsContent = fs.readFileSync(path.join(localesDir, 'translations.d.ts'), 'utf-8');
+      expect(dtsContent).toContain('"app.title"');
+      expect(dtsContent).not.toContain('"auth.welcome"');
+      expect(dtsContent).toContain('"en" | "ja"');
+      expect(dtsContent).not.toContain('"my"');
     });
   });
 

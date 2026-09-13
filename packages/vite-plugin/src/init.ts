@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { generateTranslationsDts, generateI18nTs } from './fsUtils.js';
 
 export interface InitResult {
   success: boolean;
@@ -89,118 +90,13 @@ export function scaffoldLocales(targetDir: string): boolean {
   fs.writeFileSync(path.join(localesDir, 'my.json'), JSON.stringify(myData, null, 2) + '\n');
 
   // 3. translations.d.ts
-  const dtsContent = `export type SupportedLanguage = "en" | "my";
-
-export type TranslationKey =
-  | "app.title"
-  | "app.description"
-  | "auth.welcome"
-  | "common.save"
-  | "common.cancel";
-
-export interface TranslationDictionary {
-  [key: string]: string;
-}
-`;
+  const defaultKeys = Object.keys(enData);
+  const defaultLangs = ['en', 'my'];
+  const dtsContent = generateTranslationsDts(defaultKeys, defaultLangs);
   fs.writeFileSync(path.join(localesDir, 'translations.d.ts'), dtsContent);
 
   // 4. i18n.ts (Reactive client loader)
-  const i18nContent = `import { useSyncExternalStore } from 'react';
-import type { SupportedLanguage, TranslationKey } from './translations';
-import en from './en.json';
-import my from './my.json';
-
-export const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en', 'my'];
-
-export const resources: Record<SupportedLanguage, Record<string, any>> = {
-  en,
-  my,
-};
-
-let currentLanguage: SupportedLanguage = 'en';
-const listeners = new Set<() => void>();
-
-function notify() {
-  listeners.forEach((listener) => listener());
-}
-
-export function setLanguage(lang: SupportedLanguage): void {
-  if (resources[lang]) {
-    currentLanguage = lang;
-    notify();
-  }
-}
-
-export function getLanguage(): SupportedLanguage {
-  return currentLanguage;
-}
-
-export function updateTranslation(key: string, value: string, lang?: SupportedLanguage): void {
-  const targetLang = lang || currentLanguage;
-  if (!resources[targetLang]) return;
-  resources[targetLang][key] = value;
-  notify();
-}
-
-function resolveValue(obj: Record<string, any>, key: string): string | undefined {
-  if (obj[key] !== undefined) return String(obj[key]);
-  const parts = key.split('.');
-  let current: any = obj;
-  for (const part of parts) {
-    if (current && typeof current === 'object' && part in current) {
-      current = current[part];
-    } else {
-      return undefined;
-    }
-  }
-  return typeof current === 'string' ? current : undefined;
-}
-
-export function t(
-  key: TranslationKey | (string & {}),
-  params?: Record<string, string | number>,
-  lang?: SupportedLanguage
-): string {
-  const activeLang = lang || currentLanguage;
-  const dict = resources[activeLang] || resources['en'] || {};
-  let text = resolveValue(dict, key);
-
-  if (text === undefined) {
-    text = resolveValue(resources['en'] || {}, key) ?? key;
-  }
-
-  if (params && typeof text === 'string') {
-    return text.replace(/\\{([a-zA-Z0-9_]+)\\}/g, (_, varName) => {
-      return params[varName] !== undefined ? String(params[varName]) : \`{\${varName}}\`;
-    });
-  }
-
-  return text;
-}
-
-export function useTranslation() {
-  const lang = useSyncExternalStore(
-    (callback) => {
-      listeners.add(callback);
-      return () => listeners.delete(callback);
-    },
-    () => currentLanguage
-  );
-
-  return {
-    t,
-    language: lang,
-    setLanguage,
-    languages: SUPPORTED_LANGUAGES,
-  };
-}
-
-if (import.meta.hot) {
-  import.meta.hot.accept((newModule) => {
-    if (newModule) notify();
-  });
-}
-`;
+  const i18nContent = generateI18nTs(defaultLangs);
   fs.writeFileSync(path.join(localesDir, 'i18n.ts'), i18nContent);
 
   return true;
