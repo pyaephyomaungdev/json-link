@@ -609,6 +609,9 @@ export default defineConfig({
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JSON Link — Vite i18n Starter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
@@ -901,8 +904,8 @@ function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditor
   return (
     <div
       style={{
-        backgroundColor: '#0f172a',
-        border: '1px solid #1e293b',
+        backgroundColor: 'hsl(var(--muted) / 0.4)',
+        border: '1px solid hsl(var(--border))',
         borderRadius: '8px',
         padding: '10px 12px',
         display: 'flex',
@@ -913,9 +916,9 @@ function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditor
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <span
           style={{
-            fontFamily: 'ui-monospace, monospace',
+            fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            color: '#38bdf8',
+            color: 'hsl(var(--primary))',
             fontWeight: 600,
             wordBreak: 'break-all',
           }}
@@ -931,7 +934,7 @@ function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditor
             border: 'none',
             cursor: 'pointer',
             fontSize: '11px',
-            color: '#64748b',
+            color: 'hsl(var(--muted-foreground))',
             padding: '2px 4px',
             borderRadius: '4px',
           }}
@@ -950,13 +953,14 @@ function KeyEditorRow({ itemKey, initialValue, activeLang, onUpdate }: KeyEditor
         placeholder="Empty string..."
         style={{
           width: '100%',
-          backgroundColor: '#090d16',
-          border: '1px solid #334155',
+          backgroundColor: 'hsl(var(--background))',
+          border: '1px solid hsl(var(--input))',
           borderRadius: '6px',
           padding: '6px 8px',
-          color: '#f8fafc',
+          color: 'hsl(var(--foreground))',
           fontSize: '12px',
-          fontFamily: 'inherit',
+          fontFamily: 'var(--font-sans)',
+          lineHeight: 1.5,
           resize: 'vertical',
           boxSizing: 'border-box',
           outline: 'none',
@@ -1018,38 +1022,42 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 99999, fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ position: 'fixed', bottom: 16, right: 16, zIndex: 99999, fontFamily: 'var(--font-sans)' }}>
       {/* Floating Toggle Button */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
           style={{
-            backgroundColor: '#090d16',
-            color: '#f8fafc',
-            border: '1px solid #10b981',
+            backgroundColor: 'hsl(var(--card))',
+            color: 'hsl(var(--foreground))',
+            border: '1px solid hsl(var(--border))',
             borderRadius: '9999px',
-            padding: '8px 14px',
+            padding: '7px 14px',
             fontSize: '12px',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.25)',
-            transition: 'transform 0.15s ease',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.15s ease',
+            fontFamily: 'var(--font-sans)',
           }}
           title="Open JSON Link Devtools"
         >
-          <span style={{ color: '#10b981' }}>⚡</span>
+          <span style={{ color: 'hsl(var(--primary))' }}>⚡</span>
           <span>JSON Link Devtools</span>
           <span
             style={{
-              backgroundColor: '#1e293b',
-              padding: '2px 6px',
-              borderRadius: '6px',
+              backgroundColor: 'hsl(var(--muted))',
+              border: '1px solid hsl(var(--border))',
+              padding: '1px 6px',
+              borderRadius: '4px',
               fontSize: '10px',
-              color: '#34d399',
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              color: 'hsl(var(--foreground))',
               textTransform: 'uppercase',
             }}
           >
@@ -1058,10 +1066,10 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
           {modifiedCount > 0 && (
             <span
               style={{
-                backgroundColor: '#e11d48',
-                color: '#ffffff',
+                backgroundColor: 'hsl(var(--destructive))',
+                color: 'hsl(var(--destructive-foreground))',
                 borderRadius: '9999px',
-                padding: '1px 5px',
+                padding: '1px 6px',
                 fontSize: '10px',
                 fontWeight: 800,
               }}
@@ -1078,40 +1086,43 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
           style={{
             width: '420px',
             maxWidth: 'calc(100vw - 32px)',
-            height: '560px',
-            maxHeight: 'calc(100vh - 64px)',
-            backgroundColor: '#0c1220',
-            border: '1px solid #1e293b',
-            borderRadius: '16px',
+            height: '580px',
+            maxHeight: 'calc(100vh - 48px)',
+            backgroundColor: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '14px',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.05)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
             overflow: 'hidden',
+            color: 'hsl(var(--foreground))',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           {/* Header */}
           <div
             style={{
               padding: '12px 16px',
-              borderBottom: '1px solid #1e293b',
+              borderBottom: '1px solid hsl(var(--border))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: '#090d16',
+              backgroundColor: 'hsl(var(--card))',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#10b981', fontSize: '14px', fontWeight: 800 }}>⚡</span>
-              <span style={{ color: '#f8fafc', fontSize: '13px', fontWeight: 700 }}>
+              <span style={{ color: 'hsl(var(--primary))', fontSize: '14px', fontWeight: 800 }}>⚡</span>
+              <span style={{ color: 'hsl(var(--foreground))', fontSize: '13px', fontWeight: 700 }}>
                 JSON Link Devtools
               </span>
               <span
                 style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  backgroundColor: 'hsl(var(--primary) / 0.12)',
+                  color: 'hsl(var(--primary))',
+                  border: '1px solid hsl(var(--primary) / 0.25)',
                   fontSize: '10px',
                   fontWeight: 700,
+                  fontFamily: 'var(--font-mono)',
                   padding: '1px 6px',
                   borderRadius: '4px',
                 }}
@@ -1125,7 +1136,7 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#94a3b8',
+                color: 'hsl(var(--muted-foreground))',
                 cursor: 'pointer',
                 fontSize: '16px',
                 padding: '4px',
@@ -1138,35 +1149,40 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
           </div>
 
           {/* Subheader: Languages & Search */}
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Language Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginRight: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', fontWeight: 600, marginRight: '4px' }}>
                 Locale:
               </span>
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => {
-                    setInspectLang(lang);
-                    setLanguage(lang);
-                  }}
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textTransform: 'uppercase',
-                    backgroundColor: inspectLang === lang ? '#10b981' : '#1e293b',
-                    color: inspectLang === lang ? '#ffffff' : '#94a3b8',
-                  }}
-                >
-                  {lang}
-                </button>
-              ))}
+              {SUPPORTED_LANGUAGES.map((lang) => {
+                const isSelected = inspectLang === lang;
+                return (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => {
+                      setInspectLang(lang);
+                      setLanguage(lang);
+                    }}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '5px',
+                      border: '1px solid ' + (isSelected ? 'transparent' : 'hsl(var(--border))'),
+                      fontSize: '11px',
+                      fontWeight: isSelected ? 700 : 500,
+                      fontFamily: 'var(--font-mono)',
+                      cursor: 'pointer',
+                      textTransform: 'uppercase',
+                      backgroundColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--muted))',
+                      color: isSelected ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
+                      boxShadow: isSelected ? '0 1px 2px rgba(0, 0, 0, 0.1)' : 'none',
+                    }}
+                  >
+                    {lang}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Filter Search Input */}
@@ -1177,12 +1193,13 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
               placeholder="Filter keys or text content..."
               style={{
                 width: '100%',
-                backgroundColor: '#090d16',
-                border: '1px solid #334155',
+                backgroundColor: 'hsl(var(--background))',
+                border: '1px solid hsl(var(--input))',
                 borderRadius: '8px',
-                padding: '6px 10px',
-                color: '#f8fafc',
+                padding: '7px 12px',
+                color: 'hsl(var(--foreground))',
                 fontSize: '12px',
+                fontFamily: 'var(--font-sans)',
                 outline: 'none',
                 boxSizing: 'border-box',
               }}
@@ -1201,7 +1218,7 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
             }}
           >
             {filteredEntries.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#64748b', fontSize: '12px', padding: '32px 0' }}>
+              <div style={{ textAlign: 'center', color: 'hsl(var(--muted-foreground))', fontSize: '12px', padding: '32px 0' }}>
                 No translation keys match &ldquo;{query}&rdquo;
               </div>
             ) : (
@@ -1221,31 +1238,32 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
           <div
             style={{
               padding: '10px 16px',
-              borderTop: '1px solid #1e293b',
-              backgroundColor: '#090d16',
+              borderTop: '1px solid hsl(var(--border))',
+              backgroundColor: 'hsl(var(--card))',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '8px',
             }}
           >
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-mono)' }}>
               {filteredEntries.length} key{filteredEntries.length === 1 ? '' : 's'}
               {modifiedCount > 0 && \` • \${modifiedCount} edit\${modifiedCount === 1 ? '' : 's'}\`}
             </span>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
                 onClick={handleCopyJson}
                 style={{
-                  backgroundColor: '#1e293b',
-                  color: copied ? '#34d399' : '#f1f5f9',
-                  border: '1px solid #334155',
+                  backgroundColor: 'hsl(var(--secondary))',
+                  color: 'hsl(var(--secondary-foreground))',
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '6px',
-                  padding: '5px 10px',
+                  padding: '5px 12px',
                   fontSize: '11px',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
                 {copied ? '✓ Copied' : '📋 Copy JSON'}
@@ -1254,14 +1272,15 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
                 type="button"
                 onClick={handleDownloadJson}
                 style={{
-                  backgroundColor: '#10b981',
-                  color: '#ffffff',
+                  backgroundColor: 'hsl(var(--primary))',
+                  color: 'hsl(var(--primary-foreground))',
                   border: 'none',
                   borderRadius: '6px',
-                  padding: '5px 10px',
+                  padding: '5px 12px',
                   fontSize: '11px',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
                 💾 Download JSON
@@ -1281,21 +1300,74 @@ export function JsonLinkDevtools({ defaultOpen = false }: JsonLinkDevtoolsProps)
   box-sizing: border-box;
 }
 
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+  --radius: 0.5rem;
+
+  --font-sans: 'Inter', 'Noto Sans Myanmar', 'Pyidaungsu', 'Myanmar Text', 'Myanmar Sangam MN', 'Myanmar MN', 'Padauk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Noto Sans Myanmar', 'Pyidaungsu', 'Myanmar Text', 'Myanmar Sangam MN', 'Myanmar MN', 'Padauk', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 224 76% 48%;
+  }
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #090d16;
-  color: #f1f5f9;
+  font-family: var(--font-sans);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 `;
   zip.file('src/index.css', indexCss);
@@ -1312,25 +1384,49 @@ export default function App() {
 
   return (
     <div style={{ maxWidth: '640px', width: '100%', margin: '0 auto', position: 'relative' }}>
-      {/* Header & Brand */}
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{
-          display: 'inline-flex',
-          padding: '6px 14px',
-          borderRadius: '9999px',
-          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          color: '#34d399',
-          fontSize: '12px',
-          fontWeight: 600,
-          marginBottom: '16px'
-        }}>
-          ⚡ JSON Link Vite i18n Starter
+      {/* Brand Header */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #10b981 0%, #0d9488 50%, #4f46e5 100%)',
+            padding: '1.5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'hsl(var(--card))',
+              borderRadius: '8.5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <svg viewBox="0 0 32 32" fill="none" style={{ width: '22px', height: '22px' }}>
+                <path d="M11 7C9.34 7 8 8.34 8 10V13C8 14.66 6.66 16 5 16C6.66 16 8 17.34 8 19V22C8 23.66 9.34 25 11 25" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 7C22.66 7 24 8.34 24 10V13C24 14.66 25.34 16 27 16C25.34 16 24 17.34 24 19V22C24 23.66 22.66 25 21 25" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 16H20" stroke="#818cf8" strokeWidth="2.2" strokeLinecap="round" strokeDasharray="1 2.5" />
+                <circle cx="12" cy="16" r="2" fill="#34d399" />
+                <circle cx="20" cy="16" r="2" fill="#38bdf8" />
+              </svg>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.025em', color: 'hsl(var(--foreground))' }}>JSON</span>
+            <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.025em', background: 'linear-gradient(to right, #10b981, #14b8a6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Link</span>
+            <span style={{ marginLeft: '6px', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '9999px', background: 'hsl(var(--primary) / 0.1)', color: 'hsl(var(--primary))', border: '1px solid hsl(var(--primary) / 0.2)' }}>Vite Starter</span>
+          </div>
         </div>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
+
+        <h1 style={{ fontSize: '26px', fontWeight: 800, margin: '0 0 8px 0', letterSpacing: '-0.025em', color: 'hsl(var(--foreground))' }}>
           Real-Time Translation Demo
         </h1>
-        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
+        <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '13px', margin: 0, lineHeight: 1.5, textAlign: 'center' }}>
           Language switching with zero reload, live Devtools drawer, and native Vite HMR.
         </p>
       </div>
@@ -1340,82 +1436,108 @@ export default function App() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '8px',
-        backgroundColor: '#131b2e',
-        padding: '8px',
-        borderRadius: '12px',
-        border: '1px solid #1e293b',
-        marginBottom: '24px'
+        gap: '4px',
+        backgroundColor: 'hsl(var(--muted))',
+        padding: '4px',
+        borderRadius: '10px',
+        border: '1px solid hsl(var(--border))',
+        marginBottom: '24px',
+        width: 'fit-content',
+        margin: '0 auto 24px auto',
       }}>
-        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginRight: '4px' }}>
+        <span style={{ fontSize: '11px', color: 'hsl(var(--muted-foreground))', fontWeight: 600, padding: '0 8px' }}>
           Select Language:
         </span>
-        {languages.map((lang) => (
-          <button
-            key={lang}
-            onClick={() => setLanguage(lang)}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: '13px',
-              textTransform: 'uppercase',
-              transition: 'all 0.15s ease',
-              backgroundColor: language === lang ? '#10b981' : 'transparent',
-              color: language === lang ? '#ffffff' : '#94a3b8',
-            }}
-          >
-            {lang}
-          </button>
-        ))}
+        {languages.map((lang) => {
+          const isActive = language === lang;
+          return (
+            <button
+              key={lang}
+              onClick={() => setLanguage(lang)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '12px',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                transition: 'all 0.15s ease',
+                backgroundColor: isActive ? 'hsl(var(--card))' : 'transparent',
+                color: isActive ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))',
+                boxShadow: isActive ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+              }}
+            >
+              {lang}
+            </button>
+          );
+        })}
       </div>
 
       {/* Live Preview Card */}
       <div style={{
-        backgroundColor: '#131b2e',
-        borderRadius: '16px',
-        border: '1px solid #1e293b',
+        backgroundColor: 'hsl(var(--card))',
+        borderRadius: '14px',
+        border: '1px solid hsl(var(--border))',
         padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4)'
+        marginBottom: '20px',
+        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
       }}>
-        <div style={{ fontSize: '11px', textTransform: 'uppercase', color: '#10b981', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '8px' }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '11px',
+          fontWeight: 700,
+          fontFamily: 'var(--font-mono)',
+          color: 'hsl(var(--primary))',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '10px',
+        }}>
+          <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'hsl(var(--primary))' }} />
           Live Render ({language.toUpperCase()})
         </div>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+        <div style={{ fontSize: '22px', fontWeight: 700, color: 'hsl(var(--foreground))', marginBottom: '8px', lineHeight: 1.35, fontFamily: 'var(--font-sans)' }}>
           {t('${sampleKey}')}
         </div>
-        <div style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.6 }}>
+        <div style={{ fontSize: '14px', color: 'hsl(var(--muted-foreground))', lineHeight: 1.6, fontFamily: 'var(--font-sans)' }}>
           {t('${sampleKey2}')}
         </div>
       </div>
 
       {/* Drop-in Integration Box */}
       <div style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backgroundColor: 'hsl(var(--muted) / 0.35)',
         borderRadius: '12px',
-        border: '1px dashed #334155',
-        padding: '20px',
-        fontSize: '13px',
-        color: '#94a3b8',
-        marginBottom: '20px'
+        border: '1px dashed hsl(var(--border))',
+        padding: '18px 20px',
+        marginBottom: '20px',
       }}>
-        <div style={{ fontWeight: 700, color: '#e2e8f0', marginBottom: '8px' }}>
-          🚀 Drop into your existing React / Vite project:
+        <div style={{ fontWeight: 600, color: 'hsl(var(--foreground))', marginBottom: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span>🚀</span>
+          <span>Drop into your existing React / Vite project:</span>
         </div>
-        <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.7 }}>
-          <li>Copy <code style={{ color: '#38bdf8' }}>src/locales/</code> into your project.</li>
-          <li>Import: <code style={{ color: '#34d399' }}>import &#123; useTranslation &#125; from './locales/i18n';</code></li>
-          <li>Use: <code style={{ color: '#fbbf24' }}>const &#123; t &#125; = useTranslation();</code></li>
+        <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: 1.8, fontSize: '12px', color: 'hsl(var(--muted-foreground))' }}>
+          <li>Copy <code style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1px 5px', borderRadius: '4px', color: 'hsl(var(--foreground))' }}>src/locales/</code> into your project.</li>
+          <li>Import: <code style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1px 5px', borderRadius: '4px', color: 'hsl(var(--primary))' }}>import &#123; useTranslation &#125; from './locales/i18n';</code></li>
+          <li>Use: <code style={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', padding: '1px 5px', borderRadius: '4px', color: 'hsl(var(--foreground))' }}>const &#123; t &#125; = useTranslation();</code></li>
         </ol>
       </div>
 
       {/* Devtools Prompt (DEV mode only) */}
       {import.meta.env.DEV && (
-        <div style={{ textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
-          💡 In local dev mode (<code>import.meta.env.DEV</code>), click the <strong style={{ color: '#10b981' }}>⚡ JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
+        <div style={{
+          textAlign: 'center',
+          fontSize: '12px',
+          color: 'hsl(var(--muted-foreground))',
+          backgroundColor: 'hsl(var(--primary) / 0.06)',
+          border: '1px solid hsl(var(--primary) / 0.15)',
+          borderRadius: '8px',
+          padding: '10px 14px',
+        }}>
+          💡 In local dev mode (<code>import.meta.env.DEV</code>), click the <strong style={{ color: 'hsl(var(--primary))' }}>⚡ JSON Link Devtools</strong> button in the bottom-right corner to live-tweak any copy in this app.
         </div>
       )}
 
