@@ -50,23 +50,24 @@ const ExcelLogo = ({ className = 'size-12' }: { className?: string }) => (
 const JsonLogo = ({ className = 'size-12' }: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={className} fill="none">
     <rect x="2" y="2" width="28" height="28" rx="7" fill="#F59E0B" />
+    {/* Prominent curly braces { } */}
     <path
-      d="M5.5 10c-.8 0-1.2.4-1.2 1.2v3c0 .8-.5 1.3-1 1.8.5.5 1 1 1 1.8v3c0 .8.4 1.2 1.2 1.2M26.5 10c.8 0 1.2.4 1.2 1.2v3c0 .8.5 1.3 1 1.8-.5.5-1 1-1 1.8v3c0 .8-.4 1.2-1.2 1.2"
+      d="M6.5 9.5c-.9 0-1.6.5-1.6 1.4v3.1c0 .8-.5 1.4-1.2 1.8.7.4 1.2 1 1.2 1.8v3.1c0 .9.7 1.4 1.6 1.4M25.5 9.5c.9 0 1.6.5 1.6 1.4v3.1c0 .8.5 1.4 1.2 1.8-.7.4-1.2 1-1.2 1.8v3.1c0 .9-.7 1.4-1.6 1.4"
       stroke="#FFFFFF"
-      strokeWidth="1.2"
+      strokeWidth="1.6"
       strokeLinecap="round"
       fill="none"
-      opacity="0.3"
+      opacity="0.8"
     />
     <text
       x="16"
-      y="20.5"
+      y="18.0"
       textAnchor="middle"
       fill="#FFFFFF"
-      fontSize="8.5"
+      fontSize="5.0"
       fontWeight="900"
       fontFamily="system-ui, -apple-system, sans-serif"
-      letterSpacing="0.4px"
+      letterSpacing="0.2px"
     >
       JSON
     </text>
@@ -76,8 +77,19 @@ const JsonLogo = ({ className = 'size-12' }: { className?: string }) => (
 const CsvLogo = ({ className = 'size-12' }: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={className} fill="none">
     <rect x="2" y="2" width="28" height="28" rx="7" fill="#0284C7" />
-    <rect x="5.5" y="5.5" width="21" height="21" rx="4" stroke="#BAE6FD" strokeWidth="1.5" strokeDasharray="2 2" fill="none" />
-    <text x="16" y="20.5" textAnchor="middle" fill="#FFFFFF" fontSize="8.5" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" letterSpacing="0.5px">CSV</text>
+    <rect x="5.5" y="5.5" width="21" height="21" rx="4.5" stroke="#BAE6FD" strokeWidth="1.3" strokeDasharray="2 2" fill="none" opacity="0.85" />
+    <text
+      x="16"
+      y="18.8"
+      textAnchor="middle"
+      fill="#FFFFFF"
+      fontSize="6.6"
+      fontWeight="900"
+      fontFamily="system-ui, -apple-system, sans-serif"
+      letterSpacing="0.4px"
+    >
+      CSV
+    </text>
   </svg>
 );
 
