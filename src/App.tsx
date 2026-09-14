@@ -302,6 +302,7 @@ export function App() {
   const [pendingDiff, setPendingDiff] = useState<DiffResult | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogConfig | null>(null);
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
+  const [findReplaceInitialTab, setFindReplaceInitialTab] = useState<'find' | 'replace'>('find');
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
   const [isLinterOpen, setIsLinterOpen] = useState(false);
@@ -686,10 +687,19 @@ export function App() {
         return;
       }
 
-      // Find & Replace: Ctrl+F, Cmd+F, Ctrl+H, or Cmd+H
-      if ((e.metaKey || e.ctrlKey) && (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'h')) {
+      // Find: Ctrl+F or Cmd+F
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
         e.preventDefault();
-        setIsFindReplaceOpen(prev => !prev);
+        setFindReplaceInitialTab('find');
+        setIsFindReplaceOpen(true);
+        return;
+      }
+
+      // Replace: Ctrl+H or Cmd+H
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        setFindReplaceInitialTab('replace');
+        setIsFindReplaceOpen(true);
         return;
       }
 
@@ -2140,14 +2150,21 @@ export function App() {
         onClose={() => setConfirmDialog(null)}
       />
 
-      {/* Find & Replace Across Languages (Cmd+H / Ctrl+H) */}
+      {/* Find & Replace Across Languages (Cmd+F / Cmd+H) */}
       <FindReplaceModal
         isOpen={isFindReplaceOpen}
         onClose={() => setIsFindReplaceOpen(false)}
         items={items}
         languages={languages}
+        initialTab={findReplaceInitialTab}
         onApplyReplace={(updatedItems) => {
           setItems(updatedItems);
+        }}
+        onJumpToKey={(key) => {
+          setSearchQuery(key);
+        }}
+        onFilterTable={(query) => {
+          setSearchQuery(query);
         }}
       />
 

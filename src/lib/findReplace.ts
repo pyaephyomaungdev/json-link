@@ -15,6 +15,7 @@ export interface MatchOccurrence {
   rowIndex: number;
   key: string;
   field: string;
+  value: string;
   matchCount: number;
 }
 
@@ -82,6 +83,7 @@ export function countMatches(
             rowIndex: r,
             key: item.key,
             field,
+            value: val,
             matchCount: matches.length,
           });
         }

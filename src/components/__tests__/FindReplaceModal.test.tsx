@@ -89,4 +89,56 @@ describe('FindReplaceModal', () => {
     fireEvent.click(cancelBtn);
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('switches to Find tab, displays matching list entries, and supports jumping to key', () => {
+    const onJumpToKey = vi.fn();
+    const onFilterTable = vi.fn();
+
+    render(
+      <FindReplaceModal
+        {...defaultProps}
+        initialTab="find"
+        onJumpToKey={onJumpToKey}
+        onFilterTable={onFilterTable}
+      />
+    );
+
+    // Verify Find tab active
+    const searchInput = screen.getByPlaceholderText('Search term or regex...');
+    fireEvent.change(searchInput, { target: { value: 'Sign' } });
+
+    // Should display matching entries list
+    expect(screen.getByText(/Matching Entries \(2\)/i)).toBeDefined();
+    expect(screen.getByText('auth.login')).toBeDefined();
+    expect(screen.getByText('auth.logout')).toBeDefined();
+
+    // Click Jump button on first occurrence
+    const jumpBtns = screen.getAllByRole('button', { name: /Jump/i });
+    expect(jumpBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(jumpBtns[0]);
+
+    expect(onJumpToKey).toHaveBeenCalledWith('auth.login');
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
+
+  it('filters table when Filter Table button is clicked in Find tab', () => {
+    const onFilterTable = vi.fn();
+
+    render(
+      <FindReplaceModal
+        {...defaultProps}
+        initialTab="find"
+        onFilterTable={onFilterTable}
+      />
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search term or regex...');
+    fireEvent.change(searchInput, { target: { value: 'Sign' } });
+
+    const filterBtn = screen.getByRole('button', { name: /Filter Table/i });
+    fireEvent.click(filterBtn);
+
+    expect(onFilterTable).toHaveBeenCalledWith('Sign');
+    expect(defaultProps.onClose).toHaveBeenCalled();
+  });
 });
