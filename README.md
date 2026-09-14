@@ -69,7 +69,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 ## <img src=".github/assets/icons/layers.svg" width="22" height="22" align="absmiddle" /> Why JSON Link?
 
 | Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | JSON Link (Open Source) |
-| :--- | :---: | :---: | :---: |
+| :--- | :--- | :--- | :--- |
 | **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **AST-locked visual chips & live linter** |
 | **Local Disk Sync & HMR** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Manual export & copy-paste | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> CLI polling / webhooks | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct disk write (`Cmd+S`) with instant Vite HMR** |
 | **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Zero-dependency reactive client (<2KB)** |
