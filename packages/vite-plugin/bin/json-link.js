@@ -31,5 +31,5 @@ if (command === 'init') {
   console.log('  👉 \x1b[36mhttp://localhost:5173/__jsonlink\x1b[0m\n');
   console.log('All changes write directly to disk with instant Vite HMR.\n');
 } else {
-  console.log('Usage: npx json-link init');
+  console.log('Usage: npx @jsonlink/vite-plugin init');
 }

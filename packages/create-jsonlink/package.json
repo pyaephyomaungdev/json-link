@@ -1,0 +1,43 @@
+{
+  "name": "create-jsonlink",
+  "version": "1.0.1",
+  "description": "Scaffold a modern React + Vite application preconfigured with JSON Link localization workspace, or initialize JSON Link in an existing project",
+  "author": "Pyae Phyo Maung",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "create-jsonlink": "bin/create-jsonlink.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pyaephyomaungdev/json-link.git",
+    "directory": "packages/create-jsonlink"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "keywords": [
+    "create-jsonlink",
+    "jsonlink",
+    "json-link",
+    "i18n",
+    "vite",
+    "vite-plugin",
+    "react",
+    "localization",
+    "translation",
+    "starter",
+    "scaffold",
+    "myanmar"
+  ]
+}

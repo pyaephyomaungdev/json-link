@@ -11,7 +11,7 @@ Turn any React + Vite project into an instant, local-first localization workspac
 In your existing React + Vite project root, run:
 
 ```bash
-npx json-link init
+npx @jsonlink/vite-plugin init
 ```
 
 This will automatically:

@@ -1,8 +1,8 @@
 {
   "name": "@jsonlink/vite-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official JSON Link Vite Plugin & CLI for local development dashboard and two-way file synchronization",
-  "author": "JSON Link Team",
+  "author": "Pyae Phyo Maung",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,7 +14,16 @@
     }
   },
   "bin": {
-    "json-link": "./bin/json-link.js"
+    "jsonlink": "bin/json-link.js",
+    "json-link": "bin/json-link.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pyaephyomaungdev/json-link.git",
+    "directory": "packages/vite-plugin"
   },
   "files": [
     "dist",
@@ -31,10 +40,12 @@
   "keywords": [
     "vite",
     "vite-plugin",
+    "jsonlink",
     "json-link",
     "i18n",
     "localization",
     "translation",
-    "devtools"
+    "devtools",
+    "myanmar"
   ]
 }

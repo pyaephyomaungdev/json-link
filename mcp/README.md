@@ -18,72 +18,61 @@ An official **Model Context Protocol (MCP)** server for **JSON Link**, allowing 
 
 ## Installation & Setup
 
-### 1. Build the Server
+### 1. Zero-Install via NPX (Recommended)
 
-Ensure the MCP server is compiled to JavaScript:
+You can run the MCP server directly via `npx` in any AI IDE or assistant without cloning or manual building:
 
-```bash
-cd mcp
-npm run build
-```
-
-The executable is located at `mcp/dist/index.js`.
-
----
-
-### 2. Configure in Claude Desktop
-
-Add this entry to your Claude Desktop configuration file:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+#### In Claude Desktop
+Add this to your Claude Desktop configuration file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
 
 ```json
 {
   "mcpServers": {
     "json-link": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/json-link/mcp/dist/index.js"
-      ]
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. You will now see the hammer icon 🔨 with `json-link` tools available in your conversations.
-
----
-
-### 3. Configure in Cursor
-
-Add the server to your project's `.cursor/mcp.json`:
+#### In Cursor
+Add to `.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "json-link": {
-      "command": "node",
-      "args": ["${workspaceFolder}/mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
     }
   }
 }
 ```
 
----
-
-### 4. Configure in Antigravity
-
+#### In Antigravity
 Add to `~/.gemini/antigravity/mcp_config.json`:
 
 ```json
 {
   "mcpServers": {
     "json-link": {
-      "command": "node",
-      "args": ["/Users/pyaephyomaung/Development/Project/PPM/json-link/mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
     }
   }
 }
+```
+
+---
+
+### 2. Local Development & Build
+
+If developing locally on the server:
+
+```bash
+cd mcp
+npm run build
 ```
 
 ---
