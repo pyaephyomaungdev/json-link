@@ -501,11 +501,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 font-mono">
                       {'{count, plural, one{# item} other{# items}}'}
                     </td>
-                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans font-myanmar">
-                      ပစ္စည်း <span className="font-mono text-foreground font-semibold">{'{count}'}</span> ခု
+                    <td className="py-2 px-3.5 text-muted-foreground border-r border-border/40 leading-relaxed font-sans font-myanmar font-mono">
+                      {'{count, plural, other{ပစ္စည်း # ခု}}'}
                     </td>
-                    <td className="py-2 px-3.5 text-muted-foreground">
-                      <span className="font-mono text-foreground font-semibold">{'{count}'}</span>個のアイテム
+                    <td className="py-2 px-3.5 text-muted-foreground font-mono">
+                      {'{count, plural, other{#個のアイテム}}'}
                     </td>
                   </tr>
                 </tbody>
