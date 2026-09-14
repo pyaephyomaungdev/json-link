@@ -107,7 +107,7 @@ export function runInit(targetDir = process.cwd()): InitResult {
   if (!configPath) {
     return {
       success: false,
-      message: 'No Vite configuration found (vite.config.ts/js). Please run npx json-link init inside a Vite project root.',
+      message: 'No Vite configuration found (vite.config.ts/js). Please run npx create-jsonlink inside a Vite project root.',
     };
   }
 

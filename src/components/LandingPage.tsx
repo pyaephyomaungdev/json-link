@@ -206,7 +206,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopyCmd = () => {
-    navigator.clipboard?.writeText('npx json-link init');
+    navigator.clipboard?.writeText('npx create-jsonlink');
     setCopiedCmd(true);
     setTimeout(() => setCopiedCmd(false), 2000);
   };
@@ -351,7 +351,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Terminal Command Quickstart */}
             <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground shadow-2xs hover:border-primary/40 transition-colors">
               <span className="text-primary font-bold select-none">$</span>
-              <span className="text-foreground font-semibold select-all">npx json-link init</span>
+              <span className="text-foreground font-semibold select-all">npx create-jsonlink</span>
               <button
                 type="button"
                 onClick={handleCopyCmd}
@@ -709,7 +709,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <CardDescription className="text-xs">Zero daemon, instant HMR &amp; two-way disk saving</CardDescription>
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Run <code className="font-mono text-primary">npx json-link init</code> to auto-configure <code className="font-mono text-primary">@jsonlink/vite-plugin</code> and serve a full spreadsheet dashboard at <code className="font-mono text-primary">localhost:5173/__jsonlink</code>, or drop <code className="font-mono text-amber-600 dark:text-amber-400">src/locales/</code> directly into any existing React project.
+              Run <code className="font-mono text-primary">npx create-jsonlink</code> to auto-configure <code className="font-mono text-primary">@jsonlink/vite-plugin</code> and serve a full spreadsheet dashboard at <code className="font-mono text-primary">localhost:5173/__jsonlink</code>, or drop <code className="font-mono text-amber-600 dark:text-amber-400">src/locales/</code> directly into any existing React project.
             </CardContent>
           </Card>
         </div>
@@ -838,7 +838,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: 'How do I run JSON Link as an embedded dev tool inside my existing Vite project?',
-                a: 'Run `npx json-link init` in your Vite project root. It auto-configures `@jsonlink/vite-plugin` in your vite.config.ts and scaffolds `src/locales/`. When you run `npm run dev`, open `http://localhost:5173/__jsonlink`. You get the complete spreadsheet workspace embedded inside your dev server with zero extra ports. Any edits or AI translations you make are written directly to your local JSON files on disk, triggering instant Vite HMR in your running app!',
+                a: 'Run `npx create-jsonlink` in your Vite project root. It auto-configures `@jsonlink/vite-plugin` in your vite.config.ts and scaffolds `src/locales/`. When you run `npm run dev`, open `http://localhost:5173/__jsonlink`. You get the complete spreadsheet workspace embedded inside your dev server with zero extra ports. Any edits or AI translations you make are written directly to your local JSON files on disk, triggering instant Vite HMR in your running app!',
               },
             ].map((faq, idx) => {
               const isOpen = openFaq === idx;

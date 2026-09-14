@@ -976,7 +976,7 @@ function ExportersSection() {
   const [copiedCli, setCopiedCli] = useState(false);
 
   const handleCopyCli = () => {
-    navigator.clipboard?.writeText('npx json-link init');
+    navigator.clipboard?.writeText('npx create-jsonlink');
     setCopiedCli(true);
     setTimeout(() => setCopiedCli(false), 2000);
   };
@@ -1017,7 +1017,7 @@ function ExportersSection() {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-xs font-bold text-foreground flex items-center gap-2">
             <Zap className="size-4 text-primary" />
-            <span>Vite Plugin &amp; 1-Command Setup: <code>npx json-link init</code></span>
+            <span>Vite Plugin &amp; 1-Command Setup: <code>npx create-jsonlink</code></span>
           </h3>
           <Badge variant="outline" className="text-[10px] font-mono bg-primary/10 text-primary border-primary/30">
             Recommended
@@ -1046,7 +1046,7 @@ function ExportersSection() {
             )}
           </button>
           <p className="text-muted-foreground"># 1. Run automatic initializer in your Vite project root</p>
-          <p className="text-primary font-bold">npx json-link init</p>
+          <p className="text-primary font-bold">npx create-jsonlink</p>
           <p className="text-muted-foreground pt-1"># 2. Start your regular Vite development server</p>
           <p className="text-foreground">npm run dev</p>
           <p className="text-muted-foreground pt-1"># 3. Open your embedded spreadsheet dashboard</p>
