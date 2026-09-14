@@ -1,416 +1,316 @@
-# JSON Link
+<div align="center">
+  <img src="public/icon-512.svg" width="84" height="84" alt="JSON Link Logo" />
+  <h1>JSON Link</h1>
+  <p><strong>The Local-First Localization Workspace for Software Teams & AI Coding Assistants</strong></p>
+  <p>Zero-backend spreadsheet studio, two-way disk synchronization, lossless AST variable protection, and native Model Context Protocol (MCP) server.</p>
 
-A modern, high-performance web application designed for multilingual localization (i18n) workflows. View, edit, validate, and translate your localization files side-by-side in an authentic, edge-to-edge spreadsheet interface, with roundtrip support for Excel (.xlsx), CSV, JSON, YAML, Android XML, iOS Strings, TypeScript definitions, and portable .jsonlink project files.
+  <p>
+    <a href="https://json-link.pages.dev"><img src="https://img.shields.io/badge/Live_Demo-json--link.pages.dev-blue?style=for-the-badge&logo=cloudflarepages&logoColor=white" alt="Live Demo" /></a>
+    <a href="https://www.npmjs.com/package/create-jsonlink"><img src="https://img.shields.io/npm/v/create-jsonlink?style=for-the-badge&logo=npm&color=CB3837" alt="npm version" /></a>
+    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-398%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" /></a>
+    <a href="https://github.com/pyaephyomaungdev/json-link"><img src="https://img.shields.io/badge/Zero--Backend-100%25%20Private-purple?style=for-the-badge" alt="Privacy" /></a>
+  </p>
 
-> Developed by Pyae Phyo Maung  
-> Repository: https://github.com/pyaephyomaungdev/json-link
-
----
-
-## Features
-
-### Authentic Spreadsheet Interface
-- Edge-to-Edge Grid: Full viewport spreadsheet with zero outer margins, clean gridlines, row numbers (1, 2, 3...), and column letters (A, B, C...).
-- Dynamic Freeze Panes:
-  - Sticky Top: Column headers stay pinned at the top while scrolling vertically.
-  - Freeze Left: Index (#) and Translation Key columns stay pinned at the left while scrolling horizontally through languages.
-  - Custom Freeze and Unfreeze: Pin any language column with one click from the header dropdown menu.
-- Formula Bar (fx): Displays active cell address (e.g. B14 [en]) with a full-width text inspector and editor.
-- Excel-like Drag Column Resizing: Drag divider handles on Key, Context, and Language headers with widths smoothly constrained between 120px and 900px. Preserved locally in `localStorage` with a 1-click "Reset Widths" button in the status bar.
-- Excel Keyboard Navigation: Seamless arrow key navigation across the grid (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`), `Tab` / `Shift+Tab` cell advancement, and `Enter` to edit or commit and jump to the row below.
-- Translation Diff and 1-Click Revert: Modified or newly translated cells display an interactive `[↺ Revert]` chip to instantly roll back changes to prior values.
-- Header Missing Keys Badges: Column headers display an amber badge showing the count of missing keys for that language; clicking isolates missing rows with 1 click.
-- Inline Cell Editing: Click or double-click to edit text directly. Full native font rendering for English, Myanmar Unicode (Pyidaungsu / Noto Sans), Thai, Japanese, Chinese, and Right-to-Left languages.
-- Multi-Cell Copy and Paste: Paste tab-separated or newline-separated values from Google Sheets or Microsoft Excel directly into cells.
-- Undo and Redo History: Full state time-machine (Cmd+Z / Ctrl+Z, Cmd+Y / Ctrl+Y) supporting up to 50 historical snapshots.
+  <p>
+    <a href="#-quickstart-3-seconds">Quickstart</a> •
+    <a href="#-why-json-link-comparison">Why JSON Link?</a> •
+    <a href="#-core-ecosystem">Ecosystem Packages</a> •
+    <a href="#-interactive-feature-tour">Feature Tour</a> •
+    <a href="#-developer-integration-react--vite">Developer Guide</a> •
+    <a href="#-testing--verification">Tests & CI</a>
+  </p>
+</div>
 
 ---
 
-### GitHub Localization Sync & Automated Pull Requests
-- **Zero-Setup In-Browser Sync**: Connect to any public or private GitHub repository using a Personal Access Token (PAT). Tokens are stored exclusively in client-side `localStorage` with zero intermediary backend storage.
-- **Tree-Scanning Locales Discovery**: Recursively scans repository branches via GitHub Git Trees API to auto-detect translation files across standard conventions (`locales/`, `i18n/`, `lang/`, `values-*/`, `l10n/`, etc.).
-- **Selective Pull & Spreadsheet Load**: Select specific localization files from the branch to load directly into the spreadsheet workspace with schema validation.
-- **Automated Feature Branch & PR Workflow**: Packages updated translations into Git blobs, patches the tree onto a dedicated feature branch (`jsonlink/translations-...`), and opens a Pull Request with a markdown summary of affected files, key counts, and Co-worked by JSON Link watermark.
-- **Direct Commit Mode**: Option to commit translations directly to the selected branch for repository owners and maintainers.
-- **Locales-Only Safety Guardrail**: Multi-tier security enforcement permanently blocks read and write operations to source code (`src/`), dependencies (`node_modules`), CI/CD pipelines (`.github/workflows`), configurations (`package.json`, `tsconfig.json`), and secrets (`.env*`).
+<p align="center">
+  <img src="public/hero-screenshot.png" alt="JSON Link Spreadsheet Studio" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
+</p>
 
 ---
 
-### React + Vite Starter & Developer Integration
-- **First-Class Vite Starter (ZIP)**: Export your translation project as a ready-to-run React + Vite application archive with one click (Tested Golden Stack: **React 19.0.0** • **Vite 6.0.0** • **TypeScript 5.7.2**).
-- **Zero-Daemon Drop-in Workflow (3 Steps)**:
-  1. Export or copy `/src/locales/` into your existing React / Vite project.
-  2. Import `{ useTranslation } from './locales/i18n'`.
-  3. Use `const { t, language, setLanguage } = useTranslation();` in any component.
-- **Ultra-Lightweight Client Loader (`i18n.ts`)**: ~120 lines, zero external npm dependencies, reactive language state switching, and parameter interpolation (`{name}`).
-- **Compile-Time Type Safety (`translations.d.ts`)**: Autogenerated string literal union types (`TranslationKey`, `SupportedLanguage`) eliminate typo-induced runtime bugs.
-- **Embedded Devtools Drawer (`<JsonLinkDevtools />`)**: Bundled slide-over drawer (gated via `import.meta.env.DEV`) for in-browser key search, live in-memory copy tweaking with instant re-render, and 1-click Download / Copy JSON (zero backend daemons required).
-- **Native Vite HMR**: Edits to any locale JSON file trigger hot module replacement, instantly updating UI strings in active browser tabs with 0 page refreshes.
-- **Official AI Skill Bundled in ZIP**: Includes `.agents/skills/jsonlink-vite-i18n/SKILL.md` directly inside both the repository and every exported starter ZIP archive to guide AI coding assistants (Cursor, Claude Desktop, Antigravity) to scaffold and wire translations automatically.
+## ⚡ Quickstart (3 Seconds)
 
----
+Choose how you want to run JSON Link:
 
-### Cell Right-Click Context Menu
-- Right-Click Action Trigger: Right-click any translation cell to open a dedicated context menu:
-  - Copy cell value directly to the clipboard (`Cmd+C` / `Ctrl+C`).
-  - Paste clipboard content into the targeted cell (`Cmd+V` / `Ctrl+V`).
-  - Clear cell content with full undo support.
-  - 1-Click Revert to Original Value: Instantly restores the cell back to its initial imported or saved value.
-  - Zawgyi ⇄ Unicode Converter: Converts cell encoding on demand with Rabbit algorithm accuracy.
-  - AI Translate This Row: Batch translates the active key across any missing target languages with variable safety.
-
----
-
-### Myanmar Unicode and Zawgyi Auto-Detector and Converter
-- Real-Time Font Detection: Automatically analyzes text in columns to detect legacy Zawgyi encoding patterns (e.g., pre-posed vowel e ordering, Zawgyi medial consonants).
-- Warning Badge: Displays a Zawgyi indicator on language headers when Zawgyi text is detected.
-- One-Click Conversion:
-  - Zawgyi to Unicode Converter: Accurately converts legacy Zawgyi encodings to standard Myanmar Unicode with proper syllable and consonant reordering.
-  - Unicode to Zawgyi Converter: Allows exporting or preparing legacy strings when required for older devices.
-
----
-
-### AI Translation Glossary and Termbase
-- Strict AI Terminology Enforcement: Define custom brand names, technical terms, and product names that must be preserved or translated in a specific way.
-- Rule Types:
-  - Keep Original: Strict instruction to the AI model never to translate or alter brand names (e.g., "JSON Link" remains "JSON Link").
-  - Custom Target Translation: Explicit definition of the exact target term the AI must output.
-- Dedicated Management Modal: Add, remove, and review terms directly from the AI Translation modal or the top navigation bar.
-
----
-
-### Pseudolocalization (Layout Stress Testing)
-- One-Click Pseudolocale Generation (qps-ploc): Automatically transforms source language strings into accented, lengthened pseudolocalized strings.
-- Visual Inspection:
-  - Homoglyph Accent Expansion: Maps ASCII letters to accented characters (e.g., "Settings" becomes "[!!! Šééttîîññĝš !!!]").
-  - 35 Percent Length Padding: Tests whether UI buttons and card components wrap or truncate when text expands in languages like German or Myanmar.
-  - Delimiter Wrapping: Surrounds strings with markers to detect untranslated, hardcoded strings in codebases.
-  - Variable Preservation: All interpolation placeholders ({name}, {{count}}, %s) remain completely intact and uncorrupted.
-
----
-
-### Find and Replace Across Languages
-- Dedicated Modal and Shortcut (Cmd+H / Ctrl+H): Rapidly search and replace strings across the entire translation dataset.
-- Granular Scopes:
-  - All Languages and Fields
-  - Translation Keys Only
-  - Developer Context / Description Only
-  - Specific Language Column
-- Search Criteria:
-  - Match Case (case sensitive)
-  - Whole Word
-  - Regular Expressions (Regex) with capture group replacement ($1, $2)
-- Match Statistics: Displays real-time count of matching occurrences and affected rows before executing replacements.
-- Safe Execution: Every replace action registers with the history manager for instant undo.
-
----
-
-### Developer Context and Description Column
-- Context per Translation Key: Add explanations, button locations, and formatting notes for human translators and AI models.
-- AI Context Injection: Descriptions are automatically supplied to OpenRouter AI prompts to produce more accurate, context-aware translations.
-- Comment Export Support:
-  - Android strings.xml: Exported as XML comments above resource entries.
-  - iOS Localizable.strings: Exported as C-style block comments above string keys.
-  - Excel and CSV: Exported as a dedicated Description column.
-- Toggleable Visibility: Show or hide the context column directly from the Formula Bar or Key column dropdown menu.
-
----
-
-### Localization Health and Completion Scorecard
-- Real-Time Completion Tracking: Visual dashboard displaying completion percentages across all active languages.
-- Metrics and Diagnostics:
-  - Overall project completion percentage.
-  - Number of missing translations per language.
-  - Number of variable integrity warnings.
-- Quick AI Batch Translation: One-click button on each language row to launch AI translation targeting only missing keys.
-- Variable Integrity Audit: Lists all keys where translations miss source interpolation parameters.
-
----
-
-### Localization QA and Consistency Linter
-- Automated Quality Scans: Real-time scan across all languages for common localization pitfalls:
-  - Whitespace: Leading or trailing whitespace in keys or translation values.
-  - Variable Mismatches: Target translations missing source placeholders ({name}, %s, {{count}}).
-  - Length Expansion: Text expansion (>2.5x source length) that may clip in mobile buttons and labels.
-  - Duplicates: Identical translations reused across multiple distinct keys.
-  - Untranslated: Target translations identical to English source text.
-  - Missing: Unfilled translation keys.
-- One-Click Auto-Fixer: "Fix All Whitespace" cleans all keys and translations in 1 click.
-- Jump Navigation: Direct "Jump" button on any issue selects and focuses the exact cell in the spreadsheet.
-- Tab Category Filtering: Scorecard-style underline tabs with live per-category counts.
-
----
-
-### Row Review Workflow Statuses
-- Editorial Status Tracking: Tag each translation key with a workflow status:
-  - Draft (gray): New or in-progress translation.
-  - Needs Review (amber): Automatically applied to AI-translated rows or flagged content.
-  - Approved (emerald): Human-reviewed and verified for release.
-- Status Filter: Instant toolbar filtering by status (All, Needs Review, Approved, Draft).
-
----
-
-### Native Right-to-Left (RTL) Language Layout
-- Automatic Script Direction: Automatically applies dir="rtl" and right text alignment for RTL languages (Arabic, Hebrew, Persian, Urdu).
-- Bidirectional Formula Bar: When an RTL cell is selected, the formula inspector bar adapts its direction to RTL automatically.
-
----
-
-### Variable and Interpolation Protection
-- Parameter Highlighter:
-  - Automatically tokenizes and renders visual tags for interpolation placeholders:
-    - ICU MessageFormat: {name}, {count}, {0}
-    - Mustache / Handlebars: {{username}}, {{total}}
-    - Printf format: %s, %d, %1$s, %(name)s
-    - Positional parameters: $1, $2
-- Missing Variable Validation:
-  - Alert badges identify translations missing expected placeholders, preventing runtime application crashes.
-
-### Local Folder Direct Sync (Native File System Access API)
-- Real-Time Bidirectional Folder Link: Connect directly to your local project directory (e.g. `src/locales` or `assets/l10n`) on your hard drive using the modern browser File System Access API.
-- Live Status Indicator: Displays connected folder name (`📁 Sync: locales/`) with status badge and last-synced timestamp.
-- 1-Click Sync to Disk: Writes all language translation files directly to disk simultaneously without downloading individual zip files.
-- Auto-Sync on Edit: Optional toggle to automatically persist spreadsheet edits straight to your hard drive files in real time.
-- Reload from Disk: Pulls the latest changes from disk if external files were modified by team members or git updates.
-- Safe Disconnect: Easily unbind linked folders with one click whenever needed.
-
----
-
-### Translation Memory (TM Cache)
-- Passive Memory Learning: Automatically caches previously verified, translated, or approved phrase pairs in browser local storage.
-- Intelligent Pre-Translation & Token Cost Savings: Checks incoming or missing strings against the TM Cache before sending AI translation requests, dramatically reducing token costs and keeping translations consistent.
-- Dedicated TM Management Modal: Search stored source-target phrase pairs, view occurrence counts, manually add/edit entries, or export/import memory data.
-- 1-Click Current Project Extraction: Extracts all existing translations from the active spreadsheet straight into Translation Memory in 1 click.
-
----
-
-### ICU Message & Plural Format Tester
-- Real-Time Syntax & Plural Evaluation: Test complex ICU syntax strings containing `{count, plural, one {...} other {...}}`, `{gender, select, male {...} female {...}}`, and nested arguments.
-- Live Parameter Simulation: Dynamic input fields for test variable inputs (e.g. `count = 0`, `count = 1`, `count = 5`) with instant preview across all configured languages.
-- Syntax Error Linting: Catches unclosed brackets, invalid plural keywords, and malformed ICU strings before exporting to production.
-
----
-
-### Duplicate Value Finder
-- Project-Wide Redundancy Audit: Scans all translation keys to identify duplicate translated strings across languages.
-- Clean Duplicate Grouping: Groups identical values together, displaying all associated translation keys and their respective language columns.
-- Jump & Refactor: Directly navigate to duplicate keys in the spreadsheet with 1 click to consolidate keys or verify intentional reuse.
-
----
-
-### PWA Offline Support & Desktop Installation
-- 100% Offline Capability: Service worker caching and web app manifest allow JSON Link to launch and function completely offline without internet access.
-- Desktop App Installation: One-click "Install App" button in the header installs JSON Link as a standalone desktop app on macOS, Windows, Linux, and Android.
-
----
-
-### Streamlined Toolbar IA & Polish
-- Semantic Menu Grouping: Toolbar actions organized cleanly into `Translate ▾` (AI Auto-Translate, TM Cache, Glossary), `File ▾` (Import, Folder Sync, Save .jsonlink), and `Tools ▾` (Find & Replace, ICU Tester, Duplicate Finder, Command Palette, Workspace Reset).
-- Clear CTA Hierarchy: Single primary `Export` button to prevent visual competition.
-- Responsive Header: Tailored layouts for Mobile (compact project name, icon-only QA buttons, brand mark) and Tablet (balanced ribbon breathing room).
-- Clean Row Status Indicator: Subtle dot status indicator (Approved = green, Needs Review = amber, Draft = hover) replacing noisy text badges.
-
----
-
-### AI Auto-Translate (OpenRouter BYOK)
-- Multi-Language Batch AI Translation: Translate across all configured target languages sequentially with live percentage progress (`Translating Thai (TH) (3/10 keys)... [Overall: 35%]`).
-- Translation Scope Control: Clean segmented toggle switching between **Missing Keys Only** (fills empty cells) and **All Rows (Overwrite)**.
-- Automatic Review Tagging: AI-translated rows are automatically tagged as `Needs Review` for human QA signoff.
-- Any OpenRouter Model: Select recommended models (Gemini 2.5 Flash, DeepSeek V3, GPT-4o Mini, Claude 3.5 Haiku) or provide any custom model ID.
-- Searchable ISO 639-1 Language Picker: Filter languages by standard code, English name, or native script.
-
-#### BYOK Security Architecture
-- Session-Only Storage by Default: API keys are stored in browser session memory (sessionStorage) and wiped upon closing the browser tab.
-- Web Crypto AES-GCM 256-bit Encryption: Optional "Remember key on this device" encrypts keys client-side before storing in localStorage.
-- Zero Intermediary Server: Client-side Single Page Application. Requests travel directly from the browser to OpenRouter (https://openrouter.ai/api/v1/).
-
----
-
-### Universal Exporters
-- React + Vite i18n Starter Kit (ZIP):
-  - Ready-to-run React 19 + Vite 6 + TypeScript starter archive with autogenerated `translations.d.ts` and ultra-lightweight client loader (`src/locales/i18n.ts`).
-  - Drop-in to existing projects: Just copy `/src/locales` into any React codebase with a 3-line `useTranslation()` hook.
-  - Native Vite HMR: Hot Module Replacement updates translations in real time on file save with 0 page reloads.
-  - Official AI Skill: Bundled `.agents/skills/jsonlink-vite-i18n/SKILL.md` for zero-boilerplate agentic integrations in Cursor, Claude Desktop, and Antigravity.
-- 1-Click Multi-Framework Project Bundle (ZIP): Export a complete, production-ready localization archive containing:
-  - `web-locales/{lang}.json` (Web, Next.js, React)
-  - `flutter-l10n/app_{lang}.arb` (Flutter ARB)
-  - `ios-strings/{lang}.lproj/Localizable.strings` (iOS Xcode Swift/Obj-C)
-  - `android-res/values-{lang}/strings.xml` (Android strings.xml)
-  - `typescript/translations.d.ts` (TypeScript type declarations)
-- Flutter ARB (.arb):
-  - Two-way roundtrip preserving `@key` descriptions and variable placeholder parameters.
-  - Dedicated ARB ZIP archive (`app_en.arb`, `app_my.arb`, etc.).
-  - 1-Click single-file download (`Download app_<lang>.arb`) directly from any spreadsheet language column header dropdown menu.
-- Flutter and Ruby on Rails: Indented YAML (.yaml ZIP archive) with language-prefix stripping options.
-- Android: res/values/strings.xml and res/values-<lang>/strings.xml with XML comments.
-- iOS: Apple Xcode <lang>.lproj/Localizable.strings with comments.
-- TypeScript: translations.d.ts declaration file with union types for TranslationKey and SupportedLanguage.
-- Microsoft Excel (.xlsx): Multi-column workbook with header formatting, dynamic column auto-sizing, and Unicode support.
-- CSV (.csv): Prefixed with UTF-8 BOM (\uFEFF) for seamless opening in Excel on Windows and macOS.
-- JSON (ZIP and Single Combined): Export individual JSON files or single combined files with flat or unflattened nested structures.
-
----
-
-### Model Context Protocol (MCP) Server for AI Assistants
-- Native AI Integration: Connect JSON Link directly to Claude Desktop, Cursor, or Google Antigravity.
-- Stdio JSON-RPC 2.0: Located in `mcp/` with 5 exposed tools:
-  - `convert_zawgyi`: Lossless Rabbit converter between Zawgyi and Unicode.
-  - `validate_variables`: Checks variable interpolation placeholder integrity.
-  - `lint_translations`: Automated localization scanner.
-  - `read_translations`: File parser for JSON, ARB, XML, Strings.
-  - `export_bundle`: Multi-platform code generation.
-- Build & Run:
-  ```bash
-  npm run mcp:build
-  npm run mcp:start
-  ```
-
----
-
-### Zero-Knowledge Workspace Sharing & Team Handoff (.jsonlink)
-- **Zero-Storage Instant URL Sharing (`#share=...`)**:
-  - Compresses entire multi-language workspace payloads in-browser using DEFLATE (`pako`) and packs them into the URL hash fragment.
-  - Zero server storage, zero database overhead, zero privacy exposure. Plaintext data never transits or resides on any backend.
-- **Client-Side AES-GCM 256-bit Password Encryption**:
-  - Optional password protection available for both Instant URLs and standalone `.jsonlink` project files.
-  - PBKDF2 key derivation using SHA-256 with 100,000 iterations, 16-byte random salt, and 12-byte initialization vector (IV).
-  - Strict input validation prevents accidental fallback to unencrypted links when password protection is enabled.
-- **Full Encryption Parity Across the App**:
-  - Available across all project export touchpoints: `ShareModal` (Team Handoff), `SaveProjectModal` (`File ▾` → Save Project), and `ExitConfirmDialog` (`← Home` save guard).
-- **Automated Decryption Dialog**:
-  - Visiting an encrypted share URL or uploading/dropping a password-protected `.jsonlink` file automatically triggers the `UnlockShareDialog`.
-  - Cryptographic authentication tag verification detects wrong passwords or tampered ciphertext with clear error feedback.
-
----
-
-### Bidirectional Import and Smart Diff / Merge
-- Supported Formats: `.jsonlink`, `.arb` (Flutter ARB), `.json`, `.xlsx`, `.csv`, `.yaml`, Android `.xml`, iOS `.strings`.
-- Smart Diff Inspection:
-  - Compares incoming files against existing spreadsheet contents.
-  - Interactive modal displays new keys, modified keys, and unchanged counts.
-  - Merge Modes: Full Merge, Add New Keys Only, or Overwrite.
-
----
-
-### Keyboard Shortcuts and Command Palette (Cmd+K / Ctrl+K)
-- Cmd+K / Ctrl+K: Open Command Palette.
-- Cmd+H / Ctrl+H: Open Find and Replace dialog.
-- Cmd+Z / Ctrl+Z: Undo last action.
-- Cmd+Y / Ctrl+Y (or Cmd+Shift+Z): Redo last action.
-- Cmd+S / Ctrl+S: Save .jsonlink project file.
-- Esc: Close open modal dialogs / cancel cell editing.
-- Enter / Double Click: Edit active cell.
-
----
-
-### Interactive User Guide and Visual Documentation
-- Header Access: Dedicated "Docs" button in the top navigation bar and searchable via the Command Palette (`Cmd+K`).
-- Visual Annotations: Annotated diagrams with numbered step pins (`1`, `2`, `3`), high-contrast focus rings, and directional callout arrows pointing to key UI controls.
-- Bilingual Instructions: Clear step-by-step guidance in both English and Myanmar for maximum clarity.
-- Interactive Topic Guides:
-  - Getting Started: Multi-file drag-and-drop, format badges, and project restoration.
-  - Spreadsheet & Formula Bar: Inline double-click editing, Formula Bar (`fx`) inspector, and keyboard navigation.
-  - Right-Click Context Menu: Fast cell actions, 1-click snapshot revert, and Zawgyi/Unicode conversions.
-  - AI Auto-Translate: Scope selection (Missing Keys vs. All Rows), BYOK security, and termbase rules.
-  - QA Linter & Scorecard: Health completion audits, 1-click "Fix All Whitespace", and high-contrast Missing/All filter toggles.
-  - Keyboard Shortcuts & Pro Tips: Complete shortcuts cheat sheet and column header quick downloads.
-
----
-
-## Automated Testing and CI
-
-Quality, stability, and zero-regression architecture are verified with an extensive automated test suite:
-
-- Testing Framework: Vitest (Vite-native runner) with `@testing-library/react`.
-- Test Coverage: 338 Automated Tests across 45 test files:
-  - 17 Core Library Test Suites (210 unit tests):
-    - `shareUrl.test.ts`: URL payload compression, base64url transcoding, PBKDF2 key derivation, URL share decryption.
-    - `project.test.ts`: .jsonlink serialization, AES-GCM 256 project container encryption, decryption with password, tamper rejection.
-    - `linter.test.ts`: Whitespace detection, variable mismatch, length expansion, auto-fixer.
-    - `findReplace.test.ts`: Search, scope filtering, whole-word matching, regex replacement.
-    - `myanmarFont.test.ts`: Zawgyi detection heuristics, Rabbit Zawgyi-to-Unicode and Unicode-to-Zawgyi converters.
-    - `glossary.test.ts`: Termbase storage, serialization, and prompt formatting.
-    - `pseudoloc.test.ts`: Homoglyph mapping, expansion padding, variable preservation.
-    - `exporter.test.ts`: Flutter ARB (`app_<lang>.arb` & bundle ZIP), JSON, YAML, Android strings.xml, iOS Localizable.strings, CSV BOM, TypeScript d.ts.
-    - `parser.test.ts`: Object flattening/unflattening, Flutter ARB, JSON, Android XML, iOS strings, YAML, Excel, CSV with descriptions.
-    - `openrouter.test.ts`: BYOK translation, glossary prompt injection, response recovery, JSON repair.
-    - `crypto.test.ts`: AES-GCM 256-bit encryption, decryption, and key derivation.
-    - `variables.test.ts`: ICU, Mustache, Printf tokenization and validation.
-    - `languages.test.ts`: ISO definitions, labels, and RTL language detection.
-    - `fileSystem.test.ts`: File System Access API read/write operations and permission checks.
-    - `translationMemory.test.ts`: Phrase pair caching, fuzzy matching, and memory import/export.
-    - `duplicateFinder.test.ts`: Duplicate translation value group analysis.
-    - `icuEvaluator.test.ts`: ICU plural, select, and nested argument parsing and evaluation.
-  - 28 UI Component Test Suites (128 component integration tests):
-    - `UnlockShareDialog.test.tsx`: Password unlock dialog, WebCrypto payload decryption, encrypted file unlocking, wrong password rejection.
-    - `ShareModal.test.tsx`: Instant URL sharing, Team Handoff (.jsonlink), password protection toggle, empty password validation.
-    - `SaveProjectModal.test.tsx`: Standalone project export with optional AES-256 password protection.
-    - `ExitConfirmDialog.test.tsx`: Home navigation guard, discard protection, password-encrypted project backup on exit.
-    - `DocsPage.test.tsx`: User guide modal, visual annotations, tab navigation, search filtering.
-    - `SpreadsheetTable.test.tsx`: Grid headers, row keys, empty state, and column actions.
-    - `Toolbar.test.tsx`: Search, namespace, status, top-aligned menu icons, and semantic dropdowns.
-    - `LinterModal.test.tsx`: QA issue categories, 1-click whitespace cleanup, jump-to-cell navigation.
-    - `ScorecardModal.test.tsx`: Language health breakdown, completion progress, variable mismatch audit.
-    - `AiTranslateModal.test.tsx`: OpenRouter BYOK validation, missing keys batch translation.
-    - `GlossaryModal.test.tsx`: Termbase rule creation, editing, and persistence.
-    - `ExportModal.test.tsx`: Flutter ARB, Excel, CSV, JSON, and full project bundle generation.
-    - `ImportModal.test.tsx`: File dropzone, format pills, encrypted file warning, and multi-file ingestion.
-    - `FindReplaceModal.test.tsx`: Search & replace execution across languages and keys.
-    - `CommandPalette.test.tsx`: Quick command navigation, keyboard shortcuts, and filtering.
-    - `DiffMergeModal.test.tsx`: Smart import diff calculation and collision resolution.
-    - `FolderSyncModal.test.tsx`: Local folder sync interface, auto-sync toggle, sync status.
-    - `TranslationMemoryModal.test.tsx`: TM cache viewer, search filter, project phrase extraction.
-    - `DuplicateFinderModal.test.tsx`: Duplicate value grouping, key jumping.
-    - `IcuTesterModal.test.tsx`: Live ICU message simulator and plural testing.
-    - `PwaInstallButton.test.tsx`: PWA install prompt handler.
-    - `AddKeyDialog.test.tsx` & `AddLanguageDialog.test.tsx`: Modal key and language addition workflows.
-    - `GitHubSyncModal.test.tsx`: Modal rendering, tab navigation, locales discovery, and PR creation workflow.
-    - `github.test.ts`: Security guardrail path validation, Base64 UTF-8 encoding, Git Data API mocking, and PR body formatting.
-    - `AboutPage.test.tsx`, `StatsBar.test.tsx`, `Logo.test.tsx`, `ErrorBoundary.test.tsx`.
-- Continuous Integration: GitHub Actions workflow running typecheck and tests on every push and pull request.
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18 or higher
-- npm 9 or higher
-
-### Installation
+### 1. Scaffold a New Localized React App
 ```bash
-git clone https://github.com/pyaephyomaungdev/json-link.git
-cd json-link
-npm install
+npm create jsonlink my-app
+# or
+npx create-jsonlink my-app
+```
+*Creates a production-ready React 19 + TypeScript + Vite project preconfigured with bilingual switching (`en`, `my`) and the live translation devtool at `http://localhost:5173/__jsonlink`.*
+
+### 2. Inject into an Existing React + Vite Project
+```bash
+npx create-jsonlink
+```
+*Auto-detects your `vite.config.ts`, patches `jsonLink()` devtool, and scaffolds `src/locales/` with zero configuration.*
+
+### 3. Connect AI Assistants via Model Context Protocol (MCP)
+Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.json`), or **Antigravity**:
+```json
+{
+  "mcpServers": {
+    "json-link": {
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
+    }
+  }
+}
 ```
 
-### Development Server
-```bash
-npm run dev
+### 4. Or Launch the Web Studio in Any Browser
+👉 **[Open json-link.pages.dev](https://json-link.pages.dev)** *(100% client-side, zero backend, works offline)*
+
+---
+
+## ⚔️ Why JSON Link? (Comparison)
+
+| Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | ⚡ JSON Link (Open Source) |
+| :--- | :---: | :---: | :---: |
+| **Interpolation Safety** (`{user}`, `%s`) | ❌ Translators corrupt variables | ⚠️ Complex regex setups | **✅ AST-locked visual chips & live linter** |
+| **Local Disk Sync & HMR** | ❌ Manual export & copy-paste | ❌ CLI polling / webhooks | **✅ Direct disk write (`Cmd+S`) with instant Vite HMR** |
+| **Developer Overhead** | ❌ Heavy glue scripts | ❌ Vendor lock-in & SDK bloat | **✅ Zero-dependency reactive client (<2KB)** |
+| **AI Translation (BYOK)** | ❌ None | ⚠️ High per-token markup | **✅ Direct OpenRouter (Gemini, Claude, DeepSeek)** |
+| **Data Privacy & Storage** | ⚠️ Plaintext on external cloud | ⚠️ Third-party server hosting | **✅ 100% Client-Side AES-GCM 256 + Zero Backend** |
+| **AI Coding Assistant Tools** | ❌ None | ❌ None | **✅ Native Model Context Protocol (MCP) server** |
+| **Myanmar Font Support** | ❌ Garbled Zawgyi rendering | ❌ Unsupported | **✅ Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
+| **Pricing** | Free with manual pain | Expensive recurring seat fees | **🆓 Free forever (MIT License)** |
+
+---
+
+## 📦 Core Ecosystem
+
+| Package | npm | Role |
+| :--- | :--- | :--- |
+| **[`create-jsonlink`](packages/create-jsonlink/)** | `npm create jsonlink` | Zero-setup project starter and existing repo initializer |
+| **[`@jsonlink/vite-plugin`](packages/vite-plugin/)** | `npm i -D @jsonlink/vite-plugin` | Vite dev middleware serving `/__jsonlink` with direct disk synchronization |
+| **[`@jsonlink/mcp`](mcp/)** | `npx -y @jsonlink/mcp` | stdio JSON-RPC 2.0 MCP server for Cursor, Claude Desktop, and Antigravity |
+
+---
+
+## 🔍 Interactive Feature Tour
+
+<details>
+<summary><strong>📊 1. Authentic Spreadsheet Grid & Keyboard Navigation</strong> (Click to expand)</summary>
+
+* **Edge-to-Edge Grid**: Full viewport spreadsheet with zero outer margins, clean gridlines, row numbers (`1, 2, 3...`), and column letters (`A, B, C...`).
+* **Freeze Panes**:
+  * Sticky Top: Headers stay pinned during vertical scrolling.
+  * Freeze Left: Key column stays fixed while scrolling horizontally across languages.
+  * Custom Pinning: Pin any language column with 1 click from the header dropdown.
+* **Formula Bar (`fx`)**: Inspect active cell coordinates (e.g., `B14 [en]`) with full-width multiline editing.
+* **Keyboard Navigation**: Familiar Excel arrow keys (`↑`, `↓`, `←`, `→`), `Tab` / `Shift+Tab` cell jump, and `Enter` to commit and advance.
+* **1-Click Revert Chip (`↺`)**: Modified or newly translated cells show an interactive rollback chip to revert back to disk/imported state.
+* **Multi-Cell Copy & Paste**: Paste tab-separated or newline-delimited text from Google Sheets or Excel seamlessly.
+* **Time Machine**: 50-step historical snapshot engine (`Cmd+Z` / `Cmd+Shift+Z`).
+
+</details>
+
+<details>
+<summary><strong>🛡️ 2. AST Tokenizer & Real-time QA Consistency Linter</strong> (Click to expand)</summary>
+
+* **Token Protection Engine**: Automatically tokenizes interpolation variables into indestructible visual chips:
+  * ICU MessageFormat: `{name}`, `{count, plural, one{# item} other{# items}}`
+  * Mustache / Handlebars: `{{username}}`, `{{total}}`
+  * Printf syntax: `%s`, `%1$s`, `%(user)d`
+  * Positional variables: `$1`, `$2`
+* **Real-time QA Linter**:
+  * **Missing Variables**: Flags any translation missing variables present in source strings.
+  * **Whitespace Cleaner**: 1-click "Fix All Whitespace" trims leading/trailing spaces across all keys.
+  * **Text Expansion Warning**: Highlights translations exceeding 2.5x source length to prevent mobile UI button clipping.
+  * **Untranslated & Duplicate Detector**: Pinpoints identical strings and unmigrated keys.
+  * **Jump to Cell**: Click any issue row in the linter modal to automatically select and focus that cell in the grid.
+
+</details>
+
+<details>
+<summary><strong>⚡ 3. Two-Way Disk Synchronization & Instant Vite HMR</strong> (Click to expand)</summary>
+
+* **Native File System Access API**: Connects directly to local folders (`src/locales/` or `assets/l10n/`).
+* **Instant Disk Sync**: Press `Cmd+S` or `Ctrl+S` — changes write directly to `.json` files on your local drive with zero download prompts.
+* **Zero Production Overhead**: The devtool runs exclusively in `vite dev` (`apply: 'serve'`). In production builds (`npm run build`), zero runtime bytes from JSON Link are bundled.
+* **Live Type Generation**: Every disk save regenerates `translations.d.ts` with strict TypeScript literal union types.
+
+</details>
+
+<details>
+<summary><strong>🤖 4. Model Context Protocol (MCP) Server for AI Assistants</strong> (Click to expand)</summary>
+
+Connects directly to **Claude Desktop**, **Cursor**, **Windsurf**, and **Google Antigravity** via stdio JSON-RPC 2.0:
+
+* `validate_variables`: Verifies interpolation token integrity across files.
+* `convert_zawgyi`: Lossless Rabbit encoding conversion.
+* `lint_translations`: Automated headless QA audit for CI or chat prompts.
+* `read_translations`: Unified parser across JSON, ARB, XML, Strings, YAML, and CSV.
+* `export_bundle`: Multi-platform code generation.
+
+**Configuration in `.cursor/mcp.json` or Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "json-link": {
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
+    }
+  }
+}
 ```
 
-### Running Automated Tests
+</details>
+
+<details>
+<summary><strong>🔒 5. Zero-Knowledge E2EE Sharing & Team Handoff (.jsonlink)</strong> (Click to expand)</summary>
+
+* **Zero-Storage URL Fragment Sharing (`#share=...`)**:
+  * Entire multi-language workspace states are compressed in-browser via DEFLATE (`pako`) and encoded into the URL hash fragment.
+  * Zero server storage, zero database overhead. Plaintext data never transits an intermediary server.
+* **Client-Side AES-GCM 256-bit Password Encryption**:
+  * Optional password protection using PBKDF2-SHA256 (100,000 iterations), 16-byte cryptographic salt, and 12-byte IV.
+  * Available across URL shares, standalone `.jsonlink` file backups, and workspace exit guards.
+* **Automated Decryption Dialog**: Opening an encrypted URL triggers password prompts with cryptographic authentication tag verification.
+
+</details>
+
+<details>
+<summary><strong>🇲🇲 6. Lossless Myanmar Zawgyi ⇄ Unicode Engine</strong> (Click to expand)</summary>
+
+* **Heuristic Font Detector**: Analyzes text ordering, vowel markers, and medials to automatically detect legacy Zawgyi encoding.
+* **Warning Header Badges**: Displays a Zawgyi warning pill on affected language columns.
+* **Rabbit Transcoder**:
+  * **Zawgyi → Unicode**: One-click conversion reordering syllables to international Myanmar Unicode standards.
+  * **Unicode → Zawgyi**: Transcodes clean Unicode back to Zawgyi for testing on legacy Android forks.
+
+</details>
+
+<details>
+<summary><strong>📦 7. Universal Multi-Platform Exporters</strong> (Click to expand)</summary>
+
+One-click multi-format bundle exporter transpiling simultaneously into:
+* **Web & Next.js**: `locales/{lang}.json` (flat or nested)
+* **Flutter**: `flutter-l10n/app_{lang}.arb` (preserves `@key` descriptions & placeholders)
+* **iOS / Xcode**: `ios-strings/{lang}.lproj/Localizable.strings` (with C-style comments)
+* **Android**: `android-res/values-{lang}/strings.xml` (with XML resource comments)
+* **TypeScript**: `translations.d.ts` (strict type-safe unions)
+* **Spreadsheets**: Excel `.xlsx` (auto-sized columns) and UTF-8 BOM `.csv`
+* **Server**: YAML `.yaml`
+
+</details>
+
+<details>
+<summary><strong>🐙 8. GitHub Branch Discovery & Automated Pull Requests</strong> (Click to expand)</summary>
+
+* **Zero-Setup Client-Side Sync**: Connects to public or private repositories using a GitHub Personal Access Token (stored only in browser `localStorage`).
+* **Git Tree Locales Discovery**: Recursively scans repo branches to detect existing localization files (`locales/`, `i18n/`, `values-*/`, etc.).
+* **Automated Feature Branch & PR Creation**: Commits updated translations to a dedicated branch (`jsonlink/translations-...`) and opens a Pull Request with a clear markdown diff summary.
+* **Safety Guardrails**: Security filters permanently block read/write operations outside translation paths (e.g., blocking `src/`, `.env*`, `.github/`).
+
+</details>
+
+---
+
+## 💻 Developer Integration (React + Vite)
+
+JSON Link provides an ultra-lightweight, zero-dependency reactive client loader (`i18n.ts`):
+
+```tsx
+// src/App.tsx
+import { useTranslation } from './locales/i18n';
+
+export function App() {
+  const { t, language, setLanguage, languages } = useTranslation();
+
+  return (
+    <div>
+      {/* Type-safe key autocomplete with variable interpolation */}
+      <h1>{t('app.title')}</h1>
+      <p>{t('auth.welcome', { username: 'Developer' })}</p>
+
+      {/* Reactive language switcher */}
+      <div className="flex gap-2">
+        {languages.map((lang) => (
+          <button
+            key={lang}
+            className={language === lang ? 'active' : ''}
+            onClick={() => setLanguage(lang)}
+          >
+            {lang === 'en' ? 'English' : 'မြန်မာ'}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { jsonLink } from '@jsonlink/vite-plugin';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    jsonLink({
+      localesDir: './src/locales',
+      route: '/__jsonlink', // open devtool at http://localhost:5173/__jsonlink
+    }),
+  ],
+});
+```
+
+---
+
+## 🧪 Testing & Verification
+
+Quality and zero-regression architecture are guaranteed via automated test suites in Vitest:
+
 ```bash
 npm test
 ```
 
-### Production Build
-```bash
-npm run build
 ```
+ ✓ src/components/__tests__/SpreadsheetTable.test.tsx (8 tests)
+ ✓ src/lib/__tests__/variables.test.ts (31 tests)
+ ✓ src/lib/__tests__/linter.test.ts (20 tests)
+ ✓ src/lib/__tests__/myanmarFont.test.ts (16 tests)
+ ✓ src/lib/__tests__/exporter.test.ts (23 tests)
+ ✓ packages/vite-plugin/src/__tests__/init.test.ts (12 tests)
+ ✓ packages/create-jsonlink/src/__tests__/create.test.ts (2 tests)
+ ...
 
-### Model Context Protocol (MCP) Server
-```bash
-# Build the MCP server
-npm run mcp:build
-
-# Start MCP server via stdio (connect to Claude Desktop or Cursor)
-npm run mcp:start
+ Test Files  52 passed (52)
+      Tests  398 passed (398)
 ```
 
 ---
 
-## License
+## 🛠️ Local Development
 
-This project is licensed under the [MIT License](LICENSE). Free and open-source for individuals and developer teams worldwide.
+```bash
+# Clone the repository
+git clone https://github.com/pyaephyomaungdev/json-link.git
+cd json-link
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build all packages (Web app, Vite Plugin, MCP Server, Starter CLI)
+npm run build
+npm run plugin:build
+npm run mcp:build
+npm run create:build
+```
+
+---
+
+## 📄 License
+
+MIT © [Pyae Phyo Maung](https://github.com/pyaephyomaungdev) — Free and open-source for developers and teams worldwide.
+
