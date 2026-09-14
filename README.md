@@ -13,12 +13,12 @@
   </p>
 
   <p>
-    <a href="#-quickstart-3-seconds">Quickstart</a> •
-    <a href="#-why-json-link-comparison">Why JSON Link?</a> •
-    <a href="#-core-ecosystem">Ecosystem Packages</a> •
-    <a href="#-interactive-feature-tour">Feature Tour</a> •
-    <a href="#-developer-integration-react--vite">Developer Guide</a> •
-    <a href="#-testing--verification">Tests & CI</a>
+    <a href="#quickstart">Quickstart</a> •
+    <a href="#why-json-link">Why JSON Link?</a> •
+    <a href="#core-ecosystem">Ecosystem Packages</a> •
+    <a href="#feature-tour">Feature Tour</a> •
+    <a href="#developer-integration-react--vite">Developer Guide</a> •
+    <a href="#testing--verification">Tests & CI</a>
   </p>
 </div>
 
@@ -30,7 +30,7 @@
 
 ---
 
-## ⚡ Quickstart (3 Seconds)
+## <img src=".github/assets/icons/zap.svg" width="20" height="20" align="center" /> Quickstart
 
 Choose how you want to run JSON Link:
 
@@ -66,22 +66,22 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 
 ---
 
-## ⚔️ Why JSON Link? (Comparison)
+## <img src=".github/assets/icons/layers.svg" width="20" height="20" align="center" /> Why JSON Link?
 
-| Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | ⚡ JSON Link (Open Source) |
+| Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | JSON Link (Open Source) |
 | :--- | :---: | :---: | :---: |
-| **Interpolation Safety** (`{user}`, `%s`) | ❌ Translators corrupt variables | ⚠️ Complex regex setups | **✅ AST-locked visual chips & live linter** |
-| **Local Disk Sync & HMR** | ❌ Manual export & copy-paste | ❌ CLI polling / webhooks | **✅ Direct disk write (`Cmd+S`) with instant Vite HMR** |
-| **Developer Overhead** | ❌ Heavy glue scripts | ❌ Vendor lock-in & SDK bloat | **✅ Zero-dependency reactive client (<2KB)** |
-| **AI Translation (BYOK)** | ❌ None | ⚠️ High per-token markup | **✅ Direct OpenRouter (Gemini, Claude, DeepSeek)** |
-| **Data Privacy & Storage** | ⚠️ Plaintext on external cloud | ⚠️ Third-party server hosting | **✅ 100% Client-Side AES-GCM 256 + Zero Backend** |
-| **AI Coding Assistant Tools** | ❌ None | ❌ None | **✅ Native Model Context Protocol (MCP) server** |
-| **Myanmar Font Support** | ❌ Garbled Zawgyi rendering | ❌ Unsupported | **✅ Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
-| **Pricing** | Free with manual pain | Expensive recurring seat fees | **🆓 Free forever (MIT License)** |
+| **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="center" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **AST-locked visual chips & live linter** |
+| **Local Disk Sync & HMR** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Manual export & copy-paste | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> CLI polling / webhooks | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Direct disk write (`Cmd+S`) with instant Vite HMR** |
+| **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Zero-dependency reactive client (<2KB)** |
+| **AI Translation (BYOK)** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> None | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="center" /> High per-token markup | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Direct OpenRouter (Gemini, Claude, DeepSeek)** |
+| **Data Privacy & Storage** | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="center" /> Plaintext on external cloud | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="center" /> Third-party server hosting | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **100% Client-Side AES-GCM 256 + Zero Backend** |
+| **AI Coding Assistant Tools** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> None | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> None | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Native Model Context Protocol (MCP) server** |
+| **Myanmar Font Support** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Garbled Zawgyi rendering | <img src=".github/assets/icons/x.svg" width="16" height="16" align="center" /> Unsupported | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
+| **Pricing** | Free with manual friction | Expensive recurring seat fees | <img src=".github/assets/icons/check.svg" width="16" height="16" align="center" /> **Free forever (MIT License)** |
 
 ---
 
-## 📦 Core Ecosystem
+## <img src=".github/assets/icons/box.svg" width="20" height="20" align="center" /> Core Ecosystem
 
 | Package | npm | Role |
 | :--- | :--- | :--- |
@@ -91,10 +91,10 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 
 ---
 
-## 🔍 Interactive Feature Tour
+## Feature Tour
 
 <details>
-<summary><strong>📊 1. Authentic Spreadsheet Grid & Keyboard Navigation</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/table.svg" width="18" height="18" align="center" /> 1. Authentic Spreadsheet Grid & Keyboard Navigation</strong> (Click to expand)</summary>
 
 * **Edge-to-Edge Grid**: Full viewport spreadsheet with zero outer margins, clean gridlines, row numbers (`1, 2, 3...`), and column letters (`A, B, C...`).
 * **Freeze Panes**:
@@ -110,7 +110,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 </details>
 
 <details>
-<summary><strong>🛡️ 2. AST Tokenizer & Real-time QA Consistency Linter</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/shield.svg" width="18" height="18" align="center" /> 2. AST Tokenizer & Real-time QA Consistency Linter</strong> (Click to expand)</summary>
 
 * **Token Protection Engine**: Automatically tokenizes interpolation variables into indestructible visual chips:
   * ICU MessageFormat: `{name}`, `{count, plural, one{# item} other{# items}}`
@@ -127,7 +127,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 </details>
 
 <details>
-<summary><strong>⚡ 3. Two-Way Disk Synchronization & Instant Vite HMR</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/refresh.svg" width="18" height="18" align="center" /> 3. Two-Way Disk Synchronization & Instant Vite HMR</strong> (Click to expand)</summary>
 
 * **Native File System Access API**: Connects directly to local folders (`src/locales/` or `assets/l10n/`).
 * **Instant Disk Sync**: Press `Cmd+S` or `Ctrl+S` — changes write directly to `.json` files on your local drive with zero download prompts.
@@ -137,7 +137,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 </details>
 
 <details>
-<summary><strong>🤖 4. Model Context Protocol (MCP) Server for AI Assistants</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/bot.svg" width="18" height="18" align="center" /> 4. Model Context Protocol (MCP) Server for AI Assistants</strong> (Click to expand)</summary>
 
 Connects directly to **Claude Desktop**, **Cursor**, **Windsurf**, and **Google Antigravity** via stdio JSON-RPC 2.0:
 
@@ -162,7 +162,7 @@ Connects directly to **Claude Desktop**, **Cursor**, **Windsurf**, and **Google 
 </details>
 
 <details>
-<summary><strong>🔒 5. Zero-Knowledge E2EE Sharing & Team Handoff (.jsonlink)</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/lock.svg" width="18" height="18" align="center" /> 5. Zero-Knowledge E2EE Sharing & Team Handoff (.jsonlink)</strong> (Click to expand)</summary>
 
 * **Zero-Storage URL Fragment Sharing (`#share=...`)**:
   * Entire multi-language workspace states are compressed in-browser via DEFLATE (`pako`) and encoded into the URL hash fragment.
@@ -175,7 +175,7 @@ Connects directly to **Claude Desktop**, **Cursor**, **Windsurf**, and **Google 
 </details>
 
 <details>
-<summary><strong>🇲🇲 6. Lossless Myanmar Zawgyi ⇄ Unicode Engine</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/globe.svg" width="18" height="18" align="center" /> 6. Lossless Myanmar Zawgyi ⇄ Unicode Engine</strong> (Click to expand)</summary>
 
 * **Heuristic Font Detector**: Analyzes text ordering, vowel markers, and medials to automatically detect legacy Zawgyi encoding.
 * **Warning Header Badges**: Displays a Zawgyi warning pill on affected language columns.
@@ -186,7 +186,7 @@ Connects directly to **Claude Desktop**, **Cursor**, **Windsurf**, and **Google 
 </details>
 
 <details>
-<summary><strong>📦 7. Universal Multi-Platform Exporters</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/download.svg" width="18" height="18" align="center" /> 7. Universal Multi-Platform Exporters</strong> (Click to expand)</summary>
 
 One-click multi-format bundle exporter transpiling simultaneously into:
 * **Web & Next.js**: `locales/{lang}.json` (flat or nested)
@@ -200,7 +200,7 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 </details>
 
 <details>
-<summary><strong>🐙 8. GitHub Branch Discovery & Automated Pull Requests</strong> (Click to expand)</summary>
+<summary><strong><img src=".github/assets/icons/git-pull-request.svg" width="18" height="18" align="center" /> 8. GitHub Branch Discovery & Automated Pull Requests</strong> (Click to expand)</summary>
 
 * **Zero-Setup Client-Side Sync**: Connects to public or private repositories using a GitHub Personal Access Token (stored only in browser `localStorage`).
 * **Git Tree Locales Discovery**: Recursively scans repo branches to detect existing localization files (`locales/`, `i18n/`, `values-*/`, etc.).
@@ -211,7 +211,7 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 
 ---
 
-## 💻 Developer Integration (React + Vite)
+## <img src=".github/assets/icons/code.svg" width="20" height="20" align="center" /> Developer Integration (React + Vite)
 
 JSON Link provides an ultra-lightweight, zero-dependency reactive client loader (`i18n.ts`):
 
@@ -264,7 +264,7 @@ export default defineConfig({
 
 ---
 
-## 🧪 Testing & Verification
+## <img src=".github/assets/icons/shield.svg" width="20" height="20" align="center" /> Testing & Verification
 
 Quality and zero-regression architecture are guaranteed via automated test suites in Vitest:
 
@@ -288,7 +288,7 @@ npm test
 
 ---
 
-## 🛠️ Local Development
+## <img src=".github/assets/icons/terminal.svg" width="20" height="20" align="center" /> Local Development
 
 ```bash
 # Clone the repository
