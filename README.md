@@ -25,7 +25,7 @@
 ---
 
 <p align="center">
-  <img src="public/hero-screenshot.png" alt="JSON Link Spreadsheet Studio" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
+  <img src="public/update-web.png" alt="JSON Link Spreadsheet Studio" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
 </p>
 
 ---
