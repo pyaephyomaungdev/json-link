@@ -20,6 +20,14 @@ describe('myanmarFont.ts', () => {
 
       const uni2 = 'မြန်မာနိုင်ငံ'; // Myanmar Naing Ngan
       expect(isZawgyi(uni2)).toBe(false);
+
+      // Unicode text containing ၎င်း (\u104e\u1004\u103a\u1038)
+      const uniLagaung = '၎င်းအကြောင်းအရာများကို ပြသရန်နှင့် ဖြန့်ဝေရန်';
+      expect(isZawgyi(uniLagaung)).toBe(false);
+
+      // Real-world TextPad Terms text that was previously falsely detected as Zawgyi
+      const uniTerms = 'အသုံးပြုသူမှ တင်ဆက်လိုက်သော စာမူနှင့် အကြောင်းအရာများ၏ မူပိုင်ခွင့်သည် ဖန်တီးသူထံ၌သာ ရှိပါသည်။ သို့သော် TextPad ပေါ်တွင် တင်ဆက်ခြင်းဖြင့် ၎င်းအကြောင်းအရာများကို ပြသရန်နှင့် ဖြန့်ဝေရန် လုပ်ပိုင်ခွင့် (License) ကို ကျွန်ုပ်တို့အား ခွင့်ပြုပြီး ဖြစ်ပါသည်။';
+      expect(isZawgyi(uniTerms)).toBe(false);
     });
 
     it('returns false for plain English or empty text', () => {

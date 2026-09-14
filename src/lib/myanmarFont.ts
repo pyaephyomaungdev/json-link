@@ -12,10 +12,12 @@ const ZG_REGEX = new RegExp(
   [
     '[\u1060-\u1097]', // Zawgyi-specific glyph ranges (stacked consonants, medials, tall vowels)
     '\u1033', '\u1034', // Zawgyi u/uu vowels
-    '(?:^|[\s\u104a\u104b\u103a\u1037\u1038\u102c\u102b\u102d\u102e\u102f\u1030\u1032\u1036])\u1031[\u1000-\u1021]', // Pre-posed e-vowel
-    '(?:^|[\s\u104a\u104b\u103a\u1037\u1038\u102c\u102b\u102d\u102e\u102f\u1030\u1032\u1036])\u103b[\u1000-\u1021]', // Pre-posed ya-yit
+    '(?:^|[\\s\u104a\u104b\u103a\u1037\u1038\u102c\u102b\u102d\u102e\u102f\u1030\u1032\u1036])\u1031[\u1000-\u1021]', // Pre-posed e-vowel
+    '(?:^|[\\s\u104a\u104b\u103a\u1037\u1038\u102c\u102b\u102d\u102e\u102f\u1030\u1032\u1036])\u103b[\u1000-\u1021]', // Pre-posed ya-yit
     '\u1039[^\u1000-\u1021]', // Stacking virama not followed by consonant
-    '\u104e\u1004\u103a\u1038', // Zawgyi ၎င်္း
+    // NOTE: \u104e\u1004\u103a\u1038 was removed — in standard Unicode, \u104e (၎) + \u1004\u103a\u1038 (င်း)
+    // is a valid representation of ၎င်း. Real Zawgyi ၎င်္း uses Zawgyi kinzi (\u1064/\u108b) which is
+    // already caught by [\u1060-\u1097].
     // NOTE: \u103c\u1031 (ြ + ေ) was intentionally removed — it is the VALID Unicode
     // order for common words like ဖြေ / ကြောင်း (medial before e-vowel:
     // consonant+medial+ေ). In Zawgyi the e-vowel is pre-posed BEFORE the

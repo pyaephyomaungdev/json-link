@@ -56,6 +56,7 @@ import { exportSingleLanguageJson, exportSingleLanguageArb } from '@/lib/exporte
 import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/lib/variables';
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
+import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -173,6 +174,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [renameLangTarget, setRenameLangTarget] = useState<string | null>(null);
   const [renameLangValue, setRenameLangValue] = useState<string>('');
+  const [zawgyiModalLang, setZawgyiModalLang] = useState<string | null>(null);
 
   const handleStartRenameLanguage = (lang: string) => {
     setRenameLangTarget(lang);
@@ -458,18 +460,26 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   };
 
   const handleConvertZawgyiToUnicode = (lang: string) => {
-    if (!onBatchUpdate) return;
-    let count = 0;
+    setZawgyiModalLang(lang);
+  };
+
+  const handleConfirmZawgyiConversion = (conversions: ZawgyiCandidateRow[]) => {
+    if (!onBatchUpdate || !zawgyiModalLang) return;
+    const lang = zawgyiModalLang;
+    const convMap = new Map(conversions.map(c => [c.key, c.after]));
     const prevMap: Record<string, string> = {};
+    let count = 0;
+
     const updated = items.map(item => {
-      const val = item[lang];
-      if (typeof val === 'string' && isZawgyi(val)) {
+      const convertedVal = convMap.get(item.key);
+      if (convertedVal !== undefined) {
         count++;
-        prevMap[item.key] = val;
-        return { ...item, [lang]: zawgyiToUnicode(val) };
+        prevMap[item.key] = item[lang] as string;
+        return { ...item, [lang]: convertedVal };
       }
       return item;
     });
+
     if (count > 0) {
       setPreviousValues(prev => {
         const next = { ...prev };
@@ -479,11 +489,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         return next;
       });
       onBatchUpdate(updated);
-      setCopiedNotification(`Converted ${count} Zawgyi cell${count > 1 ? 's' : ''} to Unicode`);
-    } else {
-      setCopiedNotification(`No Zawgyi text detected in ${lang.toUpperCase()}`);
+      setCopiedNotification(`Converted ${count} Zawgyi cell${count > 1 ? 's' : ''} to Unicode in ${lang.toUpperCase()}`);
     }
-    setTimeout(() => setCopiedNotification(null), 2000);
+    setTimeout(() => setCopiedNotification(null), 2500);
   };
 
   const handleConvertCellZawgyiToUnicode = (key: string, lang: string) => {
@@ -2373,6 +2381,17 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Zawgyi to Unicode Conversion Preview Modal */}
+      <ZawgyiConvertModal
+        open={Boolean(zawgyiModalLang)}
+        onOpenChange={open => {
+          if (!open) setZawgyiModalLang(null);
+        }}
+        lang={zawgyiModalLang || ''}
+        items={items}
+        onConfirm={handleConfirmZawgyiConversion}
+      />
 
       {/* Floating Bulk Actions Bar when rows are selected */}
       {selectedRowKeys.size > 0 && (
