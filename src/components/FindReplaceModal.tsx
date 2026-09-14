@@ -8,7 +8,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -229,37 +228,45 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader className="pb-2">
+      <DialogContent className="max-w-lg">
+        <DialogHeader className="pb-3">
           <DialogTitle className="text-base font-semibold text-foreground">
             Find &amp; Replace Across Languages
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
             Search and replace text across translation keys, descriptions, or specific language columns.
           </DialogDescription>
-
-          {/* Mode Switcher Tabs */}
-          <div className="pt-2">
-            <Tabs
-              value={tab}
-              onValueChange={(val) => setTab(val as 'find' | 'replace')}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2 h-8">
-                <TabsTrigger value="find" className="text-xs gap-1.5 h-6.5">
-                  <Search className="size-3 text-primary" />
-                  <span>Find</span>
-                </TabsTrigger>
-                <TabsTrigger value="replace" className="text-xs gap-1.5 h-6.5">
-                  <Replace className="size-3 text-primary" />
-                  <span>Replace</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
         </DialogHeader>
 
         <DialogBody className="flex flex-col gap-3.5 text-xs py-3">
+          {/* Underline Tabs */}
+          <div className="flex items-center gap-4 border-b border-border w-full pb-0 -mt-1 mb-1">
+            <button
+              type="button"
+              onClick={() => setTab('find')}
+              className={`flex items-center gap-1.5 pb-2 px-1 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+                tab === 'find'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Search className="size-3.5" />
+              <span>Find</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('replace')}
+              className={`flex items-center gap-1.5 pb-2 px-1 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+                tab === 'replace'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Replace className="size-3.5" />
+              <span>Replace</span>
+            </button>
+          </div>
+
           {/* Find input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">

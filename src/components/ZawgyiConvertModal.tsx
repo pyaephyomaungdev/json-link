@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { AlertTriangle, Sparkles, Search, CheckCircle2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -108,31 +108,21 @@ export function ZawgyiConvertModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
-              <Sparkles className="size-4.5" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-                <span>Convert Zawgyi → Unicode</span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 uppercase border border-amber-500/30">
-                  {lang}
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                Found {candidates.length} detected Zawgyi {candidates.length === 1 ? 'row' : 'rows'} in the{' '}
-                <strong className="text-foreground">{lang.toUpperCase()}</strong> column. Review the Before & After preview below before confirming conversion.
-              </DialogDescription>
-            </div>
-          </div>
+      <DialogContent className="max-w-lg">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Convert Zawgyi → Unicode
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            Found {candidates.length} detected Zawgyi {candidates.length === 1 ? 'row' : 'rows'} in the{' '}
+            <strong className="text-foreground">{lang.toUpperCase()}</strong> column. Review the Before &amp; After preview below before confirming conversion.
+          </DialogDescription>
         </DialogHeader>
 
-        <DialogBody className="space-y-3.5 text-xs py-3.5">
+        <DialogBody className="space-y-3.5 text-xs py-3">
           {/* Controls Bar: Select All + Search */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <Checkbox
                   checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
@@ -149,7 +139,7 @@ export function ZawgyiConvertModal({
             </div>
 
             {candidates.length > 3 && (
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-44 sm:w-56">
                 <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input
                   value={searchQuery}
@@ -162,11 +152,10 @@ export function ZawgyiConvertModal({
           </div>
 
           {/* Rows List */}
-          <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1 [scrollbar-width:thin]">
+          <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 [scrollbar-width:thin]">
             {candidates.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground flex flex-col items-center gap-2">
-                <CheckCircle2 className="size-8 text-emerald-500/60" />
-                <p className="text-xs font-medium">No Zawgyi encoded text detected in this column.</p>
+              <div className="py-10 text-center text-muted-foreground text-xs font-medium">
+                No Zawgyi encoded text detected in this column.
               </div>
             ) : filteredCandidates.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground text-xs">
@@ -205,22 +194,20 @@ export function ZawgyiConvertModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* Before (Zawgyi) */}
                       <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                          <AlertTriangle className="size-3 shrink-0" />
-                          <span>Before (Zawgyi)</span>
+                        <div className="text-[11px] font-semibold text-muted-foreground">
+                          Before (Zawgyi)
                         </div>
-                        <div className="p-2 rounded-md bg-amber-500/5 border border-amber-500/20 text-foreground font-myanmar text-xs break-words whitespace-pre-wrap leading-relaxed min-h-[38px] select-text">
+                        <div className="p-2 rounded-md bg-muted/40 border border-border text-foreground font-myanmar text-xs break-words whitespace-pre-wrap leading-relaxed min-h-[38px] select-text">
                           {c.before}
                         </div>
                       </div>
 
                       {/* After (Unicode) */}
                       <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          <Sparkles className="size-3 shrink-0" />
-                          <span>After (Unicode)</span>
+                        <div className="text-[11px] font-semibold text-muted-foreground">
+                          After (Unicode)
                         </div>
-                        <div className="p-2 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-foreground font-myanmar text-xs break-words whitespace-pre-wrap leading-relaxed min-h-[38px] select-text">
+                        <div className="p-2 rounded-md bg-muted/20 border border-border text-foreground font-myanmar text-xs break-words whitespace-pre-wrap leading-relaxed min-h-[38px] select-text">
                           {c.after}
                         </div>
                       </div>
@@ -251,12 +238,9 @@ export function ZawgyiConvertModal({
               size="sm"
               onClick={handleConfirm}
               disabled={selectedKeys.size === 0}
-              className="h-8 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+              className="h-8 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
             >
-              <Sparkles className="size-3.5" />
-              <span>
-                Convert {selectedKeys.size} {selectedKeys.size === 1 ? 'Row' : 'Rows'} to Unicode
-              </span>
+              Convert {selectedKeys.size} {selectedKeys.size === 1 ? 'Row' : 'Rows'} to Unicode
             </Button>
           </div>
         </DialogFooter>
