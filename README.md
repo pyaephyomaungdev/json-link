@@ -312,5 +312,5 @@ npm run create:build
 
 ## <img src=".github/assets/icons/file-text.svg" width="22" height="22" align="absmiddle" /> License
 
-MIT © [Pyae Phyo Maung](https://github.com/pyaephyomaungdev) — Free and open-source for developers and teams worldwide.
+MIT © [Pyae Phyo Maung](https://pyaephyomaung.dev) — Free and open-source for developers and teams worldwide.
 
