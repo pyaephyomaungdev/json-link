@@ -47,7 +47,7 @@ export function unflattenObject(flat: Record<string, string>): Record<string, an
 /**
  * Reads all translation JSON files in the specified directory.
  */
-export function readLocalesFromDisk(resolvedDir: string, nested = false): { languages: string[]; records: TranslationRecord[] } {
+export function readLocalesFromDisk(resolvedDir: string, _nested = false): { languages: string[]; records: TranslationRecord[] } {
   if (!fs.existsSync(resolvedDir)) {
     return { languages: [], records: [] };
   }

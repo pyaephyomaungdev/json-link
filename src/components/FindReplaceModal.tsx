@@ -230,10 +230,10 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader className="pb-3">
-          <DialogTitle className="text-base font-semibold text-foreground">
+          <DialogTitle className="text-base font-semibold">
             Find &amp; Replace Across Languages
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+          <DialogDescription className="text-xs leading-relaxed">
             Search and replace text across translation keys, descriptions, or specific language columns.
           </DialogDescription>
         </DialogHeader>

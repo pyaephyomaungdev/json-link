@@ -65,7 +65,8 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
     let missingSum = 0;
     const issues: VariableIssue[] = [];
 
-    const stats: LanguageHealth[] = languages.map((lang) => {
+    const stats: LanguageHealth[] = [];
+    for (const lang of languages) {
       let translated = 0;
       let varIssues = 0;
 
@@ -102,7 +103,7 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
       const meta = SUPPORTED_LANGUAGES.find((l) => l.code === lang);
       const label = meta ? `${meta.name} (${lang})` : lang.toUpperCase();
 
-      return {
+      stats.push({
         lang,
         label,
         total: totalKeys,
@@ -110,8 +111,8 @@ export const ScorecardModal: React.FC<ScorecardModalProps> = ({
         missing,
         percentage,
         variableIssues: varIssues,
-      };
-    });
+      });
+    }
 
     const overall = languages.length > 0 ? Math.round(sumPercentages / languages.length) : 0;
 

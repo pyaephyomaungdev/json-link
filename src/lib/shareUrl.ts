@@ -257,7 +257,7 @@ export async function decodeSharePayload(
       let key: CryptoKey;
       try {
         key = await deriveKeyFromPassword(password, salt, ['decrypt']);
-      } catch (keyErr) {
+      } catch {
         throw new Error('INCORRECT_PASSWORD');
       }
 
@@ -268,7 +268,7 @@ export async function decodeSharePayload(
           key,
           cipherBytes
         );
-      } catch (decErr) {
+      } catch {
         throw new Error('INCORRECT_PASSWORD');
       }
 

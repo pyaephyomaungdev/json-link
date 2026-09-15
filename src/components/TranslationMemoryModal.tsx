@@ -49,7 +49,7 @@ export function TranslationMemoryModal({
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     version;
     return loadTranslationMemory();
-  }, [version, isOpen]);
+  }, [version]);
 
   const filteredEntries = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -432,7 +432,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setPreviousValues(prev => ({
         ...prev,
         [key]: {
-          ...(prev[key] || {}),
+          ...prev[key],
           [lang]: oldVal,
         },
       }));
@@ -484,7 +484,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       setPreviousValues(prev => {
         const next = { ...prev };
         for (const [k, oldText] of Object.entries(prevMap)) {
-          next[k] = { ...(next[k] || {}), [lang]: oldText };
+          next[k] = { ...next[k], [lang]: oldText };
         }
         return next;
       });
@@ -520,7 +520,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     setPreviousValues(prev => {
       const next = { ...prev };
       for (const [k, oldText] of Object.entries(prevMap)) {
-        next[k] = { ...(next[k] || {}), [lang]: oldText };
+        next[k] = { ...next[k], [lang]: oldText };
       }
       return next;
     });

@@ -158,7 +158,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         setNativeShared(true);
         setTimeout(() => setNativeShared(false), 2000);
       }
-    } catch (e) {
+    } catch {
       // User cancelled or share aborted
     }
   };

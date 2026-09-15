@@ -110,10 +110,10 @@ export function ZawgyiConvertModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader className="pb-3">
-          <DialogTitle className="text-base font-semibold text-foreground">
+          <DialogTitle className="text-base font-semibold">
             Convert Zawgyi → Unicode
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+          <DialogDescription className="text-xs leading-relaxed">
             Found {candidates.length} detected Zawgyi {candidates.length === 1 ? 'row' : 'rows'} in the{' '}
             <strong className="text-foreground">{lang.toUpperCase()}</strong> column. Review the Before &amp; After preview below before confirming conversion.
           </DialogDescription>
@@ -145,7 +145,7 @@ export function ZawgyiConvertModal({
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Filter keys or text..."
-                  className="h-7.5 pl-8 text-xs bg-muted/30"
+                  className="h-7.5 pl-8 text-xs"
                 />
               </div>
             )}
@@ -238,7 +238,7 @@ export function ZawgyiConvertModal({
               size="sm"
               onClick={handleConfirm}
               disabled={selectedKeys.size === 0}
-              className="h-8 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
+              className="h-8 text-xs font-semibold cursor-pointer"
             >
               Convert {selectedKeys.size} {selectedKeys.size === 1 ? 'Row' : 'Rows'} to Unicode
             </Button>
