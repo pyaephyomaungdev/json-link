@@ -143,7 +143,7 @@ describe('myanmarFont.ts', () => {
     it('detects Zawgyi in non-"my" language columns, regardless of row position', () => {
       // A translation column (e.g. 'th' typed with a Zawgyi keyboard) that deep in
       // the data contains Burmese text — pre-checks must not sample-skip these rows.
-      const items = new Array(50).fill(null).map((_, i) =>
+      const items = Array.from({ length: 50 }, (_, i) =>
         i === 40
           ? { key: `key${i}`, en: 'Hello', th: '\u1031\u1019\u102c\u1004\u103a' }
           : { key: `key${i}`, en: 'Hello', th: `Thai text ${i}` }

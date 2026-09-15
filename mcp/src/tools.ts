@@ -97,7 +97,7 @@ export function unicodeToZawgyi(text: string): string {
 
 // Variable Regex Tokenizer
 const VARIABLE_REGEX =
-  /(\{[a-zA-Z0-9_]+\}|\{\{[a-zA-Z0-9_]+\}\}|\%[0-9]*\$?[sdif]|%[sdif]|\$[a-zA-Z0-9_]+|:[a-zA-Z0-9_]+|\{[0-9]+\})/g;
+  /(\{[a-zA-Z0-9_]+\}|\{\{[a-zA-Z0-9_]+\}\}|%[0-9]*\$?[sdif]|%[sdif]|\$[a-zA-Z0-9_]+|:[a-zA-Z0-9_]+|\{[0-9]+\})/g;
 
 export function extractVariables(text: string): string[] {
   if (!text) return [];
@@ -294,7 +294,7 @@ export function exportFormat(
           if (vars.length > 0) {
             meta.placeholders = {};
             vars.forEach(v => {
-              const clean = v.replace(/[\{\}]/g, '');
+              const clean = v.replace(/[{}]/g, '');
               meta.placeholders[clean] = { type: 'String', example: clean };
             });
           }
