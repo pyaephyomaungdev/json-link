@@ -184,6 +184,7 @@ interface LandingPageProps {
   onDirectFiles: (files: FileList | File[]) => void;
   onOpenAbout: () => void;
   onOpenDocs: () => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms' | 'cookies') => void;
   isDark: boolean;
   onToggleTheme?: () => void;
 }
@@ -198,6 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onDirectFiles,
   onOpenAbout,
   onOpenDocs,
+  onOpenLegal,
   isDark,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -896,6 +898,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             >
               Documentation
             </button>
+            <a
+              href="/privacy"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenLegal?.('privacy');
+              }}
+              className="hover:text-foreground transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="/terms"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenLegal?.('terms');
+              }}
+              className="hover:text-foreground transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </a>
+            <a
+              href="/cookies"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenLegal?.('cookies');
+              }}
+              className="hover:text-foreground transition-colors cursor-pointer"
+            >
+              Cookie Policy
+            </a>
             <a
               href={GITHUB_URL}
               target="_blank"

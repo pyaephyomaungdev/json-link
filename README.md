@@ -13,6 +13,10 @@
   </p>
 
   <p>
+    <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
+  </p>
+
+  <p>
     <a href="#quickstart">Quickstart</a> •
     <a href="#why-json-link">Why JSON Link?</a> •
     <a href="#core-ecosystem">Ecosystem Packages</a> •
@@ -307,6 +311,22 @@ npm run plugin:build
 npm run mcp:build
 npm run create:build
 ```
+
+---
+
+## <img src="public/buy-me-a-coffee-icon.svg" width="22" height="22" align="absmiddle" /> Support the Project
+
+JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider keeping me caffeinated:
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/pyaephyomaa" target="_blank" rel="noopener noreferrer">
+    <img src="public/buy-me-a-coffee-icon.svg" width="48" height="48" align="absmiddle" alt="BMC Logo" />
+    <br /><br />
+    <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_JSON_Link-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" />
+  </a>
+</p>
+
+Every cup fuels late-night Zawgyi converter fixes, new exporter formats, and zero-backend features that never lock you into a vendor. 🙏
 
 ---
 

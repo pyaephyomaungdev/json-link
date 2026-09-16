@@ -33,6 +33,7 @@ interface AboutPageProps {
   isDark: boolean;
   onToggleTheme: () => void;
   onOpenDocs?: () => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms' | 'cookies') => void;
 }
 
 const APP_VERSION = 'v1.0.0';
@@ -148,7 +149,7 @@ const developerFeatures = [
   },
 ];
 
-export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPageProps) {
+export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLegal }: AboutPageProps) {
   // Esc key returns to the workspace
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -395,7 +396,20 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://www.buymeacoffee.com/pyaephyomaa', '_blank', 'noopener')}
+                className="gap-2 text-xs font-semibold cursor-pointer bg-background hover:bg-muted shadow-2xs"
+              >
+                <img
+                  src="/buy-me-a-coffee-icon.svg"
+                  alt="Buy me a coffee"
+                  className="h-5 w-auto shrink-0"
+                />
+                Buy me a coffee
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -423,7 +437,40 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
               <span>by</span>
               <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="/privacy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('privacy');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Privacy
+              </a>
+              <span>·</span>
+              <a
+                href="/terms"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('terms');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Terms
+              </a>
+              <span>·</span>
+              <a
+                href="/cookies"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('cookies');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Cookies
+              </a>
+              <span>·</span>
               <a
                 href={GITHUB_URL}
                 target="_blank"
@@ -432,8 +479,6 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs }: AboutPa
               >
                 GitHub
               </a>
-              <span>·</span>
-              <span>MIT License</span>
               <span>·</span>
               <span className="font-mono">{APP_VERSION}</span>
             </div>

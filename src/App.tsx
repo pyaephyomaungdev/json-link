@@ -19,6 +19,7 @@ import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { AboutPage } from '@/components/AboutPage';
+import { LegalPage, LegalTab } from '@/components/LegalPage';
 import { LandingPage } from '@/components/LandingPage';
 import { NotFoundPage } from '@/components/NotFoundPage';
 import { FolderSyncModal } from '@/components/FolderSyncModal';
@@ -583,7 +584,8 @@ export function App() {
   };
 
   // Helper to determine the logical route from the URL pathname
-  const resolveRouteFromPath = (pathname: string): 'app' | 'about' | 'docs' | 'not-found' => {
+  type AppRoute = 'app' | 'about' | 'docs' | 'privacy' | 'terms' | 'cookies' | 'not-found';
+  const resolveRouteFromPath = (pathname: string): AppRoute => {
     const devBase = getDevBase();
     let path = pathname.replace(/\/+$/, '');
     if (devBase && (path === devBase || path.startsWith(`${devBase}/`))) {
@@ -591,12 +593,15 @@ export function App() {
     }
     if (path === '/about') return 'about';
     if (path === '/docs') return 'docs';
+    if (path === '/privacy') return 'privacy';
+    if (path === '/terms') return 'terms';
+    if (path === '/cookies') return 'cookies';
     if (path === '' || path === '/') return 'app';
     return 'not-found';
   };
 
-  // Simple path-based routing: /about, /docs render dedicated pages (SPA fallback served by host)
-  const [route, setRoute] = useState<'app' | 'about' | 'docs' | 'not-found'>(() => {
+  // Simple path-based routing: /about, /docs, /privacy, /terms, /cookies render dedicated pages
+  const [route, setRoute] = useState<AppRoute>(() => {
     return resolveRouteFromPath(typeof window !== 'undefined' ? window.location.pathname : '/');
   });
 
@@ -636,6 +641,24 @@ export function App() {
   };
 
   const closeDocs = () => {
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/` : '/';
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
+    }
+    setRoute('app');
+  };
+
+  const openLegal = (tab: LegalTab = 'privacy') => {
+    const devBase = getDevBase();
+    const target = devBase ? `${devBase}/${tab}` : `/${tab}`;
+    if (window.location.pathname !== target) {
+      window.history.pushState({}, '', target);
+    }
+    setRoute(tab);
+  };
+
+  const closeLegal = () => {
     const devBase = getDevBase();
     const target = devBase ? `${devBase}/` : '/';
     if (window.location.pathname !== target) {
@@ -1687,12 +1710,33 @@ export function App() {
 
   // Dedicated About page route (/about) - only on regular web, not in devtool
   if (!isDevMode && route === 'about') {
-    return <AboutPage onBack={closeAbout} isDark={isDark} onToggleTheme={toggleTheme} onOpenDocs={openDocs} />;
+    return (
+      <AboutPage
+        onBack={closeAbout}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onOpenDocs={openDocs}
+        onOpenLegal={openLegal}
+      />
+    );
   }
 
   // Dedicated Documentation page route (/docs)
   if (route === 'docs') {
     return <DocsPage onBack={closeDocs} isDark={isDark} onToggleTheme={toggleTheme} />;
+  }
+
+  // Dedicated Legal pages route (/privacy, /terms, /cookies)
+  if (route === 'privacy' || route === 'terms' || route === 'cookies') {
+    return (
+      <LegalPage
+        initialTab={route}
+        onBack={closeLegal}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onNavigateTab={(tab) => openLegal(tab)}
+      />
+    );
   }
 
   // 404 Not Found for any unrecognised URL path
@@ -1895,6 +1939,7 @@ export function App() {
           onDirectFiles={handleDirectFiles}
           onOpenAbout={openAbout}
           onOpenDocs={openDocs}
+          onOpenLegal={openLegal}
           isDark={isDark}
           onToggleTheme={toggleTheme}
         />
