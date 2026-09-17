@@ -215,7 +215,8 @@ export function objectToYaml(obj: Record<string, any>, indentLevel = 0): string 
         strVal.startsWith('"') ||
         strVal.startsWith("'")
       ) {
-        yaml += `${indent}${key}: "${strVal.replace(/"/g, '\\"')}"\n`;
+        const escapedYaml = strVal.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        yaml += `${indent}${key}: "${escapedYaml}"\n`;
       } else {
         yaml += `${indent}${key}: ${strVal}\n`;
       }
@@ -268,7 +269,7 @@ export function generateAndroidXml(items: TranslationItem[], lang: string): stri
       .replace(/\n/g, '\\n');
 
     if (item.description && item.description.trim()) {
-      const cleanDesc = item.description.replace(/-->/g, '--');
+      const cleanDesc = item.description.replace(/--/g, '- -').replace(/-$/, '- ');
       xml += `    <!-- ${cleanDesc} -->\n`;
     }
     xml += `    <string name="${safeKey}">${val}</string>\n`;

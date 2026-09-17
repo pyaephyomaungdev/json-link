@@ -56,30 +56,35 @@ export function isKeyRemembered(): boolean {
   }
 }
 
+let inMemoryApiKey = '';
+
 /**
- * Synchronously retrieves the API key from active session storage (if present).
+ * Synchronously retrieves the API key from active session memory (if present).
  */
 export function getStoredApiKeySync(): string {
-  try {
-    if (typeof sessionStorage !== 'undefined') {
-      return sessionStorage.getItem(SESSION_KEY_API_KEY) || '';
-    }
-  } catch {}
-  return '';
+  return inMemoryApiKey;
 }
 
 /**
  * Retrieves the stored API key.
- * 1. Checks sessionStorage (tab/session lifetime).
+ * 1. Checks in-memory cache first, then decrypts from sessionStorage.
  * 2. If remembered on device, decrypts AES-GCM encrypted key from localStorage.
  * 3. Migrates any legacy plain-text key into the encrypted vault automatically.
  */
 export async function getStoredApiKey(): Promise<string> {
+  if (inMemoryApiKey) return inMemoryApiKey;
+
   try {
-    // 1. Check in-session storage first (ultra-fast & secure)
+    // 1. Check in-session storage first (AES-GCM encrypted)
     if (typeof sessionStorage !== 'undefined') {
-      const sessionKey = sessionStorage.getItem(SESSION_KEY_API_KEY);
-      if (sessionKey) return sessionKey;
+      const sessionCipher = sessionStorage.getItem(SESSION_KEY_API_KEY);
+      if (sessionCipher) {
+        const decrypted = await decryptSecret(sessionCipher);
+        if (decrypted) {
+          inMemoryApiKey = decrypted;
+          return decrypted;
+        }
+      }
     }
 
     // 2. If user opted to remember on this device, load and decrypt from localStorage
@@ -88,20 +93,21 @@ export async function getStoredApiKey(): Promise<string> {
       if (encKey) {
         const decrypted = await decryptSecret(encKey);
         if (decrypted) {
-          // Cache in session storage for current tab
-          try {
-            sessionStorage.setItem(SESSION_KEY_API_KEY, decrypted);
-          } catch {}
+          inMemoryApiKey = decrypted;
           return decrypted;
         }
       }
 
-      // 3. Migrate legacy plain-text key to session only and remove from localStorage
+      // 3. Migrate legacy plain-text key to encrypted vault and remove plaintext
       const legacyKey = localStorage.getItem(LEGACY_STORAGE_KEY_API_KEY);
       if (legacyKey) {
+        inMemoryApiKey = legacyKey;
         try {
-          sessionStorage.setItem(SESSION_KEY_API_KEY, legacyKey);
           localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
+          const encLegacy = await encryptSecret(legacyKey);
+          if (encLegacy) {
+            localStorage.setItem(LOCAL_KEY_API_KEY_ENC, encLegacy);
+          }
         } catch {}
         return legacyKey;
       }
@@ -114,7 +120,7 @@ export async function getStoredApiKey(): Promise<string> {
 
 /**
  * Stores API key securely:
- * - Always stored in sessionStorage for current tab session (auto-wiped when tab closes).
+ * - Always stored encrypted in sessionStorage for current tab session (auto-wiped when tab closes).
  * - Only persisted to localStorage if `remember = true`, where it is AES-GCM encrypted.
  */
 export async function setStoredApiKey(key: string, remember = false): Promise<void> {
@@ -124,18 +130,23 @@ export async function setStoredApiKey(key: string, remember = false): Promise<vo
     return;
   }
 
+  inMemoryApiKey = clean;
+
   try {
-    // Save to current tab session
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem(SESSION_KEY_API_KEY, clean);
+    const cipher = await encryptSecret(clean);
+
+    // Save encrypted payload to current tab session
+    if (typeof sessionStorage !== 'undefined' && cipher) {
+      sessionStorage.setItem(SESSION_KEY_API_KEY, cipher);
     }
 
     // Handle persistent storage
     if (typeof localStorage !== 'undefined') {
       if (remember) {
         localStorage.setItem(LOCAL_KEY_REMEMBER, 'true');
-        const cipher = await encryptSecret(clean);
-        localStorage.setItem(LOCAL_KEY_API_KEY_ENC, cipher);
+        if (cipher) {
+          localStorage.setItem(LOCAL_KEY_API_KEY_ENC, cipher);
+        }
         localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
       } else {
         localStorage.removeItem(LOCAL_KEY_REMEMBER);
@@ -149,9 +160,10 @@ export async function setStoredApiKey(key: string, remember = false): Promise<vo
 }
 
 /**
- * Completely clears and revokes the API key from both session and persistent storage.
+ * Completely clears and revokes the API key from memory, session and persistent storage.
  */
 export function clearStoredApiKey(): void {
+  inMemoryApiKey = '';
   try {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(SESSION_KEY_API_KEY);
