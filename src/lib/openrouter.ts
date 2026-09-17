@@ -94,24 +94,20 @@ export async function getStoredApiKey(): Promise<string> {
         const decrypted = await decryptSecret(encKey);
         if (decrypted) {
           inMemoryApiKey = decrypted;
-          // Cache encrypted cipher in session storage for current tab
-          try {
-            sessionStorage.setItem(SESSION_KEY_API_KEY, encKey);
-          } catch {}
           return decrypted;
         }
       }
 
-      // 3. Migrate legacy plain-text key to session only and remove from localStorage
+      // 3. Migrate legacy plain-text key to encrypted vault and remove plaintext
       const legacyKey = localStorage.getItem(LEGACY_STORAGE_KEY_API_KEY);
       if (legacyKey) {
         inMemoryApiKey = legacyKey;
         try {
+          localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
           const encLegacy = await encryptSecret(legacyKey);
           if (encLegacy) {
-            sessionStorage.setItem(SESSION_KEY_API_KEY, encLegacy);
+            localStorage.setItem(LOCAL_KEY_API_KEY_ENC, encLegacy);
           }
-          localStorage.removeItem(LEGACY_STORAGE_KEY_API_KEY);
         } catch {}
         return legacyKey;
       }
