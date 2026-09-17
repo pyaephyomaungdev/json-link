@@ -7,7 +7,8 @@
   <p>
     <a href="https://json-link.pages.dev"><img src="https://img.shields.io/badge/Live_Demo-json--link.pages.dev-blue?style=for-the-badge&logo=cloudflarepages&logoColor=white" alt="Live Demo" /></a>
     <a href="https://www.npmjs.com/package/create-jsonlink"><img src="https://img.shields.io/npm/v/create-jsonlink?style=for-the-badge&logo=npm&color=CB3837" alt="npm version" /></a>
-    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-398%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
+    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-417%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
+    <a href="SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy_&_Audit-brightgreen?style=for-the-badge&logo=shield&logoColor=white" alt="Security Policy" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" /></a>
     <a href="https://github.com/pyaephyomaungdev/json-link"><img src="https://img.shields.io/badge/Zero--Backend-100%25%20Private-purple?style=for-the-badge" alt="Privacy" /></a>
   </p>
@@ -22,6 +23,8 @@
     <a href="#core-ecosystem">Ecosystem Packages</a> •
     <a href="#feature-tour">Feature Tour</a> •
     <a href="#developer-integration-react--vite">Developer Guide</a> •
+    <a href="#community--contributing">Contributing</a> •
+    <a href="#security-policy">Security</a> •
     <a href="#testing--verification">Tests & CI</a>
   </p>
 </div>
@@ -286,8 +289,8 @@ npm test
  ✓ packages/create-jsonlink/src/__tests__/create.test.ts (2 tests)
  ...
 
- Test Files  52 passed (52)
-      Tests  398 passed (398)
+ Test Files  54 passed (54)
+      Tests  417 passed (417)
 ```
 
 ---
@@ -305,12 +308,36 @@ npm install
 # Start development server
 npm run dev
 
+# Run quality checks (Linter, Typecheck, Test suite)
+npm run lint
+npm run typecheck
+npm run test
+
 # Build all packages (Web app, Vite Plugin, MCP Server, Starter CLI)
 npm run build
 npm run plugin:build
 npm run mcp:build
 npm run create:build
 ```
+
+---
+
+## <img src=".github/assets/icons/check.svg" width="22" height="22" align="absmiddle" /> Community & Contributing
+
+We welcome community contributions, bug reports, format suggestions, and translation improvements!
+
+- **[Contributing Guidelines](CONTRIBUTING.md)**: Development setup, code conventions, testing requirements, and PR lifecycle.
+- **[Code of Conduct](CODE_OF_CONDUCT.md)**: Contributor Covenant v2.1 standards for an inclusive, welcoming community.
+- **[Issue Templates](.github/ISSUE_TEMPLATE/)**: Structured forms for [Bug Reports](.github/ISSUE_TEMPLATE/bug_report.yml) and [Feature Requests](.github/ISSUE_TEMPLATE/feature_request.yml).
+- **[Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)**: Standard verification checklist for all pull requests.
+
+---
+
+## <img src=".github/assets/icons/shield.svg" width="22" height="22" align="absmiddle" /> Security Policy
+
+JSON Link adheres to strict client-side data sovereignty with zero remote storage. To report security vulnerabilities privately, please review our **[Security Policy](SECURITY.md)** or contact **[contact@pyaephyomaung.dev](mailto:contact@pyaephyomaung.dev)**.
+
+RFC 9116 Vulnerability Disclosure metadata is published at `https://json-link.pages.dev/.well-known/security.txt`.
 
 ---
 
