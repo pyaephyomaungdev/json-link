@@ -288,16 +288,16 @@ export function parseAndroidXml(
   let match;
   while ((match = regex.exec(content)) !== null) {
     const key = match[1].trim();
+    const entityMap: Record<string, string> = {
+      '&lt;': '<',
+      '&gt;': '>',
+      '&amp;': '&',
+      '&quot;': '"',
+      '&apos;': "'",
+    };
     let val = match[2]
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/\\'/g, "'")
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, '\n')
-      .replace(/\\\\/g, '\\');
+      .replace(/&(?:lt|gt|amp|quot|apos);/g, m => entityMap[m] || m)
+      .replace(/\\(['"\\n\\])/g, (_, ch) => (ch === 'n' ? '\n' : ch));
     result[key] = val;
   }
 

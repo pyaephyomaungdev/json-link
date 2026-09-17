@@ -1,51 +1,57 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./icon-512.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JSON Link — Private In-Browser Translation Workspace &amp; i18n Spreadsheet</title>
-    <meta name="description" content="Free open-source private in-browser translation workspace &amp; i18n spreadsheet. Convert between Nested JSON, Excel, CSV, Flutter ARB, iOS strings, and Android XML with zero-cost sharing, AI translation, and Myanmar Zawgyi Unicode conversion." />
-    <meta name="keywords" content="i18n, localization, translation, spreadsheet, json converter, myanmar unicode, zawgyi, flutter arb, android strings xml, ios strings, openrouter, ai translation, react i18n, json link" />
-    <meta name="author" content="Pyae Phyo Maung" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://json-link.pages.dev" />
 
-    <!-- Theme and Mobile Web App -->
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="JSON Link" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="./icon-512.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON Link — Private In-Browser Translation Workspace &amp; i18n Spreadsheet</title>
+  <meta name="description"
+    content="Free open-source private in-browser translation workspace &amp; i18n spreadsheet. Convert between Nested JSON, Excel, CSV, Flutter ARB, iOS strings, and Android XML with zero-cost sharing, AI translation, and Myanmar Zawgyi Unicode conversion." />
+  <meta name="keywords"
+    content="i18n, localization, translation, spreadsheet, json converter, myanmar unicode, zawgyi, flutter arb, android strings xml, ios strings, openrouter, ai translation, react i18n, json link" />
+  <meta name="author" content="Pyae Phyo Maung" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://json-link.pages.dev" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://json-link.pages.dev" />
-    <meta property="og:title" content="JSON Link — Private In-Browser Translation Workspace" />
-    <meta property="og:description" content="Free open-source private in-browser localization workspace. Zero-cost serverless share, Excel/JSON/ARB/XML conversion, and Myanmar Zawgyi ⇄ Unicode support." />
-    <meta property="og:site_name" content="JSON Link" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:image" content="https://json-link.pages.dev/og-image.png" />
-    <meta property="og:image:secure_url" content="https://json-link.pages.dev/og-image.png" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="2400" />
-    <meta property="og:image:height" content="1260" />
-    <meta property="og:image:alt" content="JSON Link — private in-browser translation workspace with AI translation, multi-format export, and Myanmar Zawgyi ⇄ Unicode support." />
+  <!-- Theme and Mobile Web App -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="JSON Link" />
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://json-link.pages.dev" />
-    <meta name="twitter:title" content="JSON Link — Private In-Browser Translation Workspace" />
-    <meta name="twitter:description" content="Free open-source private in-browser localization workspace. Zero-cost serverless share, Excel/JSON/ARB/XML conversion, and Myanmar Zawgyi ⇄ Unicode support." />
-    <meta name="twitter:image" content="https://json-link.pages.dev/og-image.png" />
-    <meta name="twitter:image:alt" content="JSON Link — Private In-Browser Translation Workspace" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://json-link.pages.dev" />
+  <meta property="og:title" content="JSON Link — Private In-Browser Translation Workspace" />
+  <meta property="og:description"
+    content="Free open-source private in-browser localization workspace. Zero-cost serverless share, Excel/JSON/ARB/XML conversion, and Myanmar Zawgyi ⇄ Unicode support." />
+  <meta property="og:site_name" content="JSON Link" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:image" content="https://json-link.pages.dev/og-image.png" />
+  <meta property="og:image:secure_url" content="https://json-link.pages.dev/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="2400" />
+  <meta property="og:image:height" content="1260" />
+  <meta property="og:image:alt"
+    content="JSON Link — private in-browser translation workspace with AI translation, multi-format export, and Myanmar Zawgyi ⇄ Unicode support." />
 
-    <!-- Schema.org JSON-LD Structured Data -->
-    <script type="application/ld+json">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://json-link.pages.dev" />
+  <meta name="twitter:title" content="JSON Link — Private In-Browser Translation Workspace" />
+  <meta name="twitter:description"
+    content="Free open-source private in-browser localization workspace. Zero-cost serverless share, Excel/JSON/ARB/XML conversion, and Myanmar Zawgyi ⇄ Unicode support." />
+  <meta name="twitter:image" content="https://json-link.pages.dev/og-image.png" />
+  <meta name="twitter:image:alt" content="JSON Link — Private In-Browser Translation Workspace" />
+
+  <!-- Schema.org JSON-LD Structured Data -->
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -75,35 +81,39 @@
       }
     </script>
 
-    <!-- Preload Self-Hosted Myanmar WebFont for Zero-Tofu Guarantee -->
-    <link rel="preload" href="./fonts/noto-sans-myanmar.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Preload Self-Hosted Myanmar WebFont for Zero-Tofu Guarantee -->
+  <link rel="preload" href="./fonts/noto-sans-myanmar.woff2" as="font" type="font/woff2" crossorigin>
 
-    <!-- Google Fonts for English and Myanmar Unicode -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Immediate theme pre-loader to prevent flickering on reload -->
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem('json_link_theme');
-          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (isDark) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        } catch (e) {}
-      })();
-    </script>
-    <script type="module" crossorigin src="./assets/index-CQwIAIdh.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/vendor-radix-DCgBkZxY.js">
-    <link rel="modulepreload" crossorigin href="./assets/vendor-icons-ZkM97JtQ.js">
-    <link rel="modulepreload" crossorigin href="./assets/vendor-xlsx-TXgaev3-.js">
-    <link rel="modulepreload" crossorigin href="./assets/vendor-jszip-D9f0vL__.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-Cx13mzgt.css">
-  </head>
-  <body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20">
-    <div id="root"></div>
-  </body>
+  <!-- Google Fonts for English and Myanmar Unicode -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <!-- Immediate theme pre-loader to prevent flickering on reload -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('json_link_theme');
+        var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <script type="module" crossorigin src="./assets/index-BtQDpftH.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/vendor-radix-DCgBkZxY.js">
+  <link rel="modulepreload" crossorigin href="./assets/vendor-icons-C4TDkNN0.js">
+  <link rel="modulepreload" crossorigin href="./assets/vendor-xlsx-DxqTJWCS.js">
+  <link rel="modulepreload" crossorigin href="./assets/vendor-jszip-D9f0vL__.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-woJTrFvt.css">
+</head>
+
+<body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20">
+  <div id="root"></div>
+</body>
+
 </html>

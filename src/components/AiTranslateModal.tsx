@@ -367,7 +367,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                 });
                 Object.assign(translationsMap, singleResult);
               } catch (singleErr) {
-                console.warn(`Failed translation for key "${singleItem.key}":`, singleErr);
+                console.warn('Failed translation for key:', singleItem.key, singleErr);
               }
             }
           }

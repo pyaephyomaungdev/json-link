@@ -67,7 +67,8 @@ describe('openrouter.ts', () => {
 
       expect(isKeyRemembered()).toBe(false);
       expect(await getStoredApiKey()).toBe('sk-or-v1-session-key');
-      expect(mockSessionStorage['jsonlink_openrouter_api_key_session']).toBe('sk-or-v1-session-key');
+      expect(mockSessionStorage['jsonlink_openrouter_api_key_session']).toBeDefined();
+      expect(mockSessionStorage['jsonlink_openrouter_api_key_session']).not.toContain('sk-or-v1-session-key');
       expect(mockLocalStorage['jsonlink_openrouter_api_key_enc']).toBeUndefined();
     });
 

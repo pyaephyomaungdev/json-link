@@ -1,0 +1,4 @@
+# ads.txt - https://iabtechlab.com/ads-txt/
+# JSON Link is an open-source, local-first developer tool.
+# This domain does not host programmatic advertising or authorize any third-party ad sellers.
+# Contact: contact@pyaephyomaung.dev
