@@ -28,6 +28,12 @@ export function unflattenObject(flat: Record<string, string>): Record<string, an
 
   for (const [fullKey, value] of Object.entries(flat)) {
     const parts = fullKey.split('.');
+
+    // Guard against Prototype Pollution (CWE-1321)
+    if (parts.some(p => p === '__proto__' || p === 'constructor' || p === 'prototype')) {
+      continue;
+    }
+
     let current = result;
 
     for (let i = 0; i < parts.length - 1; i++) {

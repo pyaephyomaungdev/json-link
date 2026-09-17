@@ -1,0 +1,43 @@
+name: Feature Request
+description: Suggest an enhancement, new parser format, or workflow idea for JSON Link.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We love hearing new ideas for improving JSON Link! Please share the problem you're solving and how the feature would work.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / Use Case
+      description: Is your feature request related to a specific workflow problem?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Enhancement
+      description: Describe the solution you'd like to see.
+      placeholder: Add support for format X or modal capability Y...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches Considered
+      description: Any alternative solutions or workarounds you've considered?
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      options:
+        - Core Spreadsheet UI
+        - Import / Export Format Parsers
+        - AI Translation Engine (OpenRouter)
+        - GitHub Synchronization
+        - Cryptographic URL Hash Sharing
+        - Vite Plugin / Devtools
+        - MCP Server
+        - Documentation / Accessibility

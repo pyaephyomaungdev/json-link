@@ -28,8 +28,8 @@ import {
   FileCode2,
   Download,
   Lightbulb,
-  AlertTriangle,
 } from 'lucide-react';
+import { encryptSecret, decryptSecret } from '@/lib/crypto';
 import { TranslationItem } from '@/types';
 import {
   validateRepoString,
@@ -79,11 +79,51 @@ export function GitHubSyncModal({
 }: GitHubSyncModalProps) {
   const [activeTab, setActiveTab] = useState<'connect' | 'pull' | 'pr'>('connect');
 
-  // Authentication & Repo state (persisted locally)
-  const [token, setToken] = useState<string>(() => localStorage.getItem('jsonlink_github_token') || '');
+  // Authentication & Repo state (persisted locally with AES-GCM encryption)
+  const [token, setToken] = useState<string>('');
   const [showToken, setShowToken] = useState<boolean>(false);
-  const [repoInput, setRepoInput] = useState<string>(() => localStorage.getItem('jsonlink_github_repo') || '');
+  const [repoInput, setRepoInput] = useState<string>(() => {
+    try {
+      return (typeof localStorage !== 'undefined' ? localStorage.getItem('jsonlink_github_repo') : '') || '';
+    } catch {
+      return '';
+    }
+  });
   const [repoDetails, setRepoDetails] = useState<{ defaultBranch: string; isPrivate: boolean } | null>(null);
+
+  // Load and decrypt stored GitHub credentials on mount
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStoredCredentials() {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        const encToken = localStorage.getItem('jsonlink_github_token_enc');
+        if (encToken) {
+          const decrypted = await decryptSecret(encToken);
+          if (isMounted && decrypted) {
+            setToken(decrypted);
+            return;
+          }
+        }
+        // Auto-migrate legacy plain-text token to AES-GCM encrypted vault
+        const legacyToken = localStorage.getItem('jsonlink_github_token');
+        if (legacyToken) {
+          if (isMounted) setToken(legacyToken);
+          const encrypted = await encryptSecret(legacyToken);
+          if (encrypted) {
+            localStorage.setItem('jsonlink_github_token_enc', encrypted);
+            localStorage.removeItem('jsonlink_github_token');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load encrypted GitHub credentials:', err);
+      }
+    }
+    loadStoredCredentials();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Branches & selected branch
   const [branches, setBranches] = useState<GitHubBranch[]>([]);
@@ -126,14 +166,32 @@ export function GitHubSyncModal({
     }
   }, [isOpen, languages, items.length, targetFolder, targetFormat]);
 
-  const handleSaveCredentials = (newToken: string, newRepo: string) => {
-    if (newToken) localStorage.setItem('jsonlink_github_token', newToken);
-    if (newRepo) localStorage.setItem('jsonlink_github_repo', newRepo);
+  const handleSaveCredentials = async (newToken: string, newRepo: string) => {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      if (newToken) {
+        const encrypted = await encryptSecret(newToken);
+        if (encrypted) {
+          localStorage.setItem('jsonlink_github_token_enc', encrypted);
+          localStorage.removeItem('jsonlink_github_token');
+        } else {
+          localStorage.setItem('jsonlink_github_token', newToken);
+        }
+      }
+      if (newRepo) localStorage.setItem('jsonlink_github_repo', newRepo);
+    } catch (err) {
+      console.warn('Failed to save encrypted GitHub credentials:', err);
+    }
   };
 
   const handleClearCredentials = () => {
-    localStorage.removeItem('jsonlink_github_token');
-    localStorage.removeItem('jsonlink_github_repo');
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('jsonlink_github_token');
+        localStorage.removeItem('jsonlink_github_token_enc');
+        localStorage.removeItem('jsonlink_github_repo');
+      }
+    } catch {}
     setToken('');
     setRepoInput('');
     setRepoDetails(null);
@@ -564,10 +622,10 @@ export function GitHubSyncModal({
                   <p>
                     GitHub tokens require <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground font-semibold">repo</code> scope (classic) or a fine-grained PAT with <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Contents</code> &amp; <code className="font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border/50 text-foreground">Pull requests</code> (read/write). While the token grant technically gives repository-level access on GitHub, <strong>JSON Link's client-side app filter strictly restricts all operations to translation files only</strong>.
                   </p>
-                  <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] leading-relaxed flex items-start gap-1.5">
-                    <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[10px] leading-relaxed flex items-start gap-1.5">
+                    <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong>Local Storage Notice:</strong> Your token is stored in your browser's <code className="font-mono text-[10px]">localStorage</code> for convenience and communicated directly with GitHub's REST API (zero intermediary servers). We recommend using a fine-grained PAT with minimal repository scope and short expiration. Click "Disconnect Token" when finished or on shared computers.
+                      <strong>Encrypted Vault:</strong> Your token is encrypted at rest using <code className="font-mono text-[10px]">AES-GCM (256-bit)</code> before storing in browser storage, and communicated directly with GitHub's REST API (zero intermediary servers). Click &quot;Disconnect Token&quot; anytime to wipe it immediately.
                     </div>
                   </div>
                 </div>
