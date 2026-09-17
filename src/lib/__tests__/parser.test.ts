@@ -87,6 +87,18 @@ describe('parser.ts', () => {
       const flat = { title: 'Welcome', submit: 'Send' };
       expect(unflattenObject(flat)).toEqual({ title: 'Welcome', submit: 'Send' });
     });
+
+    it('neutralizes prototype pollution attempts (__proto__, constructor, prototype)', () => {
+      const malicious = {
+        'normal.key': 'safe',
+        '__proto__.polluted': 'evil',
+        'constructor.prototype.hacked': 'evil2',
+      };
+      const res = unflattenObject(malicious);
+      expect(res).toEqual({ normal: { key: 'safe' } });
+      expect(({} as any).polluted).toBeUndefined();
+      expect(({} as any).hacked).toBeUndefined();
+    });
   });
 
   describe('inferLanguageFromFilename', () => {

@@ -1,0 +1,19 @@
+/* TEAM */
+Developer: Pyae Phyo Maung
+Role: Lead Systems Architect & Full-Stack Engineer
+Site: https://pyaephyomaung.dev
+GitHub: https://github.com/pyaephyomaungdev
+Location: Yangon, Myanmar
+
+/* THANKS */
+Open Source Community: React, Tailwind CSS, Lucide, Radix UI, Vite, Vitest
+
+/* SITE */
+Standards: HTML5, CSS3, ES2022, TypeScript
+Components: React 19, Tailwind CSS v4, Radix UI
+Software: Vite, Cloudflare Pages
+Hosting: Cloudflare Pages
+Encryption: Web Crypto API (AES-GCM 256-bit, PBKDF2)
+Local File Access: Web File System Access API
+Language: English, Myanmar
+Doctype: HTML5

@@ -1,0 +1,23 @@
+# JSON Link
+
+> Local-first internationalization (i18n) spreadsheet studio and two-way disk synchronization suite with native Model Context Protocol (MCP) server for AI coding agents.
+
+JSON Link gives software teams, translators, and AI agents a unified, offline-capable interface to manage JSON, YAML, ARB, Android XML, iOS .strings, and Excel (.xlsx) localization bundles with zero server-side data leakage.
+
+## Core Capabilities
+
+- **In-Browser Local-First Engine**: Edits files directly on the local filesystem using the Web File System Access API without uploading private localization bundles to third-party cloud servers.
+- **Model Context Protocol (MCP) Server**: Provides stdio JSON-RPC 2.0 tools for Cursor, Windsurf, and Claude Code to read, batch translate, lint, and add localization keys autonomously.
+- **End-to-End Client Encryption**: Encrypts shared project snapshots in browser memory using AES-GCM 256-bit with PBKDF2 (100,000 iterations) via Web Crypto API inside URL hash fragments.
+- **ICU & Variable Preservation**: Preserves ICU MessageFormat pluralization syntax and `{variable}` placeholders across AI translations.
+- **Developer Ecosystem**: Includes `@jsonlink/vite-plugin` for native Hot Module Replacement (HMR) of locale keys and `npx create-jsonlink` scaffolding.
+
+## Documentation & Resources
+
+- [App & Editor](https://json-link.pages.dev): Web application interface
+- [User Manual](https://json-link.pages.dev/docs): Comprehensive documentation and developer guides
+- [Architecture & Philosophy](https://json-link.pages.dev/about): Local-first architecture breakdown
+- [Privacy Policy](https://json-link.pages.dev/privacy): Zero-telemetry and client-side encryption policy
+- [Terms of Service](https://json-link.pages.dev/terms): MIT open source license and usage terms
+- [Cookie & Storage Policy](https://json-link.pages.dev/cookies): Transparent local storage usage
+- [GitHub Repository](https://github.com/pyaephyomaungdev/json-link): Source code and issue tracker

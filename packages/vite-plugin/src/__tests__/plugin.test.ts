@@ -47,6 +47,18 @@ describe('Vite Plugin fsUtils & Middleware', () => {
       expect(nested.auth.login.title).toBe('Sign In');
       expect(nested.auth.login.button).toBe('Submit');
     });
+
+    it('neutralizes prototype pollution keys in unflattenObject', () => {
+      const malicious = {
+        'safe.field': 'ok',
+        '__proto__.hacked': 'danger',
+        'constructor.prototype.bad': 'danger2',
+      };
+      const res = unflattenObject(malicious);
+      expect(res).toEqual({ safe: { field: 'ok' } });
+      expect(({} as any).hacked).toBeUndefined();
+      expect(({} as any).bad).toBeUndefined();
+    });
   });
 
   describe('readLocalesFromDisk and writeLocalesToDisk', () => {

@@ -33,6 +33,12 @@ export function unflattenObject(flatObj: Record<string, string>): Record<string,
 
   for (const [flatKey, value] of Object.entries(flatObj)) {
     const keys = flatKey.split('.');
+
+    // Guard against Prototype Pollution (CWE-1321): Skip any path segment that targets object prototype
+    if (keys.some(k => k === '__proto__' || k === 'constructor' || k === 'prototype')) {
+      continue;
+    }
+
     let current = result;
 
     for (let i = 0; i < keys.length; i++) {
