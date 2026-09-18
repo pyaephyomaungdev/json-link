@@ -6,6 +6,29 @@ export interface CollabPeerUser {
   name: string;
   color: string;
   activeCell?: { key: string; field: string } | null;
+  clientID?: number;
+  lastSeen?: number;
+}
+
+/**
+ * Returns a 2-character uppercase initials badge for a peer (e.g., 'HA' for 'Hawk-30')
+ */
+export function getPeerInitials(name: string): string {
+  if (!name) return '??';
+  const clean = name.trim();
+  const letterParts = clean.split(/[\s-_]+/).filter(p => /[A-Za-z]/.test(p));
+  if (letterParts.length >= 2 && letterParts[0] && letterParts[1]) {
+    return (letterParts[0][0] + letterParts[1][0]).toUpperCase();
+  }
+  const justAlpha = clean.replace(/[^A-Za-z]/g, '');
+  if (justAlpha.length >= 2) {
+    return justAlpha.slice(0, 2).toUpperCase();
+  }
+  const alphanumeric = clean.replace(/[^A-Za-z0-9]/g, '');
+  if (alphanumeric.length >= 1) {
+    return alphanumeric.slice(0, 2).toUpperCase();
+  }
+  return '??';
 }
 
 export interface CollabSession {

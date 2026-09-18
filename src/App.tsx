@@ -353,6 +353,7 @@ export function App() {
   const [collabPeers, setCollabPeers] = useState<CollabPeerUser[]>([]);
   const [collabPassword, setCollabPassword] = useState<string | null>(null);
   const [localPeerProfile, setLocalPeerProfile] = useState<CollabPeerUser>(() => generateRandomPeerProfile());
+  const [followingPeerName, setFollowingPeerName] = useState<string | null>(null);
   const isRemoteCollabUpdateRef = useRef(false);
 
   // Local Folder Direct Sync state
@@ -536,6 +537,41 @@ export function App() {
       syncDocToReact();
       handleAwarenessChange();
 
+      // Keepalive heartbeat: send awareness ping every 10s to prevent NAT/router idle timeout
+      // and prevent y-protocols awareness outdatedTimeout (30s) from marking peer offline
+      const heartbeatTimer = setInterval(() => {
+        if (session.provider.connected || session.provider.room) {
+          awareness.setLocalStateField('user', {
+            name: cleanUserName,
+            color: localPeerProfile.color,
+            activeCell: awareness.getLocalState()?.user?.activeCell || null,
+            lastSeen: Date.now(),
+          });
+        }
+      }, 10000);
+
+      // Re-announce on window focus or network reconnect
+      const handleWindowFocus = () => {
+        if (session.provider.connected || session.provider.room) {
+          awareness.setLocalStateField('user', {
+            name: cleanUserName,
+            color: localPeerProfile.color,
+            activeCell: awareness.getLocalState()?.user?.activeCell || null,
+            lastSeen: Date.now(),
+          });
+        }
+      };
+      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('online', handleWindowFocus);
+
+      const originalDestroy = session.destroy;
+      session.destroy = () => {
+        clearInterval(heartbeatTimer);
+        window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('online', handleWindowFocus);
+        originalDestroy();
+      };
+
       setCollabSession(session);
       setCollabPassword(password || null);
       setIsWorkspaceActive(true);
@@ -597,6 +633,26 @@ export function App() {
       });
     }
   }, [localPeerProfile]);
+
+  const handleJumpToPeerCell = useCallback((key: string, field: string) => {
+    const rowIdx = items.findIndex(i => i.key === key);
+    if (rowIdx !== -1) {
+      requestAnimationFrame(() => {
+        const cellEl = document.querySelector(
+          `[data-cell-key="${CSS.escape(key)}"][data-cell-field="${CSS.escape(field)}"]`
+        ) as HTMLElement | null;
+
+        if (cellEl) {
+          cellEl.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+          cellEl.click();
+        }
+      });
+    }
+  }, [items]);
 
   // Check for collab room in URL hash (#collab=...) on initial load and hashchange
   useEffect(() => {
@@ -2210,6 +2266,11 @@ export function App() {
             onOpenCollab={() => setIsCollabModalOpen(true)}
             isCollabConnected={Boolean(collabSession)}
             collabPeerCount={collabPeers.length + 1}
+            collabPeers={collabPeers}
+            localPeerProfile={localPeerProfile}
+            followingPeerName={followingPeerName}
+            onFollowPeer={setFollowingPeerName}
+            onJumpToPeerCell={handleJumpToPeerCell}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -2291,6 +2352,8 @@ export function App() {
             onClearFilters={handleClearFilters}
             collabPeers={collabPeers}
             onActiveCellChange={handleActiveCellChange}
+            followingPeerName={followingPeerName}
+            onStopFollowing={() => setFollowingPeerName(null)}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}

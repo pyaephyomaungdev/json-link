@@ -44,6 +44,7 @@ import {
   ClipboardPaste,
   ClipboardCopy,
   Globe,
+  Eye,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -85,6 +86,8 @@ interface SpreadsheetTableProps {
   searchQuery?: string;
   collabPeers?: CollabPeerUser[];
   onActiveCellChange?: (key: string | null, field: string | null) => void;
+  followingPeerName?: string | null;
+  onStopFollowing?: () => void;
 }
 
 interface EditingCell {
@@ -149,6 +152,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   searchQuery,
   collabPeers,
   onActiveCellChange,
+  followingPeerName,
+  onStopFollowing,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -158,6 +163,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return null;
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Sync active cell to collaboration awareness
   useEffect(() => {
@@ -169,6 +175,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       onActiveCellChange?.(null, null);
     }
   }, [editingCell, selectedCell, onActiveCellChange]);
+
 
   // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
   useEffect(() => {
@@ -376,6 +383,53 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       return prev;
     });
   }, [showDescription, languages]);
+
+  // Follow Mode: smooth auto-scroll to the followed peer's active cell whenever it moves
+  useEffect(() => {
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    const targetPeer = collabPeers.find(p => p.name === followingPeerName);
+    if (!targetPeer?.activeCell?.key) return;
+
+    const targetKey = targetPeer.activeCell.key;
+    const targetField = targetPeer.activeCell.field || 'key';
+
+    // Find row index
+    const rowIdx = items.findIndex(i => i.key === targetKey);
+    if (rowIdx !== -1) {
+      const langIdx = languages.indexOf(targetField);
+      const targetCol = targetField === 'key' ? 0 : (showDescription && targetField === 'description') ? 1 : (langIdx >= 0 ? langIdx + (showDescription ? 2 : 1) : 0);
+
+      setSelectedCell(prev => {
+        if (prev?.key === targetKey && prev?.field === targetField) return prev;
+        return {
+          key: targetKey,
+          field: targetField,
+          colIndex: targetCol,
+          rowIndex: rowIdx,
+        };
+      });
+
+      // If followed peer is on description column and it's hidden, auto-open description
+      if (targetField === 'description' && !showDescription) {
+        setShowDescription(true);
+      }
+
+      // Find cell element using data attributes and smooth scroll
+      requestAnimationFrame(() => {
+        const cellEl = tableContainerRef.current?.querySelector(
+          `[data-cell-key="${CSS.escape(targetKey)}"][data-cell-field="${CSS.escape(targetField)}"]`
+        ) as HTMLElement | null;
+
+        if (cellEl) {
+          cellEl.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest',
+          });
+        }
+      });
+    }
+  }, [followingPeerName, collabPeers, items, languages, showDescription]);
 
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
@@ -1014,6 +1068,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
       {/* True Excel Spreadsheet Table: Edge-to-edge, Horizontal Scroll on Overflow, Dynamic Freeze Panes */}
       <div
+        ref={tableContainerRef}
         className="flex-1 overflow-auto relative w-full h-full bg-background"
         onScroll={(e) => {
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
@@ -1021,6 +1076,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           }
         }}
       >
+        {/* Floating Follow Mode Indicator Banner */}
+        {followingPeerName && (
+          <div className="sticky top-11 z-55 flex justify-center pointer-events-none pb-2">
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/95 dark:bg-amber-600/95 text-white shadow-md text-xs font-medium backdrop-blur-xs animate-in fade-in slide-in-from-top-2 duration-200">
+              <span className="size-2 rounded-full bg-white animate-ping" />
+              <Eye className="size-3.5 stroke-[2.5]" />
+              <span>
+                Following <strong>{followingPeerName}</strong>'s screen
+              </span>
+              {onStopFollowing && (
+                <button
+                  type="button"
+                  onClick={onStopFollowing}
+                  className="ml-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                >
+                  Stop Following
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {!hasScrolledX && languages.length > 1 && (
           <div className="sm:hidden pointer-events-none sticky bottom-3 float-right mr-3 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-muted-foreground border border-border shadow-md text-[10px] font-medium backdrop-blur-xs transition-opacity animate-pulse">
             <span>Swipe columns</span>
@@ -1620,6 +1697,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       return (
                         <td
                           key="key"
+                          data-cell-key={item.key}
+                          data-cell-field="key"
                           style={{
                             width: KEY_COL_WIDTH,
                             minWidth: KEY_COL_WIDTH,
@@ -1686,6 +1765,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       const descPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'description');
                       return (
                         <td
+                          data-cell-key={item.key}
+                          data-cell-field="description"
                           style={{
                             width: DESC_COL_WIDTH,
                             minWidth: DESC_COL_WIDTH,
@@ -1788,6 +1869,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       return (
                         <td
                           key={lang}
+                          data-cell-key={item.key}
+                          data-cell-field={lang}
                           dir={isRtl ? 'rtl' : 'ltr'}
                           style={{
                             width: getLangColWidth(lang),

@@ -5,6 +5,7 @@ import {
   generateRandomPeerProfile,
   extractItemsFromYDoc,
   applyLocalChangeToYDoc,
+  getPeerInitials,
 } from '../collaboration';
 import { TranslationItem } from '@/types';
 
@@ -88,5 +89,12 @@ describe('collaboration module', () => {
     const afterDelete = extractItemsFromYDoc(ydoc);
     expect(afterDelete.items).toHaveLength(1);
     expect(afterDelete.items[0].key).toBe('btn.save');
+  });
+
+  it('computes peer initials correctly', () => {
+    expect(getPeerInitials('Hawk-30')).toBe('HA');
+    expect(getPeerInitials('Alex Rivera')).toBe('AR');
+    expect(getPeerInitials('Fox')).toBe('FO');
+    expect(getPeerInitials('')).toBe('??');
   });
 });
