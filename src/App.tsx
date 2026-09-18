@@ -435,20 +435,38 @@ export function App() {
   };
 
   // Start / Join WebRTC collaboration session
+  const prevItemsRef = useRef<TranslationItem[]>(items);
+  const prevLanguagesRef = useRef<string[]>(languages);
+
+  const collabSessionRef = useRef<CollabSession | null>(null);
+  const itemsRef = useRef<TranslationItem[]>(items);
+  const languagesRef = useRef<string[]>(languages);
+
+  useEffect(() => {
+    collabSessionRef.current = collabSession;
+    itemsRef.current = items;
+    languagesRef.current = languages;
+  }, [collabSession, items, languages]);
+
   const handleStartCollabSession = useCallback(
-    (roomId: string, password: string | null, userName: string) => {
-      if (collabSession) {
-        collabSession.destroy();
+    (roomId: string, password: string | null, userName: string, isInitiator = false) => {
+      const cleanRoomId = roomId.trim().toLowerCase();
+
+      if (collabSessionRef.current) {
+        collabSessionRef.current.destroy();
       }
 
       const cleanUserName = userName.trim() || localPeerProfile.name;
       setLocalPeerProfile(prev => ({ ...prev, name: cleanUserName }));
 
-      const session = initCollabSession(roomId, {
+      const session = initCollabSession(cleanRoomId, {
         password: password || null,
-        initialItems: items,
-        initialLanguages: languages,
+        initialItems: isInitiator ? itemsRef.current : undefined,
+        initialLanguages: isInitiator ? languagesRef.current : undefined,
+        isInitiator,
       });
+
+      collabSessionRef.current = session;
 
       // Initialize peer awareness
       const awareness = session.provider.awareness;
@@ -469,37 +487,66 @@ export function App() {
         setCollabPeers(peers);
       };
       awareness.on('change', handleAwarenessChange);
+      awareness.on('update', handleAwarenessChange);
+      session.provider.on('peers', handleAwarenessChange);
+
+      // Synchronize Yjs document data to React state
+      const syncDocToReact = () => {
+        const { items: remoteItems, languages: remoteLangs } = extractItemsFromYDoc(session.ydoc);
+        if (remoteItems.length > 0 || session.yKeys.length > 0) {
+          isRemoteCollabUpdateRef.current = true;
+          prevItemsRef.current = remoteItems;
+          setItemsWithoutHistory(remoteItems);
+          if (remoteLangs.length > 0) {
+            prevLanguagesRef.current = remoteLangs;
+            setLanguages(remoteLangs);
+          }
+          setTimeout(() => {
+            isRemoteCollabUpdateRef.current = false;
+          }, 100);
+        }
+      };
 
       // Listen for remote Yjs updates
       const handleDocChange = (_events: any, transaction: any) => {
         if (transaction && transaction.origin === 'local') return;
-        isRemoteCollabUpdateRef.current = true;
-        const { items: remoteItems, languages: remoteLangs } = extractItemsFromYDoc(session.ydoc);
-        if (remoteItems.length > 0) {
-          setItemsWithoutHistory(remoteItems);
-        }
-        if (remoteLangs.length > 0) {
-          setLanguages(remoteLangs);
-        }
-        setTimeout(() => {
-          isRemoteCollabUpdateRef.current = false;
-        }, 50);
+        syncDocToReact();
       };
 
       session.yTranslations.observeDeep(handleDocChange);
       session.yKeys.observe(handleDocChange);
       session.yLanguages.observe(handleDocChange);
 
+      const handleYDocUpdate = (_update: Uint8Array, origin: any) => {
+        if (origin !== 'local') {
+          syncDocToReact();
+        }
+      };
+      session.ydoc.on('update', handleYDocUpdate);
+
+      const handleProviderSynced = (event: any) => {
+        if (event && event.synced) {
+          syncDocToReact();
+          handleAwarenessChange();
+        }
+      };
+      session.provider.on('synced', handleProviderSynced);
+
+      // Attempt initial read if already populated
+      syncDocToReact();
+      handleAwarenessChange();
+
       setCollabSession(session);
       setCollabPassword(password || null);
       setIsWorkspaceActive(true);
     },
-    [collabSession, localPeerProfile.name, localPeerProfile.color, items, languages, setItemsWithoutHistory]
+    [localPeerProfile.name, localPeerProfile.color, setItemsWithoutHistory]
   );
 
   const handleEndCollabSession = useCallback(() => {
-    if (collabSession) {
-      collabSession.destroy();
+    if (collabSessionRef.current) {
+      collabSessionRef.current.destroy();
+      collabSessionRef.current = null;
       setCollabSession(null);
     }
     setCollabPeers([]);
@@ -507,31 +554,49 @@ export function App() {
     if (typeof window !== 'undefined' && window.location.hash.includes('collab=')) {
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, [collabSession]);
+  }, []);
 
-  // Clean up session on component unmount
+  // Clean up session when session changes or on unmount
   useEffect(() => {
     return () => {
       collabSession?.destroy();
     };
   }, [collabSession]);
 
-  // Sync local changes to Yjs doc
+  // Sync local changes to Yjs doc (only when user actively modifies items or languages)
   useEffect(() => {
-    if (collabSession && !isRemoteCollabUpdateRef.current) {
+    if (!collabSession) {
+      prevItemsRef.current = items;
+      prevLanguagesRef.current = languages;
+      return;
+    }
+
+    if (isRemoteCollabUpdateRef.current) {
+      prevItemsRef.current = items;
+      prevLanguagesRef.current = languages;
+      return;
+    }
+
+    const itemsChanged = prevItemsRef.current !== items;
+    const languagesChanged = prevLanguagesRef.current !== languages;
+
+    prevItemsRef.current = items;
+    prevLanguagesRef.current = languages;
+
+    if (itemsChanged || languagesChanged) {
       applyLocalChangeToYDoc(collabSession.ydoc, items, languages, 'local');
     }
   }, [items, languages, collabSession]);
 
   // Active cell awareness handler
   const handleActiveCellChange = useCallback((key: string | null, field: string | null) => {
-    if (collabSession) {
-      collabSession.provider.awareness.setLocalStateField('user', {
+    if (collabSessionRef.current) {
+      collabSessionRef.current.provider.awareness.setLocalStateField('user', {
         ...localPeerProfile,
         activeCell: key && field ? { key, field } : null,
       });
     }
-  }, [collabSession, localPeerProfile]);
+  }, [localPeerProfile]);
 
   // Check for collab room in URL hash (#collab=...) on initial load and hashchange
   useEffect(() => {
@@ -542,10 +607,13 @@ export function App() {
       if (hash && (hash.startsWith('#collab=') || hash.startsWith('#/collab='))) {
         const match = hash.match(/^#\/?collab=([^&]+)(?:&key=([^&]+))?/);
         if (match) {
-          const roomId = decodeURIComponent(match[1]);
+          const roomId = decodeURIComponent(match[1]).trim().toLowerCase();
           const key = match[2] ? decodeURIComponent(match[2]) : null;
+          if (collabSessionRef.current && collabSessionRef.current.roomId.toLowerCase() === roomId) {
+            return;
+          }
           setIsWorkspaceActive(true);
-          handleStartCollabSession(roomId, key, localPeerProfile.name);
+          handleStartCollabSession(roomId, key, localPeerProfile.name, false);
         }
       }
     };
@@ -2479,7 +2547,9 @@ export function App() {
           currentRoomPassword={collabPassword}
           peers={collabPeers}
           localUser={localPeerProfile}
-          onStartSession={handleStartCollabSession}
+          onStartSession={(roomId, password, userName) =>
+            handleStartCollabSession(roomId, password, userName, true)
+          }
           onEndSession={handleEndCollabSession}
         />
       </Suspense>

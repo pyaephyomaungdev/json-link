@@ -19,10 +19,28 @@ export interface CollabSession {
 }
 
 export const DEFAULT_SIGNALING_SERVERS = [
-  'wss://signaling.yjs.dev',
-  'wss://y-webrtc-signaling-eu.herokuapp.com',
-  'wss://y-webrtc-signaling-us.herokuapp.com',
+  'wss://y-webrtc.fly.dev',
+  'wss://y-webrtc-signaling.fly.dev',
 ];
+
+/**
+ * Resolves the optimal signaling servers for the current environment.
+ * In local development (localhost), it prepends the Vite dev signaling server endpoint.
+ */
+export function getEffectiveSignalingServers(customServers?: string[]): string[] {
+  if (customServers && customServers.length > 0) {
+    return customServers;
+  }
+  const servers = [...DEFAULT_SIGNALING_SERVERS];
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')) {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      servers.unshift(`${proto}//${window.location.host}/_y_signaling`);
+    }
+  }
+  return servers;
+}
 
 export const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
@@ -88,15 +106,15 @@ export function initCollabSession(
     signalingServers?: string[];
     initialItems?: TranslationItem[];
     initialLanguages?: string[];
+    isInitiator?: boolean;
   }
 ): CollabSession {
   const ydoc = new Y.Doc();
   const roomName = `jsonlink-collab-${roomId.trim().toLowerCase()}`;
+  const signaling = getEffectiveSignalingServers(options?.signalingServers);
 
   const provider = new WebrtcProvider(roomName, ydoc, {
-    signaling: options?.signalingServers && options.signalingServers.length > 0
-      ? options.signalingServers
-      : DEFAULT_SIGNALING_SERVERS,
+    signaling,
     password: options?.password ? options.password.trim() : undefined,
     peerOpts: {
       config: {
@@ -109,8 +127,9 @@ export function initCollabSession(
   const yKeys = ydoc.getArray<string>('keys');
   const yLanguages = ydoc.getArray<string>('languages');
 
-  // Seed with initial items if doc is empty and initial data provided
+  // Seed with initial items ONLY if initiator AND doc is empty and initial data provided
   if (
+    options?.isInitiator !== false &&
     options?.initialItems &&
     options.initialItems.length > 0 &&
     yKeys.length === 0 &&
