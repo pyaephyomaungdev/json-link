@@ -12,8 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Users,
-  Radio,
   Copy,
   Check,
   ShieldCheck,
@@ -101,36 +99,24 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <span className={`size-8 rounded-lg flex items-center justify-center shrink-0 ${
-              isConnected
-                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'
-                : 'bg-primary/10 text-primary border border-primary/20'
-            }`}>
-              {isConnected ? <Radio className="size-4 animate-pulse" /> : <Users className="size-4" />}
-            </span>
-            <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                P2P Live Collaboration
-                {isConnected && (
-                  <Badge variant="success" className="text-[10px] font-mono py-0 h-4">
-                    Active Room
-                  </Badge>
-                )}
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Zero-backend, peer-to-peer WebRTC spreadsheet synchronization.
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <span>P2P Live Collaboration</span>
+            {isConnected && (
+              <Badge variant="success" className="text-[10px] font-mono py-0 h-4">
+                Active Room
+              </Badge>
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            Zero-backend, peer-to-peer WebRTC spreadsheet synchronization.
+          </DialogDescription>
         </DialogHeader>
 
-        <DialogBody className="space-y-4">
-          {isConnected ? (
-            /* Active Live Session View */
-            <div className="space-y-4">
-              <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 space-y-3">
-                <div className="flex items-center justify-between text-xs">
+        {isConnected ? (
+          <>
+            <DialogBody className="space-y-4 text-xs">
+              <div className="p-3.5 rounded-xl border border-border bg-muted/30 space-y-2.5">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Room ID:</span>
                   <span className="font-mono font-bold text-foreground bg-background px-2 py-0.5 rounded border border-border">
                     {currentRoomId}
@@ -138,8 +124,8 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                 </div>
 
                 {currentRoomPassword && (
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium flex items-center gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-medium flex items-center gap-1.5">
                       <Lock className="size-3 text-emerald-500" /> Encryption Key:
                     </span>
                     <span className="font-mono font-bold text-foreground bg-background px-2 py-0.5 rounded border border-border">
@@ -148,7 +134,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-500/20">
+                <div className="flex items-center justify-between pt-1 border-t border-border/60">
                   <span className="text-muted-foreground font-medium">Connected Peers:</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -159,7 +145,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
 
               {/* Peers List */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground block">
+                <label className="text-xs font-semibold text-foreground block">
                   Collaborators in this room
                 </label>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
@@ -206,7 +192,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
 
               {/* Invite Link */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground block">
+                <label className="text-xs font-semibold text-foreground block">
                   Share Invite Link
                 </label>
                 <div className="flex items-center gap-2">
@@ -215,131 +201,139 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                     value={`${window.location.origin}${window.location.pathname}#collab=${currentRoomId}${
                       currentRoomPassword ? `&key=${encodeURIComponent(currentRoomPassword)}` : ''
                     }`}
-                    className="h-8 text-xs font-mono bg-muted/40 cursor-text"
+                    className="h-9 text-xs font-mono bg-muted/40 cursor-text"
                   />
                   <Button
+                    type="button"
                     size="sm"
                     onClick={handleCopyLink}
-                    className="gap-1.5 text-xs font-semibold shrink-0 cursor-pointer h-8"
+                    className="gap-1.5 text-xs font-semibold shrink-0 cursor-pointer h-9 px-3"
                   >
                     {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                     {copied ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
               </div>
-            </div>
-          ) : (
-            /* Start / Join Live Session Form */
-            <form onSubmit={handleConnect} className="space-y-3.5">
-              <div className="space-y-1">
+            </DialogBody>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="flex-1 sm:flex-none text-xs h-8 cursor-pointer"
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  onEndSession();
+                  onClose();
+                }}
+                className="flex-1 sm:flex-none gap-1.5 text-xs h-8 font-semibold cursor-pointer"
+              >
+                <LogOut className="size-3.5" /> Leave Room
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <form onSubmit={handleConnect} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <DialogBody className="space-y-3.5 text-xs">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">Your Display Name</label>
+                  <label htmlFor="collab-name" className="text-xs font-semibold text-foreground">
+                    Your Display Name
+                  </label>
                   <button
                     type="button"
                     onClick={handleRandomizeProfile}
-                    className="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
                   >
                     <Sparkles className="size-3" /> Randomize
                   </button>
                 </div>
                 <Input
+                  id="collab-name"
                   value={userName}
                   onChange={e => setUserName(e.target.value)}
                   placeholder="e.g. Panda-42"
-                  className="h-8 text-xs"
+                  className="h-9 text-xs bg-background"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">Room ID</label>
+                  <label htmlFor="collab-room" className="text-xs font-semibold text-foreground">
+                    Room ID
+                  </label>
                   <button
                     type="button"
                     onClick={() => setRoomId(generateCollabRoomId())}
-                    className="text-[11px] text-primary hover:underline cursor-pointer"
+                    className="text-[11px] text-primary hover:underline cursor-pointer font-medium"
                   >
                     New Room ID
                   </button>
                 </div>
                 <Input
+                  id="collab-room"
                   value={roomId}
                   onChange={e => setRoomId(e.target.value)}
                   placeholder="e.g. collab-9x2a"
-                  className="h-8 text-xs font-mono uppercase"
+                  className="h-9 text-xs font-mono uppercase bg-background"
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1">
-                  <Lock className="size-3 text-muted-foreground" /> Room Password (Optional E2EE Key)
+              <div className="space-y-1.5">
+                <label htmlFor="collab-pass" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Lock className="size-3 text-muted-foreground" />
+                  <span>Room Password <span className="text-muted-foreground font-normal">(Optional E2EE Key)</span></span>
                 </label>
                 <Input
+                  id="collab-pass"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Leave empty for open P2P room"
-                  className="h-8 text-xs font-mono"
+                  className="h-9 text-xs font-mono bg-background"
                 />
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
                   If set, data is end-to-end encrypted with AES-GCM before transmitting over WebRTC.
                 </p>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/80 flex items-start gap-2.5 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border flex items-start gap-2.5 text-[11px] text-muted-foreground leading-relaxed">
                 <ShieldCheck className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>100% Private P2P:</strong> Your translation edits stream directly between browser tabs through encrypted WebRTC DataChannels. No database, no cloud storage.
+                  <strong className="text-foreground font-medium">100% Private P2P:</strong> Your translation edits stream directly between browser tabs through encrypted WebRTC DataChannels. Zero server storage, no database.
                 </span>
               </div>
+            </DialogBody>
 
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onClose}
-                  className="text-xs cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  className="gap-1.5 text-xs font-semibold cursor-pointer"
-                >
-                  <Wifi className="size-3.5" /> Start / Join Room
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogBody>
-
-        {isConnected && (
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              className="text-xs cursor-pointer"
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                onEndSession();
-                onClose();
-              }}
-              className="gap-1.5 text-xs font-semibold cursor-pointer"
-            >
-              <LogOut className="size-3.5" /> Leave Room
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="flex-1 sm:flex-none text-xs h-8 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="flex-1 sm:flex-none gap-1.5 text-xs h-8 font-semibold cursor-pointer"
+              >
+                <Wifi className="size-3.5" /> Start / Join Room
+              </Button>
+            </DialogFooter>
+          </form>
         )}
       </DialogContent>
     </Dialog>
