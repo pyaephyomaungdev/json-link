@@ -185,7 +185,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     } else if (activeTab === 'project-bundle') {
       await exportAllAsProjectBundle(items, languages, options, 'all-in-one', `${filename}_all_locales_bundle.zip`);
     } else if (activeTab === 'excel') {
-      exportToExcel(items, languages, `${filename}.xlsx`);
+      await exportToExcel(items, languages, `${filename}.xlsx`);
     } else if (activeTab === 'csv') {
       exportToCsv(items, languages, `${filename}.csv`);
     } else if (activeTab === 'json-zip') {

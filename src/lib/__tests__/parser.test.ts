@@ -320,7 +320,7 @@ en:
   });
 
   describe('parseSpreadsheet', () => {
-    it('parses Excel workbook binary buffer correctly', () => {
+    it('parses Excel workbook binary buffer correctly', async () => {
       const workbook = XLSX.utils.book_new();
       const sheetData = [
         ['Key', 'en', 'my'],
@@ -331,7 +331,7 @@ en:
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
 
-      const result = parseSpreadsheet(buffer);
+      const result = await parseSpreadsheet(buffer);
       expect(result.languages).toEqual(['en', 'my']);
       expect(result.items).toHaveLength(2);
       expect(result.items[0]).toEqual({
@@ -346,14 +346,14 @@ en:
       });
     });
 
-    it('throws error when spreadsheet has fewer than 2 rows', () => {
+    it('throws error when spreadsheet has fewer than 2 rows', async () => {
       const workbook = XLSX.utils.book_new();
       const sheetData = [['Key', 'en']];
       const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
 
-      expect(() => parseSpreadsheet(buffer)).toThrow(
+      await expect(parseSpreadsheet(buffer)).rejects.toThrow(
         'Spreadsheet must contain at least a header row and one data row.'
       );
     });

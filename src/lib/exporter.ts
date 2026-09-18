@@ -1,8 +1,12 @@
-import * as XLSX from 'xlsx';
-import JSZip from 'jszip';
 import { TranslationItem, ExportOptions } from '@/types';
 import { unflattenObject } from './parser';
 import { VITE_STARTER_AI_SKILL_MD } from './skillTemplate';
+
+async function createZip() {
+  const mod = await import('jszip');
+  const JSZip = mod.default || mod;
+  return new JSZip();
+}
 
 /**
  * Downloads a Blob directly in the browser
@@ -23,11 +27,12 @@ export function downloadBlob(blob: Blob, filename: string) {
 /**
  * Export to Excel (.xlsx) file
  */
-export function exportToExcel(
+export async function exportToExcel(
   items: TranslationItem[],
   languages: string[],
   filename = 'translations.xlsx'
-) {
+): Promise<void> {
+  const XLSX = await import('xlsx');
   const hasDescriptions = items.some(i => i.description && i.description.trim() !== '');
   const headers = hasDescriptions ? ['Key', ...languages, 'Description'] : ['Key', ...languages];
   
@@ -139,7 +144,7 @@ export async function exportToJsonZip(
   options: ExportOptions,
   zipFilename = 'translations_json.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
 
   for (const lang of languages) {
     const jsonData = generateLanguageJsonData(items, lang, options.nested);
@@ -235,7 +240,7 @@ export async function exportToYamlZip(
   options: ExportOptions,
   zipFilename = 'translations_yaml.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
 
   for (const lang of languages) {
     const data = generateLanguageJsonData(items, lang, options.nested);
@@ -287,7 +292,7 @@ export async function exportToAndroidXmlZip(
   languages: string[],
   zipFilename = 'android_strings_xml.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
 
   for (const lang of languages) {
     // Android folder naming: default language (e.g. en) goes to "values", others go to "values-<lang>"
@@ -331,7 +336,7 @@ export async function exportToIosStringsZip(
   languages: string[],
   zipFilename = 'ios_strings.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
 
   for (const lang of languages) {
     const folderName = `${lang.toLowerCase()}.lproj`;
@@ -374,7 +379,7 @@ export async function exportToArbZip(
   languages: string[],
   zipFilename = 'flutter_arb.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
 
   for (const lang of languages) {
     const data = generateArbData(items, lang);
@@ -450,7 +455,7 @@ export async function exportAllAsProjectBundle(
   preset: ProjectBundlePreset = 'all-in-one',
   zipFilename = 'jsonlink_project_bundle.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
   const nested = options.nested ?? false;
   const indent = options.indent ?? 2;
 
@@ -535,7 +540,7 @@ export async function exportToViteStarterZip(
   options: Partial<ExportOptions> = {},
   zipFilename = 'vite_i18n_starter.zip'
 ) {
-  const zip = new JSZip();
+  const zip = await createZip();
   const nested = options.nested ?? false;
   const indent = options.indent ?? 2;
   const firstLang = languages[0] || 'en';

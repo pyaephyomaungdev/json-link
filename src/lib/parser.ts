@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { TranslationItem } from '@/types';
 
 /**
@@ -199,7 +198,8 @@ export function mergeTranslations(
 /**
  * Parses Excel (.xlsx, .xls) or CSV files into TranslationItem[]
  */
-export function parseSpreadsheet(data: ArrayBuffer): { items: TranslationItem[]; languages: string[] } {
+export async function parseSpreadsheet(data: ArrayBuffer): Promise<{ items: TranslationItem[]; languages: string[] }> {
+  const XLSX = await import('xlsx');
   const workbook = XLSX.read(data, { type: 'array' });
   const firstSheetName = workbook.SheetNames[0];
   if (!firstSheetName) {
