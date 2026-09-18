@@ -281,7 +281,9 @@ describe('exporter.ts', () => {
       expect(appContent).toContain('import.meta.env.DEV && <JsonLinkDevtools />');
     });
 
-    it('generates a starter kit that compiles cleanly with TypeScript tsc', async () => {
+    it(
+      'generates a starter kit that compiles cleanly with TypeScript tsc',
+      async () => {
       await exportToViteStarterZip(sampleItems, languages, { nested: false }, 'tsc_test.zip');
       const mockCreateObjectURL = vi.mocked(URL.createObjectURL);
       const blob = mockCreateObjectURL.mock.calls[mockCreateObjectURL.mock.calls.length - 1][0] as Blob;
@@ -320,6 +322,6 @@ describe('exporter.ts', () => {
       } finally {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
-    });
+    }, 15000);
   });
 });

@@ -13,6 +13,7 @@ import {
   EyeOff,
   Scale,
   ExternalLink,
+  Leaf,
 } from 'lucide-react';
 
 export type LegalTab = 'privacy' | 'terms' | 'cookies';
@@ -366,10 +367,23 @@ export function LegalPage({
       {/* Footer */}
       <footer className="w-full py-8 px-4 sm:px-8 border-t border-border/60 bg-muted/20 text-xs text-muted-foreground mt-auto">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Logo size="sm" showText={true} />
-            <span className="text-muted-foreground/60">•</span>
-            <span>Local-First i18n Studio</span>
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Logo size="sm" showText={true} />
+              <span className="text-muted-foreground/60">•</span>
+              <span>Local-First i18n Studio</span>
+            </div>
+            <span className="text-muted-foreground/60 hidden sm:inline">•</span>
+            <a
+              href="https://www.thegreenwebfoundation.org/green-web-check/?url=https%3A%2F%2Fjson-link.pages.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-emerald-500 transition-colors"
+              title="Certified Green Hosting by The Green Web Foundation"
+            >
+              <Leaf className="size-3 text-emerald-500 shrink-0" />
+              <span>Green hosted on Cloudflare Pages</span>
+            </a>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
