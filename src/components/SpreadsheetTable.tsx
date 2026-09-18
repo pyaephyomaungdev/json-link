@@ -154,20 +154,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
   useEffect(() => {
-    if (!selectedCell) return;
-    const actualRowIdx = items.findIndex(i => i.key === selectedCell.key);
-    if (actualRowIdx !== -1 && actualRowIdx !== selectedCell.rowIndex) {
-      setSelectedCell(prev => prev ? { ...prev, rowIndex: actualRowIdx } : null);
-    } else if (actualRowIdx === -1 && items.length > 0) {
-      const clampedRow = Math.min(Math.max(0, selectedCell.rowIndex), items.length - 1);
-      setSelectedCell(prev => prev ? {
-        ...prev,
-        key: items[clampedRow].key,
-        rowIndex: clampedRow,
-      } : null);
-    } else if (items.length === 0) {
-      setSelectedCell(null);
-    }
+    setSelectedCell(prev => {
+      if (!prev) return null;
+      const actualRowIdx = items.findIndex(i => i.key === prev.key);
+      if (actualRowIdx !== -1 && actualRowIdx !== prev.rowIndex) {
+        return { ...prev, rowIndex: actualRowIdx };
+      } else if (actualRowIdx === -1 && items.length > 0) {
+        const clampedRow = Math.min(Math.max(0, prev.rowIndex), items.length - 1);
+        return {
+          ...prev,
+          key: items[clampedRow].key,
+          rowIndex: clampedRow,
+        };
+      } else if (items.length === 0) {
+        return null;
+      }
+      return prev;
+    });
   }, [items]);
 
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
@@ -226,13 +229,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Sync selected keys with current items (prune removed keys)
   useEffect(() => {
-    if (selectedRowKeys.size > 0) {
+    setSelectedRowKeys(prev => {
+      if (prev.size === 0) return prev;
       const existingKeys = new Set(items.map(i => i.key));
-      setSelectedRowKeys(prev => {
-        const next = new Set(Array.from(prev).filter(k => existingKeys.has(k)));
-        return next.size === prev.size ? prev : next;
-      });
-    }
+      const next = new Set(Array.from(prev).filter(k => existingKeys.has(k)));
+      return next.size === prev.size ? prev : next;
+    });
   }, [items]);
 
   const handleToggleSelectAll = () => {
@@ -340,18 +342,21 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   // Clamp selectedCell column index when columns change (e.g. description toggled off)
   useEffect(() => {
-    if (!selectedCell) return;
-    const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
-    if (selectedCell.colIndex >= totalCols) {
-      const newCol = Math.max(0, totalCols - 1);
-      let newField = 'key';
-      if (showDescription && newCol === 1) newField = 'description';
-      else if (newCol > 0) {
-        const langIdx = showDescription ? newCol - 2 : newCol - 1;
-        newField = languages[langIdx] || 'key';
+    setSelectedCell(prev => {
+      if (!prev) return null;
+      const totalCols = 1 + (showDescription ? 1 : 0) + languages.length;
+      if (prev.colIndex >= totalCols) {
+        const newCol = Math.max(0, totalCols - 1);
+        let newField = 'key';
+        if (showDescription && newCol === 1) newField = 'description';
+        else if (newCol > 0) {
+          const langIdx = showDescription ? newCol - 2 : newCol - 1;
+          newField = languages[langIdx] || 'key';
+        }
+        return { ...prev, colIndex: newCol, field: newField };
       }
-      setSelectedCell(prev => prev ? { ...prev, colIndex: newCol, field: newField } : null);
-    }
+      return prev;
+    });
   }, [showDescription, languages]);
 
   // Track resizing divider drag

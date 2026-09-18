@@ -64,34 +64,34 @@ function HighlightedText({
   isRegex: boolean;
   wholeWord: boolean;
 }) {
-  const regex = useMemo(() => {
-    return buildSearchRegex({
-      query,
-      replacement: '',
-      scope: 'all',
-      matchCase,
-      wholeWord,
-      isRegex,
-      languages: [],
-    });
-  }, [query, matchCase, wholeWord, isRegex]);
+  if (!query || !text) return <span>{text}</span>;
 
-  if (!regex || !query || !text) return <span>{text}</span>;
+  const regex = buildSearchRegex({
+    query,
+    replacement: '',
+    scope: 'all',
+    matchCase,
+    wholeWord,
+    isRegex,
+    languages: [],
+  });
+
+  if (!regex) return <span>{text}</span>;
 
   const parts: { text: string; isMatch: boolean }[] = [];
   let lastIndex = 0;
   let m: RegExpExecArray | null;
-  regex.lastIndex = 0;
 
   try {
-    while ((m = regex.exec(text)) !== null) {
+    const activeRegex = new RegExp(regex.source, regex.flags);
+    while ((m = activeRegex.exec(text)) !== null) {
       if (m.index > lastIndex) {
         parts.push({ text: text.substring(lastIndex, m.index), isMatch: false });
       }
       parts.push({ text: m[0], isMatch: true });
       lastIndex = m.index + m[0].length;
       if (m[0].length === 0) {
-        regex.lastIndex++;
+        activeRegex.lastIndex++;
       }
     }
   } catch {
@@ -119,6 +119,18 @@ function HighlightedText({
     </span>
   );
 }
+
+const getLanguageLabel = (code: string) => {
+  const meta = SUPPORTED_LANGUAGES.find((l) => l.code === code);
+  return meta ? `${meta.name} (${code})` : code.toUpperCase();
+};
+
+const getScopeLabel = (s: string) => {
+  if (s === 'all') return 'All Languages & Fields (Entire Project)';
+  if (s === 'key') return 'Translation Keys Only (key)';
+  if (s === 'description') return 'Developer Context Only (description)';
+  return getLanguageLabel(s);
+};
 
 export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   isOpen,
@@ -213,18 +225,6 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
   };
 
   const activeOcc = matchStats.occurrences[activeMatchIndex];
-
-  const getLanguageLabel = (code: string) => {
-    const meta = SUPPORTED_LANGUAGES.find((l) => l.code === code);
-    return meta ? `${meta.name} (${code})` : code.toUpperCase();
-  };
-
-  const getScopeLabel = (s: string) => {
-    if (s === 'all') return 'All Languages & Fields (Entire Project)';
-    if (s === 'key') return 'Translation Keys Only (key)';
-    if (s === 'description') return 'Developer Context Only (description)';
-    return getLanguageLabel(s);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

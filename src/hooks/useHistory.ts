@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { TranslationItem } from '@/types';
 
 interface HistoryState {
@@ -15,9 +15,6 @@ export function useHistory(initialPresent: TranslationItem[]) {
     present: initialPresent,
     future: [],
   });
-
-  const presentRef = useRef(initialPresent);
-  presentRef.current = history.present;
 
   const canUndo = history.past.length > 0;
   const canRedo = history.future.length > 0;
