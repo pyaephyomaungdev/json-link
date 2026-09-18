@@ -1,36 +1,42 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { TranslationItem, RowStatus } from '@/types';
 import { getInitialTranslations } from '@/data/sampleData';
 import { Toolbar } from '@/components/Toolbar';
 import { SpreadsheetTable } from '@/components/SpreadsheetTable';
 import { AddKeyDialog } from '@/components/AddKeyDialog';
 import { AddLanguageDialog } from '@/components/AddLanguageDialog';
-import { ImportModal } from '@/components/ImportModal';
-import { ExportModal } from '@/components/ExportModal';
 import { ExitConfirmDialog } from '@/components/ExitConfirmDialog';
-import { SaveProjectModal } from '@/components/SaveProjectModal';
-import { AiTranslateModal } from '@/components/AiTranslateModal';
-import { FindReplaceModal } from '@/components/FindReplaceModal';
-import { ScorecardModal } from '@/components/ScorecardModal';
-import { GlossaryModal } from '@/components/GlossaryModal';
-import { LinterModal } from '@/components/LinterModal';
-import { DocsPage } from '@/components/DocsPage';
 import { CommandPalette, CommandItem } from '@/components/CommandPalette';
-import { DiffMergeModal, DiffResult } from '@/components/DiffMergeModal';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
-import { AboutPage } from '@/components/AboutPage';
-import { LegalPage, LegalTab } from '@/components/LegalPage';
 import { LandingPage } from '@/components/LandingPage';
-import { NotFoundPage } from '@/components/NotFoundPage';
-import { FolderSyncModal } from '@/components/FolderSyncModal';
-import { GitHubSyncModal } from '@/components/GitHubSyncModal';
-import { TranslationMemoryModal } from '@/components/TranslationMemoryModal';
-import { DuplicateFinderModal } from '@/components/DuplicateFinderModal';
-import { IcuTesterModal } from '@/components/IcuTesterModal';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
-import { ShareModal } from '@/components/ShareModal';
-import { UnlockShareDialog } from '@/components/UnlockShareDialog';
 import { decodeSharePayload, isPayloadEncrypted, ShareProjectData } from '@/lib/shareUrl';
+import type { LegalTab } from '@/components/LegalPage';
+import type { DiffResult } from '@/components/DiffMergeModal';
+
+// Code-split secondary pages
+const DocsPage = lazy(() => import('@/components/DocsPage').then(m => ({ default: m.DocsPage })));
+const AboutPage = lazy(() => import('@/components/AboutPage').then(m => ({ default: m.AboutPage })));
+const LegalPage = lazy(() => import('@/components/LegalPage').then(m => ({ default: m.LegalPage })));
+const NotFoundPage = lazy(() => import('@/components/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+
+// Code-split heavy modals and dialogs
+const ImportModal = lazy(() => import('@/components/ImportModal').then(m => ({ default: m.ImportModal })));
+const ExportModal = lazy(() => import('@/components/ExportModal').then(m => ({ default: m.ExportModal })));
+const SaveProjectModal = lazy(() => import('@/components/SaveProjectModal').then(m => ({ default: m.SaveProjectModal })));
+const AiTranslateModal = lazy(() => import('@/components/AiTranslateModal').then(m => ({ default: m.AiTranslateModal })));
+const FindReplaceModal = lazy(() => import('@/components/FindReplaceModal').then(m => ({ default: m.FindReplaceModal })));
+const ScorecardModal = lazy(() => import('@/components/ScorecardModal').then(m => ({ default: m.ScorecardModal })));
+const GlossaryModal = lazy(() => import('@/components/GlossaryModal').then(m => ({ default: m.GlossaryModal })));
+const LinterModal = lazy(() => import('@/components/LinterModal').then(m => ({ default: m.LinterModal })));
+const DiffMergeModal = lazy(() => import('@/components/DiffMergeModal').then(m => ({ default: m.DiffMergeModal })));
+const FolderSyncModal = lazy(() => import('@/components/FolderSyncModal').then(m => ({ default: m.FolderSyncModal })));
+const GitHubSyncModal = lazy(() => import('@/components/GitHubSyncModal').then(m => ({ default: m.GitHubSyncModal })));
+const TranslationMemoryModal = lazy(() => import('@/components/TranslationMemoryModal').then(m => ({ default: m.TranslationMemoryModal })));
+const DuplicateFinderModal = lazy(() => import('@/components/DuplicateFinderModal').then(m => ({ default: m.DuplicateFinderModal })));
+const IcuTesterModal = lazy(() => import('@/components/IcuTesterModal').then(m => ({ default: m.IcuTesterModal })));
+const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ default: m.ShareModal })));
+const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -93,6 +99,14 @@ function getDevBase(): string {
   if (devConfig?.route) return devConfig.route.replace(/\/+$/, '');
   if (window.location.pathname.startsWith('/__jsonlink')) return '/__jsonlink';
   return '';
+}
+
+function PageLoadingFallback({ isDark }: { isDark: boolean }) {
+  return (
+    <div className={`h-screen w-full flex items-center justify-center bg-background text-muted-foreground ${isDark ? 'dark' : ''}`}>
+      <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
 }
 
 export function App() {
@@ -1026,7 +1040,7 @@ export function App() {
           incomingLanguages = res.languages;
         } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
           const buffer = await file.arrayBuffer();
-          const parsed = parseSpreadsheet(buffer);
+          const parsed = await parseSpreadsheet(buffer);
           if (incomingItems.length === 0) {
             incomingItems = parsed.items;
             incomingLanguages = parsed.languages;
@@ -1711,44 +1725,54 @@ export function App() {
   // Dedicated About page route (/about) - only on regular web, not in devtool
   if (!isDevMode && route === 'about') {
     return (
-      <AboutPage
-        onBack={closeAbout}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
-        onOpenDocs={openDocs}
-        onOpenLegal={openLegal}
-      />
+      <Suspense fallback={<PageLoadingFallback isDark={isDark} />}>
+        <AboutPage
+          onBack={closeAbout}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          onOpenDocs={openDocs}
+          onOpenLegal={openLegal}
+        />
+      </Suspense>
     );
   }
 
   // Dedicated Documentation page route (/docs)
   if (route === 'docs') {
-    return <DocsPage onBack={closeDocs} isDark={isDark} onToggleTheme={toggleTheme} />;
+    return (
+      <Suspense fallback={<PageLoadingFallback isDark={isDark} />}>
+        <DocsPage onBack={closeDocs} isDark={isDark} onToggleTheme={toggleTheme} />
+      </Suspense>
+    );
   }
 
   // Dedicated Legal pages route (/privacy, /terms, /cookies)
   if (route === 'privacy' || route === 'terms' || route === 'cookies') {
     return (
-      <LegalPage
-        initialTab={route}
-        onBack={closeLegal}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
-        onNavigateTab={(tab) => openLegal(tab)}
-      />
+      <Suspense fallback={<PageLoadingFallback isDark={isDark} />}>
+        <LegalPage
+          initialTab={route}
+          onBack={closeLegal}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          onNavigateTab={(tab) => openLegal(tab)}
+        />
+      </Suspense>
     );
   }
 
   // 404 Not Found for any unrecognised URL path
   if (route === 'not-found') {
     return (
-      <NotFoundPage
-        onBack={closeNotFound}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
-        onOpenDocs={openDocs}
-        onOpenAbout={!isDevMode ? openAbout : undefined}
-      />
+      <Suspense fallback={<PageLoadingFallback isDark={isDark} />}>
+        <NotFoundPage
+          onBack={closeNotFound}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+          onOpenDocs={openDocs}
+          onOpenAbout={!isDevMode ? openAbout : undefined}
+        />
+      </Suspense>
     );
   }
 
@@ -1802,7 +1826,7 @@ export function App() {
                       setIsEditingProjectName(false);
                     }
                   }}
-                  className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-24 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
+                  className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-20 xs:w-28 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
                   autoFocus
                 />
               ) : (
@@ -1811,7 +1835,7 @@ export function App() {
                   className="group flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer min-w-0"
                   title="Click to rename project"
                 >
-                  <span className="truncate max-w-[80px] xs:max-w-[110px] sm:max-w-[150px] md:max-w-[200px]">{projectName}</span>
+                  <span className="truncate max-w-[70px] xs:max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{projectName}</span>
                   <Pencil className="size-3 text-muted-foreground opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
                 </button>
               )}
@@ -2098,202 +2122,204 @@ export function App() {
         onAddLanguage={handleAddLanguage}
       />
 
-      <ImportModal
-        open={isImportOpen}
-        onOpenChange={setIsImportOpen}
-        currentItems={items}
-        currentLanguages={languages}
-        onImportComplete={handleImportComplete}
-      />
+      <Suspense fallback={null}>
+        <ImportModal
+          open={isImportOpen}
+          onOpenChange={setIsImportOpen}
+          currentItems={items}
+          currentLanguages={languages}
+          onImportComplete={handleImportComplete}
+        />
 
-      <ExportModal
-        open={isExportOpen}
-        onOpenChange={setIsExportOpen}
-        items={items}
-        languages={languages}
-        defaultFilename={projectName}
-      />
+        <ExportModal
+          open={isExportOpen}
+          onOpenChange={setIsExportOpen}
+          items={items}
+          languages={languages}
+          defaultFilename={projectName}
+        />
 
-      <ExitConfirmDialog
-        open={isExitConfirmOpen}
-        onOpenChange={setIsExitConfirmOpen}
-        items={items}
-        languages={languages}
-        onConfirmExit={handleConfirmExit}
-        defaultProjectName={projectName}
-      />
+        <ExitConfirmDialog
+          open={isExitConfirmOpen}
+          onOpenChange={setIsExitConfirmOpen}
+          items={items}
+          languages={languages}
+          onConfirmExit={handleConfirmExit}
+          defaultProjectName={projectName}
+        />
 
-      <SaveProjectModal
-        open={isSaveProjectOpen}
-        onOpenChange={setIsSaveProjectOpen}
-        items={items}
-        languages={languages}
-        defaultProjectName={projectName}
-      />
+        <SaveProjectModal
+          open={isSaveProjectOpen}
+          onOpenChange={setIsSaveProjectOpen}
+          items={items}
+          languages={languages}
+          defaultProjectName={projectName}
+        />
 
-      <ShareModal
-        open={isShareModalOpen}
-        onOpenChange={setIsShareModalOpen}
-        items={items}
-        languages={languages}
-        projectName={projectName}
-      />
+        <ShareModal
+          open={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+          items={items}
+          languages={languages}
+          projectName={projectName}
+        />
 
-      <UnlockShareDialog
-        open={isUnlockDialogOpen}
-        onOpenChange={setIsUnlockDialogOpen}
-        shareHash={pendingShareHash || ''}
-        encryptedFileContent={pendingEncryptedFile?.content}
-        onUnlocked={handleShareUnlocked}
-        onCancel={() => {
-          setPendingShareHash(null);
-          setPendingEncryptedFile(null);
-          if (typeof window !== 'undefined' && window.location.hash) {
-            window.history.replaceState(null, '', window.location.pathname);
-          }
-        }}
-      />
+        <UnlockShareDialog
+          open={isUnlockDialogOpen}
+          onOpenChange={setIsUnlockDialogOpen}
+          shareHash={pendingShareHash || ''}
+          encryptedFileContent={pendingEncryptedFile?.content}
+          onUnlocked={handleShareUnlocked}
+          onCancel={() => {
+            setPendingShareHash(null);
+            setPendingEncryptedFile(null);
+            if (typeof window !== 'undefined' && window.location.hash) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }}
+        />
 
-      {/* AI Auto-Translation Modal */}
-      <AiTranslateModal
-        isOpen={isAiTranslateOpen}
-        onClose={() => {
-          setIsAiTranslateOpen(false);
-          setAiTargetLang(undefined);
-          setAiTargetKey(undefined);
-          setAiTargetKeys(undefined);
-        }}
-        items={items}
-        languages={languages}
-        onApplyTranslations={setItems}
-        preselectedTargetLang={aiTargetLang}
-        targetKey={aiTargetKey}
-        targetKeys={aiTargetKeys}
-      />
+        {/* AI Auto-Translation Modal */}
+        <AiTranslateModal
+          isOpen={isAiTranslateOpen}
+          onClose={() => {
+            setIsAiTranslateOpen(false);
+            setAiTargetLang(undefined);
+            setAiTargetKey(undefined);
+            setAiTargetKeys(undefined);
+          }}
+          items={items}
+          languages={languages}
+          onApplyTranslations={setItems}
+          preselectedTargetLang={aiTargetLang}
+          targetKey={aiTargetKey}
+          targetKeys={aiTargetKeys}
+        />
 
-      {/* Command Palette (Ctrl+K / Cmd+K) */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        commands={paletteCommands}
-      />
+        {/* Command Palette (Ctrl+K / Cmd+K) */}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          commands={paletteCommands}
+        />
 
-      {/* Diff & Merge Modal on Import */}
-      <DiffMergeModal
-        isOpen={isDiffMergeOpen}
-        onClose={() => {
-          setIsDiffMergeOpen(false);
-          setPendingDiff(null);
-        }}
-        diff={pendingDiff}
-        onConfirmMerge={handleConfirmMerge}
-      />
+        {/* Diff & Merge Modal on Import */}
+        <DiffMergeModal
+          isOpen={isDiffMergeOpen}
+          onClose={() => {
+            setIsDiffMergeOpen(false);
+            setPendingDiff(null);
+          }}
+          diff={pendingDiff}
+          onConfirmMerge={handleConfirmMerge}
+        />
 
-      {/* Reusable Custom Modal Confirmation / Alert Dialog */}
-      <ConfirmDialog
-        config={confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-      />
+        {/* Reusable Custom Modal Confirmation / Alert Dialog */}
+        <ConfirmDialog
+          config={confirmDialog}
+          onClose={() => setConfirmDialog(null)}
+        />
 
-      {/* Find & Replace Across Languages (Cmd+F / Cmd+H) */}
-      <FindReplaceModal
-        isOpen={isFindReplaceOpen}
-        onClose={() => setIsFindReplaceOpen(false)}
-        items={items}
-        languages={languages}
-        initialTab={findReplaceInitialTab}
-        onApplyReplace={(updatedItems) => {
-          setItems(updatedItems);
-        }}
-        onJumpToKey={(key) => {
-          setSearchQuery(key);
-        }}
-        onFilterTable={(query) => {
-          setSearchQuery(query);
-        }}
-      />
+        {/* Find & Replace Across Languages (Cmd+F / Cmd+H) */}
+        <FindReplaceModal
+          isOpen={isFindReplaceOpen}
+          onClose={() => setIsFindReplaceOpen(false)}
+          items={items}
+          languages={languages}
+          initialTab={findReplaceInitialTab}
+          onApplyReplace={(updatedItems) => {
+            setItems(updatedItems);
+          }}
+          onJumpToKey={(key) => {
+            setSearchQuery(key);
+          }}
+          onFilterTable={(query) => {
+            setSearchQuery(query);
+          }}
+        />
 
-      {/* Localization Health & Completion Scorecard */}
-      <ScorecardModal
-        isOpen={isScorecardOpen}
-        onClose={() => setIsScorecardOpen(false)}
-        items={items}
-        languages={languages}
-        sourceLanguage={languages.includes('en') ? 'en' : languages[0]}
-        onTranslateMissing={(targetLang) => {
-          handleOpenAiTranslate(targetLang);
-        }}
-      />
+        {/* Localization Health & Completion Scorecard */}
+        <ScorecardModal
+          isOpen={isScorecardOpen}
+          onClose={() => setIsScorecardOpen(false)}
+          items={items}
+          languages={languages}
+          sourceLanguage={languages.includes('en') ? 'en' : languages[0]}
+          onTranslateMissing={(targetLang) => {
+            handleOpenAiTranslate(targetLang);
+          }}
+        />
 
-      {/* Standalone AI Translation Glossary & Termbase */}
-      <GlossaryModal
-        isOpen={isGlossaryOpen}
-        onClose={() => setIsGlossaryOpen(false)}
-      />
+        {/* Standalone AI Translation Glossary & Termbase */}
+        <GlossaryModal
+          isOpen={isGlossaryOpen}
+          onClose={() => setIsGlossaryOpen(false)}
+        />
 
-      {/* Localization QA & Consistency Linter */}
-      <LinterModal
-        isOpen={isLinterOpen}
-        onClose={() => setIsLinterOpen(false)}
-        items={items}
-        languages={languages}
-        onApplyItems={setItems}
-        onJumpToCell={(key) => {
-          setSearchQuery(key);
-        }}
-      />
+        {/* Localization QA & Consistency Linter */}
+        <LinterModal
+          isOpen={isLinterOpen}
+          onClose={() => setIsLinterOpen(false)}
+          items={items}
+          languages={languages}
+          onApplyItems={setItems}
+          onJumpToCell={(key) => {
+            setSearchQuery(key);
+          }}
+        />
 
-      {/* Local Folder Direct Sync Modal */}
-      <FolderSyncModal
-        isOpen={isFolderSyncOpen}
-        onClose={() => setIsFolderSyncOpen(false)}
-        folderName={linkedFolderName}
-        fileCount={languages.length}
-        lastSyncedAt={lastSyncedAt}
-        autoSync={autoSync}
-        onToggleAutoSync={handleToggleAutoSync}
-        onSelectFolder={handleSelectFolder}
-        onSyncToDisk={handleSyncToDisk}
-        onReloadFromDisk={handleReloadFromDisk}
-        onDisconnectFolder={handleDisconnectFolder}
-        isSyncing={isSyncing}
-      />
+        {/* Local Folder Direct Sync Modal */}
+        <FolderSyncModal
+          isOpen={isFolderSyncOpen}
+          onClose={() => setIsFolderSyncOpen(false)}
+          folderName={linkedFolderName}
+          fileCount={languages.length}
+          lastSyncedAt={lastSyncedAt}
+          autoSync={autoSync}
+          onToggleAutoSync={handleToggleAutoSync}
+          onSelectFolder={handleSelectFolder}
+          onSyncToDisk={handleSyncToDisk}
+          onReloadFromDisk={handleReloadFromDisk}
+          onDisconnectFolder={handleDisconnectFolder}
+          isSyncing={isSyncing}
+        />
 
-      {/* GitHub Localization Sync & Pull Request Modal */}
-      <GitHubSyncModal
-        isOpen={isGitHubSyncOpen}
-        onClose={() => setIsGitHubSyncOpen(false)}
-        items={items}
-        languages={languages}
-        onImportTranslations={handleImportComplete}
-      />
+        {/* GitHub Localization Sync & Pull Request Modal */}
+        <GitHubSyncModal
+          isOpen={isGitHubSyncOpen}
+          onClose={() => setIsGitHubSyncOpen(false)}
+          items={items}
+          languages={languages}
+          onImportTranslations={handleImportComplete}
+        />
 
-      {/* Translation Memory (TM Cache) Modal */}
-      <TranslationMemoryModal
-        isOpen={isTranslationMemoryOpen}
-        onClose={() => setIsTranslationMemoryOpen(false)}
-        items={items}
-        languages={languages}
-      />
+        {/* Translation Memory (TM Cache) Modal */}
+        <TranslationMemoryModal
+          isOpen={isTranslationMemoryOpen}
+          onClose={() => setIsTranslationMemoryOpen(false)}
+          items={items}
+          languages={languages}
+        />
 
-      {/* Duplicate Value Finder Modal */}
-      <DuplicateFinderModal
-        isOpen={isDuplicateFinderOpen}
-        onClose={() => setIsDuplicateFinderOpen(false)}
-        items={items}
-        languages={languages}
-        onSelectKey={(key) => {
-          setSearchQuery(key);
-        }}
-      />
+        {/* Duplicate Value Finder Modal */}
+        <DuplicateFinderModal
+          isOpen={isDuplicateFinderOpen}
+          onClose={() => setIsDuplicateFinderOpen(false)}
+          items={items}
+          languages={languages}
+          onSelectKey={(key) => {
+            setSearchQuery(key);
+          }}
+        />
 
-      {/* ICU Plural & Variable Tester Modal */}
-      <IcuTesterModal
-        isOpen={isIcuTesterOpen}
-        onClose={() => setIsIcuTesterOpen(false)}
-        items={items}
-        languages={languages}
-      />
+        {/* ICU Plural & Variable Tester Modal */}
+        <IcuTesterModal
+          isOpen={isIcuTesterOpen}
+          onClose={() => setIsIcuTesterOpen(false)}
+          items={items}
+          languages={languages}
+        />
+      </Suspense>
     </div>
   );
 }

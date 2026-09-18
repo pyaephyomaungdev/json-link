@@ -48,12 +48,14 @@ describe('ExportModal', () => {
     const downloadBtn = screen.getByRole('button', { name: /Download EXCEL/i });
     fireEvent.click(downloadBtn);
 
-    expect(exporterLib.exportToExcel).toHaveBeenCalledWith(
-      defaultProps.items,
-      defaultProps.languages,
-      'test_translations.xlsx'
-    );
-    expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+    await waitFor(() => {
+      expect(exporterLib.exportToExcel).toHaveBeenCalledWith(
+        defaultProps.items,
+        defaultProps.languages,
+        'test_translations.xlsx'
+      );
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 
   it('switches to Flutter ARB tab and triggers exportToArbZip', async () => {

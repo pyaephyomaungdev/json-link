@@ -1,26 +1,26 @@
 {
   "name": "JSON Link — i18n Localization Spreadsheet",
   "short_name": "JSON Link",
-  "description": "Free open-source client-side localization spreadsheet & i18n workspace.",
-  "start_url": "./",
+  "description": "Free open-source i18n translation workspace & spreadsheet.",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

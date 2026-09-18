@@ -22,6 +22,7 @@ import {
   FileUp,
   MoreHorizontal,
   ChevronDown,
+  ChevronRight,
   Download,
   CopyCheck,
   Eraser,
@@ -151,6 +152,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
     return null;
   });
+  const [hasScrolledX, setHasScrolledX] = useState(false);
 
   // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
   useEffect(() => {
@@ -995,7 +997,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       )}
 
       {/* True Excel Spreadsheet Table: Edge-to-edge, Horizontal Scroll on Overflow, Dynamic Freeze Panes */}
-      <div className="flex-1 overflow-auto relative w-full h-full bg-background">
+      <div
+        className="flex-1 overflow-auto relative w-full h-full bg-background"
+        onScroll={(e) => {
+          if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
+            setHasScrolledX(true);
+          }
+        }}
+      >
+        {!hasScrolledX && languages.length > 1 && (
+          <div className="sm:hidden pointer-events-none sticky bottom-3 float-right mr-3 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-muted-foreground border border-border shadow-md text-[10px] font-medium backdrop-blur-xs transition-opacity animate-pulse">
+            <span>Swipe columns</span>
+            <ChevronRight className="size-3 text-primary" />
+          </div>
+        )}
         <table className="min-w-full w-max border-separate border-spacing-0 text-left">
           {/* Column widths group to ensure columns never squish on multiple languages */}
           <colgroup>

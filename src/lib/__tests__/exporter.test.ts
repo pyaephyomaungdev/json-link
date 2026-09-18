@@ -117,8 +117,8 @@ describe('exporter.ts', () => {
   });
 
   describe('exportToExcel', () => {
-    it('exports XLSX workbook without errors', () => {
-      exportToExcel(sampleItems, languages, 'test.xlsx');
+    it('exports XLSX workbook without errors', async () => {
+      await exportToExcel(sampleItems, languages, 'test.xlsx');
       expect(URL.createObjectURL).toHaveBeenCalled();
     });
   });

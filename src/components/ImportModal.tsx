@@ -90,7 +90,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           });
         } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
           const buffer = await file.arrayBuffer();
-          const parsed = parseSpreadsheet(buffer);
+          const parsed = await parseSpreadsheet(buffer);
           newLoadedFiles.push({
             name: file.name,
             size: file.size,
