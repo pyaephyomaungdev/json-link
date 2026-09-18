@@ -1,6 +1,9 @@
 {
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["unicorn", "typescript", "oxc", "react"],
   "jsPlugins": ["@shadcn/lint"],
   "rules": {
+    "react/set-state-in-effect": "allow",
     "shadcn/require-static-classes": "error",
     "shadcn/no-inline-styles": [
       "error",

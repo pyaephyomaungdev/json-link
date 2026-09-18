@@ -86,6 +86,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Helper to get dev base route (e.g. /__jsonlink) when running via Vite dev plugin
+function getDevBase(): string {
+  if (typeof window === 'undefined') return '';
+  const devConfig = (window as any).__JSONLINK_DEV_MODE__;
+  if (devConfig?.route) return devConfig.route.replace(/\/+$/, '');
+  if (window.location.pathname.startsWith('/__jsonlink')) return '/__jsonlink';
+  return '';
+}
+
 export function App() {
   // Check for auto-saved draft in browser localStorage on initial mount
   const initialDraft = useMemo(() => loadLocalDraft(), []);
@@ -188,7 +197,7 @@ export function App() {
       .catch(err => {
         console.error('Failed to load locales from Vite dev server:', err);
       });
-  }, [isDevMode]);
+  }, [isDevMode, setItemsWithoutHistory]);
 
   // Track dev mode unsaved changes to disk
   useEffect(() => {
@@ -461,7 +470,7 @@ export function App() {
     }
   };
 
-  const handleSyncToDisk = async () => {
+  const handleSyncToDisk = useCallback(async () => {
     if (!linkedDirHandle) return;
     setIsSyncing(true);
     try {
@@ -474,7 +483,7 @@ export function App() {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [linkedDirHandle, items, languages, projectName]);
 
   const handleReloadFromDisk = async () => {
     if (!linkedDirHandle) return;
@@ -511,7 +520,7 @@ export function App() {
       handleSyncToDisk().catch(e => console.warn('Auto-sync failed:', e));
     }, 1500);
     return () => clearTimeout(timer);
-  }, [items, autoSync, linkedDirHandle]);
+  }, [items, autoSync, linkedDirHandle, handleSyncToDisk]);
 
   // Debounced linter issue count (300ms) to avoid CPU spikes during fast typing.
   // After the debounce elapses the scan is pushed into idle time when available,
@@ -572,15 +581,6 @@ export function App() {
 
   const toggleTheme = () => {
     setIsDark(prev => !prev);
-  };
-
-  // Helper to get dev base route (e.g. /__jsonlink) when running via Vite dev plugin
-  const getDevBase = (): string => {
-    if (typeof window === 'undefined') return '';
-    const devConfig = (window as any).__JSONLINK_DEV_MODE__;
-    if (devConfig?.route) return devConfig.route.replace(/\/+$/, '');
-    if (window.location.pathname.startsWith('/__jsonlink')) return '/__jsonlink';
-    return '';
   };
 
   // Helper to determine the logical route from the URL pathname
@@ -1138,7 +1138,7 @@ export function App() {
         }
       }
     }
-    return Array.from(nsSet).sort();
+    return Array.from(nsSet).sort((a, b) => a.localeCompare(b));
   }, [items]);
 
   // Filtered items based on search, namespace, missing filter, status filter, and column missing filter
@@ -1500,19 +1500,19 @@ export function App() {
     setFilterMissingLang(null);
   };
 
-  const handleGeneratePseudoLocale = () => {
+  const handleGeneratePseudoLocale = useCallback(() => {
     const sourceLang = languages.includes('en') ? 'en' : languages[0];
     const pseudoRecords = generatePseudoLocaleRecords(items, sourceLang);
     const pseudoCode = 'qps-ploc';
     if (!languages.includes(pseudoCode)) {
-      setLanguages([...languages, pseudoCode]);
+      setLanguages(prev => [...prev, pseudoCode]);
     }
     const updated = items.map(item => ({
       ...item,
       [pseudoCode]: pseudoRecords[item.key] || '',
     }));
     setItems(updated);
-  };
+  }, [languages, items, setItems, setLanguages]);
 
   // Quick stats summary
   const totalKeys = items.length;
@@ -1599,7 +1599,7 @@ export function App() {
         title: 'Generate Pseudolocale (qps-ploc)',
         description: 'Accent expansion test column for UI layout stress-testing',
         icon: <FlaskConical className="size-3.5" />,
-        action: handleGeneratePseudoLocale,
+        action: () => handleGeneratePseudoLocale(),
       },
       {
         id: 'ai-translate',
@@ -1705,7 +1705,7 @@ export function App() {
         action: toggleTheme,
       },
     ],
-    [isDark, undo, redo, isDevMode]
+    [isDark, undo, redo, isDevMode, handleGeneratePseudoLocale]
   );
 
   // Dedicated About page route (/about) - only on regular web, not in devtool
