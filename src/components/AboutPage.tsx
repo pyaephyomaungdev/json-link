@@ -26,6 +26,7 @@ import {
   Layers,
   GitPullRequest,
   Zap,
+  Leaf,
 } from 'lucide-react';
 
 interface AboutPageProps {
@@ -103,6 +104,13 @@ const highlights = [
     title: 'React + Vite Starter & Drop-In i18n',
     description:
       'One-click export to a production-ready Vite starter kit or drop /src/locales into your existing stack with typed translations.d.ts, a lightweight reactive client loader (i18n.ts, ~120 lines), and native HMR.',
+  },
+  {
+    icon: <Leaf className="size-4 text-emerald-500" />,
+    badgeText: 'Green Hosted',
+    title: '100% Renewable Infrastructure',
+    description:
+      'Zero backend compute footprint. Hosted globally on Cloudflare Pages running on 100% renewable energy, certified green by The Green Web Foundation.',
   },
 ];
 
@@ -382,6 +390,43 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             </div>
           </section>
 
+          {/* Green Hosting & Infrastructure Certification Card */}
+          <section className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-6 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs overflow-hidden">
+            <div className="flex flex-col gap-2 text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <span className="size-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Leaf className="size-4" />
+                </span>
+                <span className="font-bold text-sm text-foreground">Green Hosted &amp; Carbon Efficient</span>
+                <Badge variant="outline" className="text-[10px] font-mono py-0 h-4 border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+                  Certified
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
+                JSON Link operates with zero backend compute emissions. Hosted globally on Cloudflare Pages edge network powered by 100% renewable electricity, verified and certified by The Green Web Foundation.
+              </p>
+            </div>
+
+            <div className="shrink-0 flex items-center justify-center">
+              <a
+                href="https://www.thegreenwebfoundation.org/green-web-check/?url=https%3A%2F%2Fjson-link.pages.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-95 transition-transform hover:scale-[1.02] inline-block shadow-sm rounded-lg overflow-hidden border border-emerald-500/30 bg-white"
+                title="View verification on The Green Web Foundation"
+              >
+                <img
+                  src="https://app.greenweb.org/api/v3/greencheckimage/json-link.pages.dev?nocache=true"
+                  alt="This website runs on green hosting - verified by thegreenwebfoundation.org"
+                  width={200}
+                  height={95}
+                  className="block h-[75px] w-auto sm:h-[85px]"
+                  loading="lazy"
+                />
+              </a>
+            </div>
+          </section>
+
           {/* Author & Creator Section */}
           <section className="rounded-2xl border border-border/80 bg-card/60 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
             <div className="flex flex-col gap-2 text-center sm:text-left">
@@ -431,11 +476,24 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
 
           {/* Footer */}
           <footer className="pt-6 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <span>Developed with</span>
-              <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
-              <span>by</span>
-              <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span>Developed with</span>
+                <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
+                <span>by</span>
+                <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+              </div>
+              <span className="hidden sm:inline">·</span>
+              <a
+                href="https://www.thegreenwebfoundation.org/green-web-check/?url=https%3A%2F%2Fjson-link.pages.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-emerald-500 transition-colors"
+                title="Certified Green Hosting by The Green Web Foundation"
+              >
+                <Leaf className="size-3 text-emerald-500 shrink-0" />
+                <span>Green hosted on Cloudflare Pages</span>
+              </a>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <a

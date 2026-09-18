@@ -14,6 +14,7 @@
   </p>
 
   <p>
+    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
     <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
   </p>
 

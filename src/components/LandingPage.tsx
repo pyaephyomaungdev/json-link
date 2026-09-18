@@ -19,6 +19,7 @@ import {
   Zap,
   Copy,
   Check,
+  Leaf,
 } from 'lucide-react';
 
 // Official ecosystem format logos
@@ -239,7 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth relative">
+    <main className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth relative">
       {/* Screen-wide Ambient Background Aura (Screen အပြည့် ဖြန့်ကျက်ထားသော သဘာဝကျသည့် Gradient Glow) */}
       <div className="absolute top-0 left-0 right-0 w-full h-[640px] pointer-events-none overflow-hidden select-none z-0">
         <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-screen min-w-[1000px] max-w-[1920px] h-[600px] bg-gradient-to-b from-primary/12 via-teal-500/5 to-transparent blur-3xl rounded-full" />
@@ -611,109 +612,141 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2">
-                <ShieldCheck className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2">
+                    <ShieldCheck className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">100% In-Browser Privacy</CardTitle>
+                  <CardDescription className="text-xs">Zero remote databases or background tracking</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Files are parsed, validated, and translated right in your browser via Web Workers and Web Crypto. Your company's proprietary copy never touches our servers.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">100% In-Browser Privacy</CardTitle>
-              <CardDescription className="text-xs">Zero remote databases or background tracking</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Files are parsed, validated, and translated right in your browser via Web Workers and Web Crypto. Your company's proprietary copy never touches our servers.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2">
-                <Lock className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2">
+                    <Lock className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">Zero-Knowledge Team Handoff</CardTitle>
+                  <CardDescription className="text-xs">End-to-end client-side encryption</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Share encrypted `.jsonlink` project bundles or instant URL fragments. Data is locked with PBKDF2 key derivation and AES-256-GCM before leaving your tab.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">Zero-Knowledge Team Handoff</CardTitle>
-              <CardDescription className="text-xs">End-to-end client-side encryption</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Share encrypted `.jsonlink` project bundles or instant URL fragments. Data is locked with PBKDF2 key derivation and AES-256-GCM before leaving your tab.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-2">
-                <Sparkles className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-2">
+                    <Sparkles className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">ICU Variable-Safe AI Translation</CardTitle>
+                  <CardDescription className="text-xs">Bring your own OpenRouter key</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Batch translate missing keys with strict AST placeholder protection. Never suffer hallucinated variable names or broken ICU plurals again.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">ICU Variable-Safe AI Translation</CardTitle>
-              <CardDescription className="text-xs">Bring your own OpenRouter key</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Batch translate missing keys with strict AST placeholder protection. Never suffer hallucinated variable names or broken ICU plurals again.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 mb-2">
-                <Layers className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 mb-2">
+                    <Layers className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">Flutter ARB Native</CardTitle>
+                  <CardDescription className="text-xs">First-class mobile localization support</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Round-trip Flutter ARB files while preserving <code className="font-mono text-cyan-600 dark:text-cyan-400">@key</code> descriptions, placeholders, and type annotations alongside Android XML and iOS Strings.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">Flutter ARB Native</CardTitle>
-              <CardDescription className="text-xs">First-class mobile localization support</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Round-trip Flutter ARB files while preserving <code className="font-mono text-cyan-600 dark:text-cyan-400">@key</code> descriptions, placeholders, and type annotations alongside Android XML and iOS Strings.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
-                <Languages className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
+                    <Languages className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">Zawgyi ⇄ Unicode Auto-Detect</CardTitle>
+                  <CardDescription className="text-xs">Legacy Myanmar font resilience</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Automatically detect legacy Myanmar Zawgyi encodings in incoming spreadsheets or JSON strings, with 1-click lossless Rabbit conversion.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">Zawgyi ⇄ Unicode Auto-Detect</CardTitle>
-              <CardDescription className="text-xs">Legacy Myanmar font resilience</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Automatically detect legacy Myanmar Zawgyi encodings in incoming spreadsheets or JSON strings, with 1-click lossless Rabbit conversion.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-2">
-                <Terminal className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-2">
+                    <Terminal className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">Stdio MCP Server for AI IDEs</CardTitle>
+                  <CardDescription className="text-xs">Connect to Claude Desktop &amp; Cursor</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Use standard Model Context Protocol (stdio JSON-RPC 2.0) to lint missing keys, validate translations, and update locales directly from your IDE prompt.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">Stdio MCP Server for AI IDEs</CardTitle>
-              <CardDescription className="text-xs">Connect to Claude Desktop & Cursor</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Use standard Model Context Protocol (stdio JSON-RPC 2.0) to lint missing keys, validate translations, and update locales directly from your IDE prompt.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-2">
-                <GitPullRequest className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-2">
+                    <GitPullRequest className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">GitHub Localization Sync &amp; PR</CardTitle>
+                  <CardDescription className="text-xs">Direct repo sync with locales-only safety lock</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Pull translations directly from any repository branch, edit in the spreadsheet, and open automated Pull Requests. Protected by client-side guardrails that permanently block non-locale files.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">GitHub Localization Sync &amp; PR</CardTitle>
-              <CardDescription className="text-xs">Direct repo sync with locales-only safety lock</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Pull translations directly from any repository branch, edit in the spreadsheet, and open automated Pull Requests. Protected by client-side guardrails that permanently block non-locale files.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
 
-          <Card className="border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
-                <Zap className="size-5" />
+          <article className="h-full">
+            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
+              <div>
+                <CardHeader className="pb-3">
+                  <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
+                    <Zap className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">Vite Plugin, CLI &amp; Drop-in i18n</CardTitle>
+                  <CardDescription className="text-xs">Zero daemon, instant HMR &amp; two-way disk saving</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                  Run <code className="font-mono text-primary">npx create-jsonlink</code> to auto-configure <code className="font-mono text-primary">@jsonlink/vite-plugin</code> and serve a full spreadsheet dashboard at <code className="font-mono text-primary">localhost:5173/__jsonlink</code>, or drop <code className="font-mono text-amber-600 dark:text-amber-400">src/locales/</code> directly into any existing React project.
+                </CardContent>
               </div>
-              <CardTitle className="text-base">Vite Plugin, CLI &amp; Drop-in i18n</CardTitle>
-              <CardDescription className="text-xs">Zero daemon, instant HMR &amp; two-way disk saving</CardDescription>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground leading-relaxed">
-              Run <code className="font-mono text-primary">npx create-jsonlink</code> to auto-configure <code className="font-mono text-primary">@jsonlink/vite-plugin</code> and serve a full spreadsheet dashboard at <code className="font-mono text-primary">localhost:5173/__jsonlink</code>, or drop <code className="font-mono text-amber-600 dark:text-amber-400">src/locales/</code> directly into any existing React project.
-            </CardContent>
-          </Card>
+            </Card>
+          </article>
         </div>
       </section>
 
@@ -764,7 +797,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
+          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
             <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
               1
             </span>
@@ -772,9 +805,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-xs text-muted-foreground leading-relaxed">
               Drag your existing locale files into the browser or start fresh with an empty sheet. No account or onboarding needed.
             </p>
-          </div>
+          </article>
 
-          <div className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
+          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
             <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
               2
             </span>
@@ -782,9 +815,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-xs text-muted-foreground leading-relaxed">
               Review strings in a full-featured spreadsheet. Detect missing keys, run variable-safe OpenRouter AI translation, and convert Zawgyi with 1 click.
             </p>
-          </div>
+          </article>
 
-          <div className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
+          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
             <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
               3
             </span>
@@ -792,7 +825,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-xs text-muted-foreground leading-relaxed">
               Download nested JSON, Flutter ARB, ready-to-run React/Vite i18n starter kits, or generate an encrypted `.jsonlink` file for zero-knowledge team handoff.
             </p>
-          </div>
+          </article>
         </div>
       </section>
 
@@ -845,7 +878,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ].map((faq, idx) => {
               const isOpen = openFaq === idx;
               return (
-                <div
+                <article
                   key={idx}
                   className="rounded-xl border border-border/70 bg-card overflow-hidden transition-colors"
                 >
@@ -865,7 +898,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       {faq.a}
                     </div>
                   )}
-                </div>
+                </article>
               );
             })}
           </div>
@@ -876,78 +909,102 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 10. Rich Footer */}
       <footer className="w-full py-8 px-4 sm:px-6 border-t border-border/60 bg-muted/20 text-xs text-muted-foreground mt-auto">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <Logo size="sm" showText={true} />
-            <span className="text-muted-foreground/60 hidden sm:inline">·</span>
-            <span className="text-[11px] text-muted-foreground">
-              Developed with <Heart className="size-3 text-rose-500 fill-rose-500 inline mx-0.5" /> by <strong className="text-foreground">Pyae Phyo Maung</strong>
-            </span>
+        <div className="max-w-6xl mx-auto space-y-5">
+          {/* Top Row: Brand on Left, Navigation on Right */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <Logo size="sm" showText={true} />
+              <span className="text-muted-foreground/40 hidden sm:inline">|</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                Private In-Browser Translation Workspace
+              </span>
+            </div>
+
+            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium">
+              <button
+                onClick={onOpenAbout}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                About JSON Link
+              </button>
+              <button
+                onClick={onOpenDocs}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Documentation
+              </button>
+              <a
+                href="/privacy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('privacy');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Privacy
+              </a>
+              <a
+                href="/terms"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('terms');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Terms
+              </a>
+              <a
+                href="/cookies"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenLegal?.('cookies');
+                }}
+                className="hover:text-foreground transition-colors cursor-pointer"
+              >
+                Cookies
+              </a>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+              >
+                <Star className="size-3 text-amber-500 fill-amber-500" />
+                GitHub
+              </a>
+              <a
+                href={PRODUCT_HUNT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground transition-colors"
+              >
+                Product Hunt
+              </a>
+            </nav>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
-            <button
-              onClick={onOpenAbout}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              About JSON Link
-            </button>
-            <button
-              onClick={onOpenDocs}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Documentation
-            </button>
+          {/* Bottom Sub-footer Strip: Developer Credit & Green Hosting */}
+          <div className="pt-4 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span>Developed with</span>
+              <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
+              <span>by</span>
+              <strong className="text-foreground font-semibold">Pyae Phyo Maung</strong>
+            </div>
+
             <a
-              href="/privacy"
-              onClick={(e) => {
-                e.preventDefault();
-                onOpenLegal?.('privacy');
-              }}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Privacy Policy
-            </a>
-            <a
-              href="/terms"
-              onClick={(e) => {
-                e.preventDefault();
-                onOpenLegal?.('terms');
-              }}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Terms of Service
-            </a>
-            <a
-              href="/cookies"
-              onClick={(e) => {
-                e.preventDefault();
-                onOpenLegal?.('cookies');
-              }}
-              className="hover:text-foreground transition-colors cursor-pointer"
-            >
-              Cookie Policy
-            </a>
-            <a
-              href={GITHUB_URL}
+              href="https://www.thegreenwebfoundation.org/green-web-check/?url=https%3A%2F%2Fjson-link.pages.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-emerald-500 transition-colors whitespace-nowrap"
+              title="Certified Green Hosting by The Green Web Foundation"
             >
-              <Star className="size-3 text-amber-500 fill-amber-500" />
-              GitHub
-            </a>
-            <a
-              href={PRODUCT_HUNT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors"
-            >
-              Product Hunt
+              <Leaf className="size-3 text-emerald-500 shrink-0" />
+              <span>Green hosted on Cloudflare Pages · 100% Renewable Energy</span>
             </a>
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 };

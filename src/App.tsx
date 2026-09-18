@@ -1869,7 +1869,7 @@ export function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <nav aria-label="Header Actions" className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {items.length > 0 && (
             <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
               <Button
@@ -1925,7 +1925,7 @@ export function App() {
           >
             {isDark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
           </Button>
-        </div>
+        </nav>
       </header>
 
       {/* Main Content Area */}

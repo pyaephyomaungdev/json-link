@@ -1,1 +1,4 @@
+/.well-known/stackscope-claim    /.well-known/stackscope-claim.txt    200
+/.well-known/security.txt    /.well-known/security.txt    200
+/.well-known/*    /.well-known/:splat    200
 /*    /index.html   200
