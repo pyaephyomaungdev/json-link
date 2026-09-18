@@ -34,7 +34,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "@shadcn/lint": "^0.1.0",

@@ -5,12 +5,16 @@ import path from 'path';
 
 export default defineConfig({
   base: './',
+  define: {
+    global: 'window',
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor-xlsx': ['xlsx'],
           'vendor-jszip': ['jszip'],
+          'vendor-collab': ['yjs', 'y-webrtc'],
           'vendor-icons': ['lucide-react'],
           'vendor-radix': [
             '@radix-ui/react-checkbox',

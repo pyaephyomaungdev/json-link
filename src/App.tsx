@@ -37,6 +37,15 @@ const DuplicateFinderModal = lazy(() => import('@/components/DuplicateFinderModa
 const IcuTesterModal = lazy(() => import('@/components/IcuTesterModal').then(m => ({ default: m.IcuTesterModal })));
 const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ default: m.ShareModal })));
 const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
+const LiveCollabModal = lazy(() => import('@/components/LiveCollabModal').then(m => ({ default: m.LiveCollabModal })));
+import {
+  CollabSession,
+  CollabPeerUser,
+  initCollabSession,
+  applyLocalChangeToYDoc,
+  extractItemsFromYDoc,
+  generateRandomPeerProfile,
+} from '@/lib/collaboration';
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -338,6 +347,14 @@ export function App() {
   const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
   const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
 
+  // Live WebRTC Collaboration state
+  const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
+  const [collabSession, setCollabSession] = useState<CollabSession | null>(null);
+  const [collabPeers, setCollabPeers] = useState<CollabPeerUser[]>([]);
+  const [collabPassword, setCollabPassword] = useState<string | null>(null);
+  const [localPeerProfile, setLocalPeerProfile] = useState<CollabPeerUser>(() => generateRandomPeerProfile());
+  const isRemoteCollabUpdateRef = useRef(false);
+
   // Local Folder Direct Sync state
   const [linkedDirHandle, setLinkedDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [linkedFolderName, setLinkedFolderName] = useState<string | null>(null);
@@ -416,6 +433,127 @@ export function App() {
       }
     }
   };
+
+  // Start / Join WebRTC collaboration session
+  const handleStartCollabSession = useCallback(
+    (roomId: string, password: string | null, userName: string) => {
+      if (collabSession) {
+        collabSession.destroy();
+      }
+
+      const cleanUserName = userName.trim() || localPeerProfile.name;
+      setLocalPeerProfile(prev => ({ ...prev, name: cleanUserName }));
+
+      const session = initCollabSession(roomId, {
+        password: password || null,
+        initialItems: items,
+        initialLanguages: languages,
+      });
+
+      // Initialize peer awareness
+      const awareness = session.provider.awareness;
+      awareness.setLocalStateField('user', {
+        name: cleanUserName,
+        color: localPeerProfile.color,
+        activeCell: null,
+      });
+
+      const handleAwarenessChange = () => {
+        const states = awareness.getStates();
+        const peers: CollabPeerUser[] = [];
+        states.forEach((state: any, clientID: number) => {
+          if (clientID !== awareness.clientID && state.user) {
+            peers.push(state.user);
+          }
+        });
+        setCollabPeers(peers);
+      };
+      awareness.on('change', handleAwarenessChange);
+
+      // Listen for remote Yjs updates
+      const handleDocChange = (_events: any, transaction: any) => {
+        if (transaction && transaction.origin === 'local') return;
+        isRemoteCollabUpdateRef.current = true;
+        const { items: remoteItems, languages: remoteLangs } = extractItemsFromYDoc(session.ydoc);
+        if (remoteItems.length > 0) {
+          setItemsWithoutHistory(remoteItems);
+        }
+        if (remoteLangs.length > 0) {
+          setLanguages(remoteLangs);
+        }
+        setTimeout(() => {
+          isRemoteCollabUpdateRef.current = false;
+        }, 50);
+      };
+
+      session.yTranslations.observeDeep(handleDocChange);
+      session.yKeys.observe(handleDocChange);
+      session.yLanguages.observe(handleDocChange);
+
+      setCollabSession(session);
+      setCollabPassword(password || null);
+      setIsWorkspaceActive(true);
+    },
+    [collabSession, localPeerProfile.name, localPeerProfile.color, items, languages, setItemsWithoutHistory]
+  );
+
+  const handleEndCollabSession = useCallback(() => {
+    if (collabSession) {
+      collabSession.destroy();
+      setCollabSession(null);
+    }
+    setCollabPeers([]);
+    setCollabPassword(null);
+    if (typeof window !== 'undefined' && window.location.hash.includes('collab=')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [collabSession]);
+
+  // Clean up session on component unmount
+  useEffect(() => {
+    return () => {
+      collabSession?.destroy();
+    };
+  }, [collabSession]);
+
+  // Sync local changes to Yjs doc
+  useEffect(() => {
+    if (collabSession && !isRemoteCollabUpdateRef.current) {
+      applyLocalChangeToYDoc(collabSession.ydoc, items, languages, 'local');
+    }
+  }, [items, languages, collabSession]);
+
+  // Active cell awareness handler
+  const handleActiveCellChange = useCallback((key: string | null, field: string | null) => {
+    if (collabSession) {
+      collabSession.provider.awareness.setLocalStateField('user', {
+        ...localPeerProfile,
+        activeCell: key && field ? { key, field } : null,
+      });
+    }
+  }, [collabSession, localPeerProfile]);
+
+  // Check for collab room in URL hash (#collab=...) on initial load and hashchange
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkCollabHash = () => {
+      const hash = window.location.hash;
+      if (hash && (hash.startsWith('#collab=') || hash.startsWith('#/collab='))) {
+        const match = hash.match(/^#\/?collab=([^&]+)(?:&key=([^&]+))?/);
+        if (match) {
+          const roomId = decodeURIComponent(match[1]);
+          const key = match[2] ? decodeURIComponent(match[2]) : null;
+          setIsWorkspaceActive(true);
+          handleStartCollabSession(roomId, key, localPeerProfile.name);
+        }
+      }
+    };
+
+    checkCollabHash();
+    window.addEventListener('hashchange', checkCollabHash);
+    return () => window.removeEventListener('hashchange', checkCollabHash);
+  }, [handleStartCollabSession, localPeerProfile.name]);
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -814,6 +952,13 @@ export function App() {
     setIsAddKeyOpen(false);
     setIsAddLanguageOpen(false);
     setIsUnlockDialogOpen(false);
+    setIsCollabModalOpen(false);
+    if (collabSession) {
+      collabSession.destroy();
+      setCollabSession(null);
+    }
+    setCollabPeers([]);
+    setCollabPassword(null);
     setPendingShareHash(null);
     setPendingEncryptedFile(null);
     shareDecodeSeqRef.current += 1;
@@ -1994,6 +2139,9 @@ export function App() {
             onOpenExport={() => setIsExportOpen(true)}
             onOpenSaveProject={() => setIsSaveProjectOpen(true)}
             onOpenShare={() => setIsShareModalOpen(true)}
+            onOpenCollab={() => setIsCollabModalOpen(true)}
+            isCollabConnected={Boolean(collabSession)}
+            collabPeerCount={collabPeers.length + 1}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -2073,6 +2221,8 @@ export function App() {
             searchQuery={searchQuery}
             totalItemCount={items.length}
             onClearFilters={handleClearFilters}
+            collabPeers={collabPeers}
+            onActiveCellChange={handleActiveCellChange}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}
@@ -2318,6 +2468,19 @@ export function App() {
           onClose={() => setIsIcuTesterOpen(false)}
           items={items}
           languages={languages}
+        />
+
+        {/* Real-time WebRTC Collaboration Modal */}
+        <LiveCollabModal
+          isOpen={isCollabModalOpen}
+          onClose={() => setIsCollabModalOpen(false)}
+          isConnected={Boolean(collabSession)}
+          currentRoomId={collabSession?.roomId || null}
+          currentRoomPassword={collabPassword}
+          peers={collabPeers}
+          localUser={localPeerProfile}
+          onStartSession={handleStartCollabSession}
+          onEndSession={handleEndCollabSession}
         />
       </Suspense>
     </div>

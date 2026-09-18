@@ -58,6 +58,7 @@ import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/li
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
+import { CollabPeerUser } from '@/lib/collaboration';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -82,6 +83,8 @@ interface SpreadsheetTableProps {
   onClearFilters?: () => void;
   activeFilter?: 'all' | 'missing';
   searchQuery?: string;
+  collabPeers?: CollabPeerUser[];
+  onActiveCellChange?: (key: string | null, field: string | null) => void;
 }
 
 interface EditingCell {
@@ -144,6 +147,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onClearFilters,
   activeFilter,
   searchQuery,
+  collabPeers,
+  onActiveCellChange,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -153,6 +158,17 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return null;
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
+
+  // Sync active cell to collaboration awareness
+  useEffect(() => {
+    if (editingCell) {
+      onActiveCellChange?.(editingCell.key, editingCell.field);
+    } else if (selectedCell) {
+      onActiveCellChange?.(selectedCell.key, selectedCell.field);
+    } else {
+      onActiveCellChange?.(null, null);
+    }
+  }, [editingCell, selectedCell, onActiveCellChange]);
 
   // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
   useEffect(() => {
@@ -1598,109 +1614,142 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </td>
 
                     {/* Translation Key Column */}
-                    <td
-                      style={{
-                        width: KEY_COL_WIDTH,
-                        minWidth: KEY_COL_WIDTH,
-                        left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
-                      }}
-                      onClick={() =>
-                        setSelectedCell({
-                          key: item.key,
-                          field: 'key',
-                          colIndex: 0,
-                          rowIndex: rowIdx,
-                        })
-                      }
-                      onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                      className={`py-1.5 px-3 font-mono text-xs ${
-                        isRowSelected
-                          ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                          : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                      } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
-                          ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
-                          : ''
-                        }`}
-                    >
-                      {editingCell?.key === item.key && editingCell.field === 'key' ? (
-                        <input
-                          ref={inputRef as React.RefObject<HTMLInputElement>}
-                          type="text"
-                          value={editingCell.value}
-                          onChange={e =>
-                            setEditingCell({ ...editingCell, value: e.target.value })
+                    {(() => {
+                      const keyPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'key');
+
+                      return (
+                        <td
+                          key="key"
+                          style={{
+                            width: KEY_COL_WIDTH,
+                            minWidth: KEY_COL_WIDTH,
+                            left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
+                          }}
+                          onClick={() =>
+                            setSelectedCell({
+                              key: item.key,
+                              field: 'key',
+                              colIndex: 0,
+                              rowIndex: rowIdx,
+                            })
                           }
-                          onBlur={handleSaveEdit}
-                          onKeyDown={handleKeyDown}
-                          className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
-                        />
-                      ) : (
-                        <div
-                          className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
-                          onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
-                          title="Double-click to edit key name"
+                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
+                          className={`py-1.5 px-3 font-mono text-xs ${
+                            isRowSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                          } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
+                              ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
+                              : ''
+                            }`}
                         >
-                          <span className="font-semibold truncate text-foreground">
-                            {item.key}
-                          </span>
-                          <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
-                        </div>
-                      )}
-                    </td>
+                          {keyPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': keyPeer.color } as React.CSSProperties}
+                            >
+                              <span className="absolute -top-2 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                {keyPeer.name}
+                              </span>
+                            </div>
+                          )}
+                          {editingCell?.key === item.key && editingCell.field === 'key' ? (
+                            <input
+                              ref={inputRef as React.RefObject<HTMLInputElement>}
+                              type="text"
+                              value={editingCell.value}
+                              onChange={e =>
+                                setEditingCell({ ...editingCell, value: e.target.value })
+                              }
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyDown}
+                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
+                            />
+                          ) : (
+                            <div
+                              className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
+                              onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
+                              title="Double-click to edit key name"
+                            >
+                              <span className="font-semibold truncate text-foreground">
+                                {item.key}
+                              </span>
+                              <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Context / Description Cell */}
-                    {showDescription && (
-                      <td
-                        style={{ width: DESC_COL_WIDTH, minWidth: DESC_COL_WIDTH }}
-                        onClick={() =>
-                          setSelectedCell({
-                            key: item.key,
-                            field: 'description',
-                            colIndex: 1,
-                            rowIndex: rowIdx,
-                          })
-                        }
-                        onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
-                        className={`py-1.5 px-3 text-xs ${
-                          isRowSelected
-                            ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                            : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                        } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
-                            ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
-                            : ''
-                          }`}
-                      >
-                        {editingCell?.key === item.key && editingCell.field === 'description' ? (
-                          <input
-                            ref={inputRef as React.RefObject<HTMLInputElement>}
-                            type="text"
-                            value={editingCell.value}
-                            onChange={e =>
-                              setEditingCell({ ...editingCell, value: e.target.value })
-                            }
-                            onBlur={handleSaveEdit}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Context for translators..."
-                            className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
-                          />
-                        ) : (
-                          <div
-                            className="min-h-[24px] flex items-center cursor-pointer"
-                            onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
-                            title="Double-click to edit context"
-                          >
-                            <span
-                              className={`truncate text-xs ${item.description
-                                  ? 'text-muted-foreground'
-                                  : 'text-muted-foreground/40 italic'
-                                }`}
+                    {showDescription && (() => {
+                      const descPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'description');
+                      return (
+                        <td
+                          style={{
+                            width: DESC_COL_WIDTH,
+                            minWidth: DESC_COL_WIDTH,
+                          }}
+                          onClick={() =>
+                            setSelectedCell({
+                              key: item.key,
+                              field: 'description',
+                              colIndex: 1,
+                              rowIndex: rowIdx,
+                            })
+                          }
+                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
+                          className={`py-1.5 px-3 text-xs relative ${
+                            isRowSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                          } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
+                              ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                              : ''
+                            }`}
+                        >
+                          {descPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': descPeer.color } as React.CSSProperties}
                             >
-                              {item.description || 'Add context...'}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                    )}
+                              <span className="absolute -top-2 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                {descPeer.name}
+                              </span>
+                            </div>
+                          )}
+                          {editingCell?.key === item.key && editingCell.field === 'description' ? (
+                            <input
+                              ref={inputRef as React.RefObject<HTMLInputElement>}
+                              type="text"
+                              value={editingCell.value}
+                              onChange={e =>
+                                setEditingCell({ ...editingCell, value: e.target.value })
+                              }
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Context for translators..."
+                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
+                            />
+                          ) : (
+                            <div
+                              className="min-h-[24px] flex items-center cursor-pointer"
+                              onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
+                              title="Double-click to edit context"
+                            >
+                              <span
+                                className={`truncate text-xs ${item.description
+                                    ? 'text-muted-foreground'
+                                    : 'text-muted-foreground/40 italic'
+                                  }`}
+                              >
+                                {item.description || 'Add context...'}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Language Translation Cells */}
                     {languages.map((lang, colIdx) => {
@@ -1731,6 +1780,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       const hasPrevious =
                         previousValues[item.key]?.[lang] !== undefined &&
                         previousValues[item.key][lang] !== val;
+
+                      const cellPeer = collabPeers?.find(
+                        p => p.activeCell?.key === item.key && p.activeCell?.field === lang
+                      );
 
                       return (
                         <td
@@ -1769,6 +1822,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               : ''
                             }`}
                         >
+                          {cellPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': cellPeer.color } as React.CSSProperties}
+                            >
+                              <span className="absolute -top-2.5 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                {cellPeer.name}
+                              </span>
+                            </div>
+                          )}
                           {/* Excel-style Corner Flag for Zawgyi warning */}
                           {isZawgyiCell && (
                             <div
