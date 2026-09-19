@@ -193,6 +193,23 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             {APP_VERSION}
           </Badge>
           <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs gap-1.5 cursor-pointer border-border hover:bg-amber-500/10 hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs group hidden sm:inline-flex"
+          >
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star JSON Link on GitHub"
+              aria-label="Star JSON Link on GitHub"
+            >
+              <Star className="size-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform shrink-0" />
+              <span className="font-medium">Star</span>
+            </a>
+          </Button>
+          <Button
             variant="ghost"
             size="icon"
             onClick={onToggleTheme}

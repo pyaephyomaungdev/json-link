@@ -97,8 +97,11 @@ import {
   ArrowLeft,
   X,
   Lightbulb,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 
 // Helper to get dev base route (e.g. /__jsonlink) when running via Vite dev plugin
 function getDevBase(): string {
@@ -2013,6 +2016,24 @@ export function App() {
           >
             <BookOpen className="size-3.5" />
             <span className="hidden md:inline font-medium">Docs</span>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs gap-1.5 cursor-pointer border-border hover:bg-amber-500/10 hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs group"
+          >
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star JSON Link on GitHub"
+              aria-label="Star JSON Link on GitHub"
+            >
+              <Star className="size-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform shrink-0" />
+              <span className="hidden xs:inline font-medium">Star</span>
+            </a>
           </Button>
 
           <Button
