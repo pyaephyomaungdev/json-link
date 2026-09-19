@@ -91,6 +91,7 @@ interface SpreadsheetTableProps {
   onStopFollowing?: () => void;
   onPointerMove?: (x: number, y: number) => void;
   onPointerLeave?: () => void;
+  onScrollPositionChange?: (scrollLeft: number, scrollTop: number) => void;
 }
 
 interface EditingCell {
@@ -159,6 +160,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onStopFollowing,
   onPointerMove,
   onPointerLeave,
+  onScrollPositionChange,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -450,95 +452,128 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
   }, [followingPeerName, collabPeers, items, languages, showDescription]);
 
-  // Follow Mode: smooth auto-scroll when followed peer's cursor moves outside the viewport
-  const lastCursorScrollTimeRef = useRef<number>(0);
-  const cursorScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Follow Mode: Silky-smooth rAF camera tracking for peer's scroll and cursor (Figma-style)
+  const targetScrollPosRef = useRef<{ left: number; top: number } | null>(null);
+  const scrollAnimFrameRef = useRef<number | null>(null);
 
   const followedPeer = collabPeers?.find(p => p.name === followingPeerName);
   const followedPointerX = followedPeer?.pointer?.x;
   const followedPointerY = followedPeer?.pointer?.y;
+  const followedScrollLeft = followedPeer?.scroll?.left;
+  const followedScrollTop = followedPeer?.scroll?.top;
 
   useEffect(() => {
-    if (!followingPeerName) return;
-    if (typeof followedPointerX !== 'number' || typeof followedPointerY !== 'number') return;
-    if (isNaN(followedPointerX) || isNaN(followedPointerY)) return;
+    if (!followingPeerName) {
+      if (scrollAnimFrameRef.current) {
+        cancelAnimationFrame(scrollAnimFrameRef.current);
+        scrollAnimFrameRef.current = null;
+      }
+      targetScrollPosRef.current = null;
+      return;
+    }
 
     const container = tableContainerRef.current;
     if (!container) return;
 
-    const checkAndScroll = () => {
-      const { scrollLeft, scrollTop, clientWidth, clientHeight } = container;
-      if (clientWidth <= 0 || clientHeight <= 0) return;
+    const { clientWidth, clientHeight } = container;
+    if (clientWidth <= 0 || clientHeight <= 0) return;
 
-      const cursorViewportX = followedPointerX - scrollLeft;
-      const cursorViewportY = followedPointerY - scrollTop;
+    let desiredLeft = container.scrollLeft;
+    let desiredTop = container.scrollTop;
 
-      const PADDING_LEFT = 60;
-      const PADDING_RIGHT = 60;
-      const PADDING_TOP = 80; // account for sticky thead header (~40px) and follow banner
-      const PADDING_BOTTOM = 60;
-
-      let needScroll = false;
-      let newScrollLeft = scrollLeft;
-      let newScrollTop = scrollTop;
-
-      if (cursorViewportX < PADDING_LEFT) {
-        newScrollLeft = Math.max(0, followedPointerX - Math.round(clientWidth / 3));
-        needScroll = true;
-      } else if (cursorViewportX > clientWidth - PADDING_RIGHT) {
-        newScrollLeft = Math.max(0, followedPointerX - Math.round((clientWidth * 2) / 3));
-        needScroll = true;
-      }
-
-      if (cursorViewportY < PADDING_TOP) {
-        newScrollTop = Math.max(0, followedPointerY - Math.round(clientHeight / 3));
-        needScroll = true;
-      } else if (cursorViewportY > clientHeight - PADDING_BOTTOM) {
-        newScrollTop = Math.max(0, followedPointerY - Math.round((clientHeight * 2) / 3));
-        needScroll = true;
-      }
-
-      if (needScroll) {
-        if (typeof container.scrollTo === 'function') {
-          container.scrollTo({
-            left: newScrollLeft,
-            top: newScrollTop,
-            behavior: 'smooth',
-          });
-        } else {
-          container.scrollLeft = newScrollLeft;
-          container.scrollTop = newScrollTop;
-        }
-        lastCursorScrollTimeRef.current = Date.now();
-      }
-    };
-
-    const now = Date.now();
-    const elapsed = now - lastCursorScrollTimeRef.current;
-    const THROTTLE_MS = 250;
-
-    if (elapsed >= THROTTLE_MS) {
-      if (cursorScrollTimeoutRef.current) {
-        clearTimeout(cursorScrollTimeoutRef.current);
-        cursorScrollTimeoutRef.current = null;
-      }
-      checkAndScroll();
-    } else {
-      if (cursorScrollTimeoutRef.current) {
-        clearTimeout(cursorScrollTimeoutRef.current);
-      }
-      cursorScrollTimeoutRef.current = setTimeout(() => {
-        checkAndScroll();
-      }, THROTTLE_MS - elapsed);
+    // 1. If followed peer has reported their scroll position, track it as baseline
+    if (typeof followedScrollLeft === 'number' && !isNaN(followedScrollLeft)) {
+      desiredLeft = followedScrollLeft;
+    }
+    if (typeof followedScrollTop === 'number' && !isNaN(followedScrollTop)) {
+      desiredTop = followedScrollTop;
     }
 
+    // 2. If followed peer has cursor, ensure cursor is comfortably visible within safe margins
+    if (
+      typeof followedPointerX === 'number' &&
+      typeof followedPointerY === 'number' &&
+      !isNaN(followedPointerX) &&
+      !isNaN(followedPointerY)
+    ) {
+      const SAFE_LEFT = isKeyFrozen ? 280 : 70;
+      const SAFE_RIGHT = 80;
+      const SAFE_TOP = 95; // table header (~40px) + follow banner (~44px) + margin
+      const SAFE_BOTTOM = 80;
+
+      // Adjust X if cursor is outside safe zone of desired viewport
+      if (followedPointerX < desiredLeft + SAFE_LEFT) {
+        desiredLeft = Math.max(0, followedPointerX - SAFE_LEFT);
+      } else if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
+        desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+      }
+
+      // Adjust Y if cursor is outside safe zone of desired viewport
+      if (followedPointerY < desiredTop + SAFE_TOP) {
+        desiredTop = Math.max(0, followedPointerY - SAFE_TOP);
+      } else if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
+        desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+      }
+    }
+
+    targetScrollPosRef.current = {
+      left: Math.round(desiredLeft),
+      top: Math.round(desiredTop),
+    };
+
+    const runScrollLoop = () => {
+      const c = tableContainerRef.current;
+      const target = targetScrollPosRef.current;
+      if (!c || !target) {
+        scrollAnimFrameRef.current = null;
+        return;
+      }
+
+      const diffX = target.left - c.scrollLeft;
+      const diffY = target.top - c.scrollTop;
+
+      // If already within sub-pixel threshold, snap to target and finish
+      if (Math.abs(diffX) <= 1 && Math.abs(diffY) <= 1) {
+        c.scrollLeft = target.left;
+        c.scrollTop = target.top;
+        scrollAnimFrameRef.current = null;
+        return;
+      }
+
+      // 60fps exponential ease-out dampening (0.18 gives snappy yet buttery response)
+      const factor = 0.18;
+      c.scrollLeft += Math.round(diffX * factor) || (diffX > 0 ? 1 : -1);
+      c.scrollTop += Math.round(diffY * factor) || (diffY > 0 ? 1 : -1);
+
+      scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
+    };
+
+    if (scrollAnimFrameRef.current === null) {
+      if (typeof requestAnimationFrame === 'function') {
+        scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
+      } else {
+        container.scrollLeft = targetScrollPosRef.current.left;
+        container.scrollTop = targetScrollPosRef.current.top;
+      }
+    }
+  }, [
+    followingPeerName,
+    followedPointerX,
+    followedPointerY,
+    followedScrollLeft,
+    followedScrollTop,
+    isKeyFrozen,
+  ]);
+
+  // Clean up animation frame on unmount
+  useEffect(() => {
     return () => {
-      if (cursorScrollTimeoutRef.current) {
-        clearTimeout(cursorScrollTimeoutRef.current);
-        cursorScrollTimeoutRef.current = null;
+      if (scrollAnimFrameRef.current) {
+        cancelAnimationFrame(scrollAnimFrameRef.current);
+        scrollAnimFrameRef.current = null;
       }
     };
-  }, [followingPeerName, followedPointerX, followedPointerY]);
+  }, []);
 
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
@@ -1191,6 +1226,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
             setHasScrolledX(true);
           }
+          onScrollPositionChange?.(e.currentTarget.scrollLeft, e.currentTarget.scrollTop);
         }}
       >
         {/* Floating Follow Mode Indicator Banner */}

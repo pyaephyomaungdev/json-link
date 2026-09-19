@@ -7,6 +7,7 @@ export interface CollabPeerUser {
   color: string;
   activeCell?: { key: string; field: string } | null;
   pointer?: { x: number; y: number } | null;
+  scroll?: { left: number; top: number } | null;
   clientID?: number;
   lastSeen?: number;
 }

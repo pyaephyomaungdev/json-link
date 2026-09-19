@@ -57,7 +57,7 @@ export function useCollabSession({
   const languagesRef = useRef<string[]>(languages);
   const projectNameRef = useRef<string | undefined>(projectName);
   const lastPointerSentRef = useRef<number>(0);
-  const pointerIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollSentRef = useRef<number>(0);
 
   useEffect(() => {
     collabSessionRef.current = collabSession;
@@ -222,7 +222,9 @@ export function useCollabSession({
                 p.activeCell?.key === peers[i]?.activeCell?.key &&
                 p.activeCell?.field === peers[i]?.activeCell?.field &&
                 p.pointer?.x === peers[i]?.pointer?.x &&
-                p.pointer?.y === peers[i]?.pointer?.y
+                p.pointer?.y === peers[i]?.pointer?.y &&
+                p.scroll?.left === peers[i]?.scroll?.left &&
+                p.scroll?.top === peers[i]?.scroll?.top
             )
           ) {
             return prevPeers;
@@ -337,10 +339,6 @@ export function useCollabSession({
           clearTimeout(connectTimeoutTimerRef.current);
           connectTimeoutTimerRef.current = null;
         }
-        if (pointerIdleTimerRef.current) {
-          clearTimeout(pointerIdleTimerRef.current);
-          pointerIdleTimerRef.current = null;
-        }
         clearInterval(heartbeatTimer);
         window.removeEventListener('focus', handleWindowFocus);
         window.removeEventListener('online', handleWindowFocus);
@@ -450,31 +448,12 @@ export function useCollabSession({
         pointer: { x: Math.round(x), y: Math.round(y) },
         lastSeen: now,
       });
-
-      // Clear pointer after 3 seconds of inactivity
-      if (pointerIdleTimerRef.current) {
-        clearTimeout(pointerIdleTimerRef.current);
-      }
-      pointerIdleTimerRef.current = setTimeout(() => {
-        if (!collabSessionRef.current) return;
-        const current = awareness.getLocalState()?.user;
-        if (current?.pointer) {
-          awareness.setLocalStateField('user', {
-            ...current,
-            pointer: null,
-          });
-        }
-      }, 3000);
     },
     [localPeerProfile]
   );
 
   const handlePointerLeave = useCallback(() => {
     if (!collabSessionRef.current) return;
-    if (pointerIdleTimerRef.current) {
-      clearTimeout(pointerIdleTimerRef.current);
-      pointerIdleTimerRef.current = null;
-    }
     const awareness = collabSessionRef.current.provider.awareness;
     const currentUser = awareness.getLocalState()?.user;
     if (currentUser?.pointer) {
@@ -484,6 +463,26 @@ export function useCollabSession({
       });
     }
   }, []);
+
+  const handleScroll = useCallback(
+    (scrollLeft: number, scrollTop: number) => {
+      if (!collabSessionRef.current) return;
+      const now = Date.now();
+      // Throttle scroll updates to ~40ms (~25fps) to maintain fluid sync with light bandwidth
+      if (now - lastScrollSentRef.current < 40) return;
+      lastScrollSentRef.current = now;
+
+      const awareness = collabSessionRef.current.provider.awareness;
+      const currentUser = awareness.getLocalState()?.user;
+
+      awareness.setLocalStateField('user', {
+        ...(currentUser || localPeerProfile),
+        scroll: { left: Math.round(scrollLeft), top: Math.round(scrollTop) },
+        lastSeen: now,
+      });
+    },
+    [localPeerProfile]
+  );
 
   const startCollabSessionRef = useRef(startCollabSession);
   useEffect(() => {
@@ -584,5 +583,6 @@ export function useCollabSession({
     handleActiveCellChange,
     handlePointerMove,
     handlePointerLeave,
+    handleScroll,
   };
 }

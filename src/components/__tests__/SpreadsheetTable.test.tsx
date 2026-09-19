@@ -186,9 +186,7 @@ describe('SpreadsheetTable', () => {
     expect(selectSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('renders peer cursors with color badge and smoothly auto-scrolls when followed peer cursor moves out of view', () => {
-    const scrollToSpy = vi.fn();
-
+  it('renders peer cursors with color badge and smoothly auto-scrolls when followed peer cursor moves out of view', async () => {
     // Initial render with Alice inside view
     const { container, rerender } = render(
       <SpreadsheetTable
@@ -215,8 +213,6 @@ describe('SpreadsheetTable', () => {
     Object.defineProperty(scrollContainer, 'clientHeight', { value: 400, configurable: true });
     Object.defineProperty(scrollContainer, 'scrollLeft', { value: 0, writable: true, configurable: true });
     Object.defineProperty(scrollContainer, 'scrollTop', { value: 0, writable: true, configurable: true });
-    scrollContainer.scrollTo = scrollToSpy;
-
     // When Alice moves cursor far off screen (e.g. x: 800, y: 900)
     rerender(
       <SpreadsheetTable
@@ -233,12 +229,29 @@ describe('SpreadsheetTable', () => {
       />
     );
 
-    expect(scrollToSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        behavior: 'smooth',
-      })
+    // Wait for rAF step
+    await vi.waitFor(() => {
+      expect(scrollContainer.scrollLeft).toBeGreaterThan(0);
+      expect(scrollContainer.scrollTop).toBeGreaterThan(0);
+    });
+  });
+
+  it('notifies onScrollPositionChange when table container is scrolled', () => {
+    const onScrollPositionChange = vi.fn();
+    const { container } = render(
+      <SpreadsheetTable
+        {...defaultProps}
+        onScrollPositionChange={onScrollPositionChange}
+      />
     );
-    expect(scrollToSpy.mock.calls[0][0].left).toBeGreaterThan(0);
-    expect(scrollToSpy.mock.calls[0][0].top).toBeGreaterThan(0);
+
+    const scrollContainer = container.querySelector('.overflow-auto') as HTMLDivElement;
+    expect(scrollContainer).not.toBeNull();
+
+    fireEvent.scroll(scrollContainer, {
+      target: { scrollLeft: 120, scrollTop: 250 },
+    });
+
+    expect(onScrollPositionChange).toHaveBeenCalledWith(120, 250);
   });
 });
