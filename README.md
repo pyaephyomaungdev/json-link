@@ -228,6 +228,7 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 * **Optional End-to-End Encryption (E2EE)**: Setting an optional room password derives 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). When enabled, document updates and awareness messages are completely unreadable to intermediary signaling relays. Open rooms without a PIN remain unencrypted for instant frictionless sharing.
 * **Human-Friendly Room IDs**: Google Meet style 3-4-3 canonical segmented identifiers (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Real-time cursor coordinates with deterministic peer palette assignment (12 distinct colors), user avatar initials badges, and one-click viewport jump to follow collaborator selections.
+* **Full Data Sync & Independent Filter Views**: Synchronizes translation cells, developer context notes, review statuses (Draft/Needs Review/Approved), and project metadata in real time, while keeping personal filter views (namespace, search, missing keys) independent per peer so collaborators never disrupt each other's focus.
 * **Dedicated Multi-Stage Auth Modals**: Clean separate screens for PIN entry, connection loading with spinner, and authentication failure recovery with auto-focused "Try Again".
 
 </details>

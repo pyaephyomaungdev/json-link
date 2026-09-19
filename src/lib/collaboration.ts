@@ -38,6 +38,7 @@ export interface CollabSession {
   yTranslations: Y.Map<any>;
   yKeys: Y.Array<string>;
   yLanguages: Y.Array<string>;
+  yMeta: Y.Map<any>;
   destroy: () => void;
   isEstablished?: boolean;
 }
@@ -176,6 +177,7 @@ export function initCollabSession(
     signalingServers?: string[];
     initialItems?: TranslationItem[];
     initialLanguages?: string[];
+    initialProjectName?: string;
     isInitiator?: boolean;
     onAuthError?: (errorMessage: string) => void;
   }
@@ -298,32 +300,38 @@ export function initCollabSession(
   const yTranslations = ydoc.getMap<any>('translations');
   const yKeys = ydoc.getArray<string>('keys');
   const yLanguages = ydoc.getArray<string>('languages');
+  const yMeta = ydoc.getMap<any>('metadata');
 
-  // Seed with initial items ONLY if initiator AND doc is empty and initial data provided
-  if (
-    options?.isInitiator !== false &&
-    options?.initialItems &&
-    options.initialItems.length > 0 &&
-    yKeys.length === 0 &&
-    yTranslations.size === 0
-  ) {
-    ydoc.transact(() => {
-      const langs = options.initialLanguages || ['en', 'my'];
-      yLanguages.push(langs);
+  // Seed with initial items and metadata ONLY if initiator AND doc is empty
+  if (options?.isInitiator !== false) {
+    if (
+      options?.initialItems &&
+      options.initialItems.length > 0 &&
+      yKeys.length === 0 &&
+      yTranslations.size === 0
+    ) {
+      ydoc.transact(() => {
+        const langs = options.initialLanguages || ['en', 'my'];
+        yLanguages.push(langs);
 
-      const keys: string[] = [];
-      for (const item of options.initialItems!) {
-        keys.push(item.key);
-        const cellData: Record<string, string> = {};
-        for (const [k, v] of Object.entries(item)) {
-          if (k !== 'key') {
-            cellData[k] = v || '';
+        const keys: string[] = [];
+        for (const item of options.initialItems!) {
+          keys.push(item.key);
+          const cellData: Record<string, string> = {};
+          for (const [k, v] of Object.entries(item)) {
+            if (k !== 'key') {
+              cellData[k] = v || '';
+            }
           }
+          yTranslations.set(item.key, cellData);
         }
-        yTranslations.set(item.key, cellData);
-      }
-      yKeys.push(keys);
-    });
+        yKeys.push(keys);
+      });
+    }
+
+    if (options?.initialProjectName && !yMeta.has('projectName')) {
+      yMeta.set('projectName', options.initialProjectName);
+    }
   }
 
   const session: CollabSession = {
@@ -333,6 +341,7 @@ export function initCollabSession(
     yTranslations,
     yKeys,
     yLanguages,
+    yMeta,
     isEstablished,
     destroy: () => {
       try {
@@ -455,4 +464,29 @@ export function applyLocalChangeToYDoc(
       }
     }
   }, origin);
+}
+
+/**
+ * Syncs project name changes to Yjs doc metadata
+ */
+export function applyProjectNameToYDoc(
+  ydoc: Y.Doc,
+  projectName: string,
+  origin: any = 'local'
+) {
+  const yMeta = ydoc.getMap<any>('metadata');
+  if (yMeta.get('projectName') !== projectName) {
+    ydoc.transact(() => {
+      yMeta.set('projectName', projectName);
+    }, origin);
+  }
+}
+
+/**
+ * Extracts project name from Yjs doc metadata
+ */
+export function extractProjectNameFromYDoc(ydoc: Y.Doc): string | undefined {
+  const yMeta = ydoc.getMap<any>('metadata');
+  const name = yMeta.get('projectName');
+  return typeof name === 'string' && name.trim().length > 0 ? name : undefined;
 }

@@ -6,6 +6,8 @@ import {
   initCollabSession,
   extractItemsFromYDoc,
   applyLocalChangeToYDoc,
+  applyProjectNameToYDoc,
+  extractProjectNameFromYDoc,
   getNextAvailablePeerColor,
   normalizeCollabRoomId,
 } from '@/lib/collaboration';
@@ -13,10 +15,12 @@ import {
 export interface UseCollabSessionOptions {
   items: TranslationItem[];
   languages: string[];
+  projectName?: string;
   localPeerProfile: { name: string; color: string };
   setLocalPeerProfile: React.Dispatch<React.SetStateAction<{ name: string; color: string }>>;
   onRemoteItemsChange: (items: TranslationItem[]) => void;
   onRemoteLanguagesChange: (languages: string[]) => void;
+  onRemoteProjectNameChange?: (projectName: string) => void;
   onActivateWorkspace?: () => void;
   onDeactivateWorkspace?: () => void;
 }
@@ -24,10 +28,12 @@ export interface UseCollabSessionOptions {
 export function useCollabSession({
   items,
   languages,
+  projectName,
   localPeerProfile,
   setLocalPeerProfile,
   onRemoteItemsChange,
   onRemoteLanguagesChange,
+  onRemoteProjectNameChange,
   onActivateWorkspace,
   onDeactivateWorkspace,
 }: UseCollabSessionOptions) {
@@ -40,6 +46,7 @@ export function useCollabSession({
 
   const prevItemsRef = useRef<TranslationItem[]>(items);
   const prevLanguagesRef = useRef<string[]>(languages);
+  const prevProjectNameRef = useRef<string | undefined>(projectName);
   const isRemoteCollabUpdateRef = useRef<boolean>(false);
 
   const collabSessionRef = useRef<CollabSession | null>(null);
@@ -47,12 +54,14 @@ export function useCollabSession({
   const connectTimeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemsRef = useRef<TranslationItem[]>(items);
   const languagesRef = useRef<string[]>(languages);
+  const projectNameRef = useRef<string | undefined>(projectName);
 
   useEffect(() => {
     collabSessionRef.current = collabSession;
     itemsRef.current = items;
     languagesRef.current = languages;
-  }, [collabSession, items, languages]);
+    projectNameRef.current = projectName;
+  }, [collabSession, items, languages, projectName]);
 
   const handleCollabAuthFailure = useCallback(
     (errorMessage: string) => {
@@ -143,6 +152,7 @@ export function useCollabSession({
         password: password || null,
         initialItems: isInitiator ? itemsRef.current : undefined,
         initialLanguages: isInitiator ? languagesRef.current : undefined,
+        initialProjectName: isInitiator ? projectNameRef.current : undefined,
         isInitiator,
         onAuthError: (msg: string) => handleCollabAuthFailureRef.current(msg),
       });
@@ -234,6 +244,15 @@ export function useCollabSession({
       // Synchronize Yjs document data to React state
       const syncDocToReact = () => {
         const { items: remoteItems, languages: remoteLangs } = extractItemsFromYDoc(session.ydoc);
+        const remoteProjectName = extractProjectNameFromYDoc(session.ydoc);
+
+        if (remoteProjectName && onRemoteProjectNameChange) {
+          if (prevProjectNameRef.current !== remoteProjectName) {
+            prevProjectNameRef.current = remoteProjectName;
+            onRemoteProjectNameChange(remoteProjectName);
+          }
+        }
+
         if (remoteItems.length > 0 || session.yKeys.length > 0) {
           onConnectionEstablished();
           isRemoteCollabUpdateRef.current = true;
@@ -257,6 +276,7 @@ export function useCollabSession({
       session.yTranslations.observeDeep(handleDocChange);
       session.yKeys.observe(handleDocChange);
       session.yLanguages.observe(handleDocChange);
+      session.yMeta?.observe(handleDocChange);
 
       const handleYDocUpdate = (_update: Uint8Array, origin: any) => {
         if (origin !== 'local') {
@@ -318,7 +338,7 @@ export function useCollabSession({
         onActivateWorkspace?.();
       }
     },
-    [localPeerProfile.name, localPeerProfile.color, setLocalPeerProfile, onRemoteItemsChange, onRemoteLanguagesChange, onActivateWorkspace]
+    [localPeerProfile.name, localPeerProfile.color, setLocalPeerProfile, onRemoteItemsChange, onRemoteLanguagesChange, onRemoteProjectNameChange, onActivateWorkspace]
   );
 
   const endCollabSession = useCallback(() => {
@@ -345,25 +365,34 @@ export function useCollabSession({
     if (!collabSession) {
       prevItemsRef.current = items;
       prevLanguagesRef.current = languages;
+      prevProjectNameRef.current = projectName;
       return;
     }
 
     if (isRemoteCollabUpdateRef.current) {
       prevItemsRef.current = items;
       prevLanguagesRef.current = languages;
+      prevProjectNameRef.current = projectName;
       return;
     }
 
     const itemsChanged = prevItemsRef.current !== items;
     const languagesChanged = prevLanguagesRef.current !== languages;
+    const projectNameChanged = projectName !== undefined && prevProjectNameRef.current !== projectName;
 
     prevItemsRef.current = items;
     prevLanguagesRef.current = languages;
+    if (projectName !== undefined) {
+      prevProjectNameRef.current = projectName;
+    }
 
     if (itemsChanged || languagesChanged) {
       applyLocalChangeToYDoc(collabSession.ydoc, items, languages, 'local');
     }
-  }, [items, languages, collabSession]);
+    if (projectNameChanged && projectName) {
+      applyProjectNameToYDoc(collabSession.ydoc, projectName, 'local');
+    }
+  }, [items, languages, projectName, collabSession]);
 
   const handleActiveCellChange = useCallback(
     (key: string | null, field: string | null) => {

@@ -451,10 +451,12 @@ export function App() {
   } = useCollabSession({
     items,
     languages,
+    projectName,
     localPeerProfile,
     setLocalPeerProfile,
     onRemoteItemsChange: setItemsWithoutHistory,
     onRemoteLanguagesChange: setLanguages,
+    onRemoteProjectNameChange: setProjectName,
     onActivateWorkspace: () => setIsWorkspaceActive(true),
     onDeactivateWorkspace: () => setIsWorkspaceActive(false),
   });

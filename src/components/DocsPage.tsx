@@ -1440,12 +1440,12 @@ function LiveCollabSection() {
         </div>
       </div>
 
-      {/* Limitations note */}
-      <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-[11px] text-muted-foreground leading-relaxed">
-        <AlertCircle className="size-4 text-amber-500 shrink-0 mt-0.5" />
+      {/* Architecture note: Full Sync & Independent Views */}
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-primary/20 bg-primary/5 text-[11px] text-muted-foreground leading-relaxed">
+        <CheckCircle2 className="size-4 text-primary shrink-0 mt-0.5" />
         <div>
-          <strong className="text-foreground font-semibold block mb-1">Beta Limitations</strong>
-          Live Collab syncs spreadsheet cell values only — file metadata, namespace filters, and status tags are not synced across peers. All translation data stays in-browser; zero server storage.
+          <strong className="text-foreground font-semibold block mb-1">Collaborative Architecture &amp; Independent Views</strong>
+          Translations, developer notes, row review statuses (Draft / Needs Review / Approved), and project names are synchronized in real time across peers via Yjs CRDTs. Search queries, namespace filters, and missing-key filters are intentionally kept independent per user (Google Sheets-style Filter Views) so teammates can work on different sections simultaneously without interrupting each other.
         </div>
       </div>
     </div>
