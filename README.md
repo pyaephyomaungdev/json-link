@@ -343,7 +343,8 @@ npm run create:build
 
 All notable changes to **JSON Link** are documented here. The project adheres to [Semantic Versioning](https://semver.org/).
 
-### [1.1.0] - 2026-09-19
+<details open>
+<summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.1.0] - 2026-09-19 — WebRTC Live Collaboration, DOM Virtualization & E2EE</strong> (Latest Release)</summary>
 
 #### Added
 * **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and WebRTC DataChannels (`useCollabSession`).
@@ -366,9 +367,11 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 * Test suite expanded to 60 test files and 455 passing tests (100% Vitest pass rate).
 * Complete zero-warning codebase compliance across 154 files with 128 oxlint rules.
 
----
+</details>
 
-### [1.0.0] - 2026-09-01
+<details>
+<summary><strong><img src=".github/assets/icons/box.svg" width="18" height="18" align="absmiddle" /> [1.0.0] - 2026-09-01 — Initial Public Release</strong> (Click to expand)</summary>
+
 * Initial public release of JSON Link.
 * Zero-backend spreadsheet studio with edge-to-edge grid and keyboard navigation.
 * Two-way disk synchronization via File System Access API with instant Vite HMR.
@@ -377,6 +380,8 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 * Model Context Protocol (MCP) server for Cursor, Claude Desktop, and Antigravity.
 * Multi-platform export (Web JSON, Flutter ARB, iOS Strings, Android XML, TypeScript, Excel, CSV, YAML).
 * Client-side zero-knowledge encrypted URL fragment sharing (`#share=...`).
+
+</details>
 
 ---
 
