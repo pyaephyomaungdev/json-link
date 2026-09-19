@@ -2004,9 +2004,12 @@ export function App() {
             </div>
           )}
 
-          <div className="hidden md:block">
-            <PwaInstallButton />
-          </div>
+          {/* Install App: Only shown on landing page, hidden in spreadsheet view */}
+          {items.length === 0 && !isWorkspaceActive && (
+            <div className="hidden md:block">
+              <PwaInstallButton />
+            </div>
+          )}
 
           <Button
             asChild
@@ -2028,16 +2031,19 @@ export function App() {
             </a>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={openDocs}
-            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
-            title="User Guide & Documentation"
-          >
-            <BookOpen className="size-3.5" />
-            <span className="hidden md:inline font-medium">Docs</span>
-          </Button>
+          {/* Docs button: Only shown on landing page, hidden in spreadsheet view */}
+          {items.length === 0 && !isWorkspaceActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openDocs}
+              className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
+              title="User Guide & Documentation"
+            >
+              <BookOpen className="size-3.5" />
+              <span className="hidden md:inline font-medium">Docs</span>
+            </Button>
+          )}
 
           <Button
             variant="ghost"
