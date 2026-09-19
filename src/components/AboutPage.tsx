@@ -452,7 +452,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
           <section className="rounded-2xl border border-border/80 bg-card/60 p-5 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xs">
             <div className="flex flex-col gap-2 text-left">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-sm text-foreground">Crafted by Pyae Phyo Maung</span>
+                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-bold text-sm text-foreground hover:text-primary transition-colors">Crafted by Pyae Phyo Maung</a>
                 <Badge variant="outline" className="text-[10px] font-mono py-0 h-4 border-primary/30 text-primary shrink-0">
                   Creator
                 </Badge>
@@ -502,7 +502,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
                 <span>Developed with</span>
                 <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
                 <span>by</span>
-                <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Pyae Phyo Maung</a>
               </div>
               <span className="hidden sm:inline">·</span>
               <a

@@ -2540,7 +2540,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <span className="text-muted-foreground hidden lg:inline">•</span>
           <span className="text-muted-foreground hidden lg:flex items-center gap-1.5 text-[11px]">
             Developed with <Heart className="size-3 text-rose-500 fill-rose-500 inline shrink-0" /> by{' '}
-            <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+            <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Pyae Phyo Maung</a>
           </span>
         </div>
 

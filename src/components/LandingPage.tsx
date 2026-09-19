@@ -995,7 +995,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>Developed with</span>
               <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
               <span>by</span>
-              <strong className="text-foreground font-semibold">Pyae Phyo Maung</strong>
+              <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Pyae Phyo Maung</a>
             </div>
 
             <a
