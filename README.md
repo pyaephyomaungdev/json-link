@@ -15,8 +15,9 @@
   </p>
 
   <p>
-    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
+    <iframe src="https://github.com/sponsors/pyaephyomaungdev/button" title="Sponsor pyaephyomaungdev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
     <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
+    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
   </p>
 
   <p>
@@ -410,7 +411,11 @@ RFC 9116 Vulnerability Disclosure metadata is published at `https://json-link.pa
 
 ## <img src="public/buy-me-a-coffee-icon.svg" width="22" height="22" align="absmiddle" /> Support the Project
 
-JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider keeping me caffeinated:
+JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider supporting the project:
+
+<p align="center">
+  <iframe src="https://github.com/sponsors/pyaephyomaungdev/button" title="Sponsor pyaephyomaungdev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+</p>
 
 <p align="center">
   <a href="https://www.buymeacoffee.com/pyaephyomaa" target="_blank" rel="noopener noreferrer">
@@ -420,7 +425,7 @@ JSON Link is free and open-source, built entirely in my spare time as a passion 
   </a>
 </p>
 
-Every cup fuels late-night Zawgyi converter fixes, new exporter formats, and zero-backend features that never lock you into a vendor. 🙏
+Every sponsor and cup of coffee fuels late-night Zawgyi converter fixes, new exporter formats, and zero-backend features that never lock you into a vendor. 🙏
 
 ---
 

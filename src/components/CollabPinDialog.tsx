@@ -49,22 +49,35 @@ export const CollabPinDialog: React.FC<CollabPinDialogProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const tryAgainBtnRef = useRef<HTMLButtonElement>(null);
 
+  const isPasswordRequired = Boolean(errorMessage?.toLowerCase().includes('password-protected'));
+  const isAuthFailed = Boolean(errorMessage) && !isPasswordRequired;
+
+  const prevRoomIdRef = useRef(roomId);
   useEffect(() => {
     if (open) {
       setPin('');
       setShowPin(false);
-      onClearError?.();
+      if (!errorMessage || prevRoomIdRef.current !== roomId) {
+        onClearError?.();
+      }
+      prevRoomIdRef.current = roomId;
+      const timer = setTimeout(() => {
+        if (inputRef.current) inputRef.current.focus();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+    prevRoomIdRef.current = roomId;
+  }, [open, roomId, errorMessage, onClearError]);
+
+  useEffect(() => {
+    if (isAuthFailed && open) {
+      const timer = setTimeout(() => tryAgainBtnRef.current?.focus(), 60);
+      return () => clearTimeout(timer);
+    } else if (open && (!isConnecting || isPasswordRequired)) {
       const timer = setTimeout(() => inputRef.current?.focus(), 60);
       return () => clearTimeout(timer);
     }
-  }, [open, roomId, onClearError]);
-
-  useEffect(() => {
-    if (errorMessage && open) {
-      const timer = setTimeout(() => tryAgainBtnRef.current?.focus(), 60);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage, open]);
+  }, [isAuthFailed, isPasswordRequired, isConnecting, open]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -86,7 +99,7 @@ export const CollabPinDialog: React.FC<CollabPinDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md outline-none focus:outline-none focus-visible:outline-none ring-0">
-        {errorMessage ? (
+        {isAuthFailed ? (
           /* View 1: Dedicated Authentication Failed Error Modal Screen */
           <div className="flex flex-col outline-none">
             <DialogHeader>
@@ -149,7 +162,7 @@ export const CollabPinDialog: React.FC<CollabPinDialogProps> = ({
               </Button>
             </DialogFooter>
           </div>
-        ) : isConnecting ? (
+        ) : isConnecting && !isPasswordRequired ? (
           /* View 2: Dedicated Connecting Modal Screen */
           <div className="flex flex-col outline-none">
             <DialogHeader>
@@ -218,6 +231,18 @@ export const CollabPinDialog: React.FC<CollabPinDialogProps> = ({
             </DialogHeader>
 
             <DialogBody className="space-y-4 text-xs">
+              {isPasswordRequired && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] space-y-1">
+                  <div className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-300">
+                    <Lock className="size-3.5 shrink-0 text-amber-500" />
+                    <span>Password Required</span>
+                  </div>
+                  <p className="leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+                    {errorMessage}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label
                   htmlFor="collab-pin-input"
@@ -249,15 +274,17 @@ export const CollabPinDialog: React.FC<CollabPinDialogProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-muted/50 border border-border text-[11px] space-y-1.5">
-                <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <ShieldAlert className="size-3.5 text-amber-500 shrink-0" />
-                  <span>End-to-End Encrypted Session</span>
+              {!isPasswordRequired && (
+                <div className="p-3 rounded-lg bg-muted/50 border border-border text-[11px] space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-medium text-foreground">
+                    <Lock className="size-3.5 text-emerald-500 shrink-0" />
+                    <span>End-to-End Encrypted Session</span>
+                  </div>
+                  <p className="leading-relaxed text-muted-foreground">
+                    Enter the room PIN or password shared by the host to decrypt and join this session.
+                  </p>
                 </div>
-                <p className="leading-relaxed text-muted-foreground">
-                  If the room is password-protected, enter the PIN code shared by the host. If this room is public (no password), leave this field empty and click Join.
-                </p>
-              </div>
+              )}
             </DialogBody>
 
             <DialogFooter className="mt-4">

@@ -450,6 +450,7 @@ export function App() {
     handleActiveCellChange,
     handlePointerMove,
     handlePointerLeave,
+    handleScroll: handleCollabScroll,
   } = useCollabSession({
     items,
     languages,
@@ -2189,6 +2190,7 @@ export function App() {
             onActiveCellChange={handleActiveCellChange}
             onPointerMove={handlePointerMove}
             onPointerLeave={handlePointerLeave}
+            onScrollPositionChange={handleCollabScroll}
             followingPeerName={followingPeerName}
             onStopFollowing={() => setFollowingPeerName(null)}
             onToggleFilterMissingLang={(lang) => {

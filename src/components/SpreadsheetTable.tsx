@@ -59,7 +59,7 @@ import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/li
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
-import { CollabPeerUser } from '@/lib/collaboration';
+import { CollabPeerUser, getPeerInitials } from '@/lib/collaboration';
 import { useVirtualRows } from '@/hooks/useVirtualRows';
 
 interface SpreadsheetTableProps {
@@ -91,6 +91,7 @@ interface SpreadsheetTableProps {
   onStopFollowing?: () => void;
   onPointerMove?: (x: number, y: number) => void;
   onPointerLeave?: () => void;
+  onScrollPositionChange?: (scrollLeft: number, scrollTop: number) => void;
 }
 
 interface EditingCell {
@@ -159,6 +160,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onStopFollowing,
   onPointerMove,
   onPointerLeave,
+  onScrollPositionChange,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -403,14 +405,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     });
   }, [showDescription, languages]);
 
-  // Follow Mode: smooth auto-scroll to the followed peer's active cell whenever it moves
+  // Follow Mode: sync selected cell to followed peer's active cell without competing scroll
+  const lastFollowedCellRef = useRef<{ key: string; field: string } | null>(null);
+
   useEffect(() => {
-    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) {
+      lastFollowedCellRef.current = null;
+      return;
+    }
     const targetPeer = collabPeers.find(p => p.name === followingPeerName);
     if (!targetPeer?.activeCell?.key) return;
 
     const targetKey = targetPeer.activeCell.key;
     const targetField = targetPeer.activeCell.field || 'key';
+
+    if (
+      targetKey === lastFollowedCellRef.current?.key &&
+      targetField === lastFollowedCellRef.current?.field
+    ) {
+      return;
+    }
+
+    lastFollowedCellRef.current = { key: targetKey, field: targetField };
 
     // Find row index
     const rowIdx = items.findIndex(i => i.key === targetKey);
@@ -432,23 +448,171 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (targetField === 'description' && !showDescription) {
         setShowDescription(true);
       }
-
-      // Find cell element using data attributes and smooth scroll
-      requestAnimationFrame(() => {
-        const cellEl = tableContainerRef.current?.querySelector(
-          `[data-cell-key="${CSS.escape(targetKey)}"][data-cell-field="${CSS.escape(targetField)}"]`
-        ) as HTMLElement | null;
-
-        if (cellEl) {
-          cellEl.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'nearest',
-          });
-        }
-      });
     }
   }, [followingPeerName, collabPeers, items, languages, showDescription]);
+
+  // Follow Mode: Silky-smooth rAF camera tracking for peer's scroll and cursor (Figma-style)
+  const targetScrollPosRef = useRef<{ left: number; top: number } | null>(null);
+  const scrollAnimFrameRef = useRef<number | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
+
+  const followedPeer = collabPeers?.find(p => p.name === followingPeerName);
+  const followedPointerX = followedPeer?.pointer?.x;
+  const followedPointerY = followedPeer?.pointer?.y;
+  const followedScrollLeft = followedPeer?.scroll?.left;
+  const followedScrollTop = followedPeer?.scroll?.top;
+
+  useEffect(() => {
+    if (!followingPeerName) {
+      if (scrollAnimFrameRef.current) {
+        cancelAnimationFrame(scrollAnimFrameRef.current);
+        scrollAnimFrameRef.current = null;
+      }
+      targetScrollPosRef.current = null;
+      return;
+    }
+
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    const { clientWidth, clientHeight } = container;
+    if (clientWidth <= 0 || clientHeight <= 0) return;
+
+    let desiredLeft = container.scrollLeft;
+    let desiredTop = container.scrollTop;
+
+    const hasReportedScrollX = typeof followedScrollLeft === 'number' && !isNaN(followedScrollLeft);
+    const hasReportedScrollY = typeof followedScrollTop === 'number' && !isNaN(followedScrollTop);
+
+    // 1. Align to followedScrollLeft and followedScrollTop as primary baseline targets
+    if (hasReportedScrollX) {
+      desiredLeft = followedScrollLeft;
+    }
+    if (hasReportedScrollY) {
+      desiredTop = followedScrollTop;
+    }
+
+    // 2. Clamping and safe margin logic
+    if (
+      typeof followedPointerX === 'number' &&
+      typeof followedPointerY === 'number' &&
+      !isNaN(followedPointerX) &&
+      !isNaN(followedPointerY)
+    ) {
+      const SAFE_LEFT = isKeyFrozen ? 280 : 70;
+      const SAFE_RIGHT = 80;
+      const SAFE_TOP = 95; // table header (~40px) + follow banner (~44px) + margin
+      const SAFE_BOTTOM = 80;
+
+      if (hasReportedScrollX) {
+        // Only nudge desiredLeft when cursor is going off-screen to the right (follower has narrower screen)
+        // Do NOT pull desiredLeft backwards when followedPointerX < desiredLeft + SAFE_LEFT if leader set followedScrollLeft!
+        if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
+          desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+        }
+      } else {
+        // Fallback mode when followedScrollLeft is not reported: ensure cursor is comfortably visible
+        if (followedPointerX < desiredLeft + SAFE_LEFT) {
+          desiredLeft = Math.max(0, followedPointerX - SAFE_LEFT);
+        } else if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
+          desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+        }
+      }
+
+      if (hasReportedScrollY) {
+        if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
+          desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+        }
+      } else {
+        if (followedPointerY < desiredTop + SAFE_TOP) {
+          desiredTop = Math.max(0, followedPointerY - SAFE_TOP);
+        } else if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
+          desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+        }
+      }
+    }
+
+    targetScrollPosRef.current = {
+      left: Math.round(desiredLeft),
+      top: Math.round(desiredTop),
+    };
+
+    const runScrollLoop = () => {
+      const c = tableContainerRef.current;
+      const target = targetScrollPosRef.current;
+      if (!c || !target) {
+        scrollAnimFrameRef.current = null;
+        return;
+      }
+
+      const diffX = target.left - c.scrollLeft;
+      const diffY = target.top - c.scrollTop;
+
+      // If already within sub-pixel threshold, snap to target and finish (1.5px deadzone)
+      if (Math.abs(diffX) < 1.5 && Math.abs(diffY) < 1.5) {
+        isProgrammaticScrollRef.current = true;
+        c.scrollLeft = target.left;
+        c.scrollTop = target.top;
+        scrollAnimFrameRef.current = null;
+        return;
+      }
+
+      // Smooth lerping with factor 0.18
+      isProgrammaticScrollRef.current = true;
+      c.scrollLeft += Math.round(diffX * 0.18) || (diffX > 0 ? 1 : -1);
+      c.scrollTop += Math.round(diffY * 0.18) || (diffY > 0 ? 1 : -1);
+
+      scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
+    };
+
+    if (scrollAnimFrameRef.current === null) {
+      if (typeof requestAnimationFrame === 'function') {
+        scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
+      } else {
+        isProgrammaticScrollRef.current = true;
+        container.scrollLeft = targetScrollPosRef.current.left;
+        container.scrollTop = targetScrollPosRef.current.top;
+      }
+    }
+  }, [
+    followingPeerName,
+    followedPointerX,
+    followedPointerY,
+    followedScrollLeft,
+    followedScrollTop,
+    isKeyFrozen,
+  ]);
+
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollAnimFrameRef.current) {
+        cancelAnimationFrame(scrollAnimFrameRef.current);
+        scrollAnimFrameRef.current = null;
+      }
+    };
+  }, []);
+
+  // Follow Mode: Press Escape key anywhere in window to exit follow mode
+  useEffect(() => {
+    if (!followingPeerName) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onStopFollowing?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [followingPeerName, onStopFollowing]);
+
+  // Follow Mode: Gracefully auto-exit if followed peer disconnects or leaves the room
+  useEffect(() => {
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    const isPeerStillPresent = collabPeers.some(p => p.name === followingPeerName);
+    if (!isPeerStillPresent) {
+      onStopFollowing?.();
+    }
+  }, [followingPeerName, collabPeers, onStopFollowing]);
 
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
@@ -1098,16 +1262,37 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         ref={tableContainerRef}
         className="flex-1 overflow-auto relative w-full h-full bg-background"
         onScroll={(e) => {
+          if (isProgrammaticScrollRef.current) {
+            isProgrammaticScrollRef.current = false;
+            return;
+          }
+          // If user manually scrolls with mouse wheel/trackpad/touch while following, effortlessly exit follow mode
+          if (followingPeerName) {
+            onStopFollowing?.();
+          }
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
             setHasScrolledX(true);
           }
+          onScrollPositionChange?.(e.currentTarget.scrollLeft, e.currentTarget.scrollTop);
         }}
       >
         {/* Floating Follow Mode Indicator Banner */}
         {followingPeerName && (
           <div className="sticky top-11 z-55 flex justify-center pointer-events-none pb-2">
-            <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/95 dark:bg-amber-600/95 text-white shadow-md text-xs font-medium backdrop-blur-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div
+              className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full text-white shadow-lg text-xs font-medium backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 border border-white/20 bg-amber-600/95 dark:bg-amber-700/95 bg-[var(--peer-color)]"
+              style={
+                followedPeer?.color
+                  ? ({ '--peer-color': followedPeer.color } as React.CSSProperties)
+                  : undefined
+              }
+            >
               <span className="size-2 rounded-full bg-white animate-ping" />
+              {followedPeer && (
+                <span className="size-4 rounded-full bg-white/25 flex items-center justify-center text-[9px] font-bold">
+                  {getPeerInitials(followedPeer.name)}
+                </span>
+              )}
               <Eye className="size-3.5 stroke-[2.5]" />
               <span>
                 Following <strong>{followingPeerName}</strong>'s screen
@@ -1116,9 +1301,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 <button
                   type="button"
                   onClick={onStopFollowing}
-                  className="ml-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                  className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                  title="Stop Following (Esc)"
                 >
-                  Stop Following
+                  <span>Stop</span>
+                  <kbd className="hidden sm:inline-block px-1 py-0.2 rounded bg-black/25 text-[9px] font-mono leading-tight">Esc</kbd>
                 </button>
               )}
             </div>
@@ -2268,7 +2455,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <div
                 key={`${peer.name}-${peer.clientID ?? peer.color}`}
-                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
+                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-opacity duration-150 ease-out"
                 style={
                   {
                     '--pointer-x': `${peer.pointer.x}px`,

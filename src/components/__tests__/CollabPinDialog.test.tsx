@@ -141,4 +141,24 @@ describe('CollabPinDialog', () => {
 
     expect(defaultProps.onCancel).toHaveBeenCalled();
   });
+
+  it('renders PIN input view directly with amber password required banner when room is password-protected', () => {
+    render(
+      <CollabPinDialog
+        {...defaultProps}
+        errorMessage="This room is password-protected. Please enter the room PIN code."
+      />
+    );
+
+    // Should NOT show authentication failed screen
+    expect(screen.queryByText('Authentication Failed')).toBeNull();
+
+    // Should show password required banner and direct PIN input form
+    expect(screen.getByText('Password Required')).not.toBeNull();
+    expect(
+      screen.getByText('This room is password-protected. Please enter the room PIN code.')
+    ).not.toBeNull();
+    expect(screen.getByPlaceholderText(/Enter room PIN or password\.\.\./i)).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Join Room/i })).not.toBeNull();
+  });
 });
