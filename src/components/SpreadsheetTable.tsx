@@ -89,6 +89,8 @@ interface SpreadsheetTableProps {
   onActiveCellChange?: (key: string | null, field: string | null) => void;
   followingPeerName?: string | null;
   onStopFollowing?: () => void;
+  onPointerMove?: (x: number, y: number) => void;
+  onPointerLeave?: () => void;
 }
 
 interface EditingCell {
@@ -155,6 +157,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onActiveCellChange,
   followingPeerName,
   onStopFollowing,
+  onPointerMove,
+  onPointerLeave,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -165,6 +169,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement | null>(null);
 
   // Virtualization windowing for large catalogs
   const {
@@ -1126,7 +1131,21 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <ChevronRight className="size-3 text-primary" />
           </div>
         )}
-        <table className="min-w-full w-max border-separate border-spacing-0 text-left">
+        <div
+          ref={tableWrapperRef}
+          className="relative min-w-full w-max"
+          onPointerMove={(e) => {
+            if (!onPointerMove) return;
+            const wrapper = tableWrapperRef.current;
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            onPointerMove(e.clientX - rect.left, e.clientY - rect.top);
+          }}
+          onPointerLeave={() => {
+            onPointerLeave?.();
+          }}
+        >
+          <table className="min-w-full w-max border-separate border-spacing-0 text-left">
           {/* Column widths group to ensure columns never squish on multiple languages */}
           <colgroup>
             <col style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH }} />
@@ -2234,6 +2253,55 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             )}
           </tbody>
         </table>
+
+          {/* Live Multiplayer Peer Cursors */}
+          {collabPeers?.map((peer) => {
+            if (
+              !peer.pointer ||
+              typeof peer.pointer.x !== 'number' ||
+              typeof peer.pointer.y !== 'number' ||
+              isNaN(peer.pointer.x) ||
+              isNaN(peer.pointer.y)
+            ) {
+              return null;
+            }
+            return (
+              <div
+                key={`${peer.name}-${peer.clientID ?? peer.color}`}
+                className="absolute top-0 left-0 pointer-events-none z-60 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
+                style={
+                  {
+                    '--pointer-x': `${peer.pointer.x}px`,
+                    '--pointer-y': `${peer.pointer.y}px`,
+                    '--peer-color': peer.color,
+                  } as React.CSSProperties
+                }
+              >
+                {/* Figma-style SVG Arrow Pointer */}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="drop-shadow-md -translate-x-1 -translate-y-1"
+                >
+                  <path
+                    d="M3 3L10.5 21L14 13.5L21.5 10L3 3Z"
+                    fill="var(--peer-color)"
+                    stroke="#ffffff"
+                    strokeWidth="1.75"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                {/* Peer Name Tag Badge with Avatar Color */}
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap ml-3.5 -mt-2 tracking-tight animate-in fade-in zoom-in-90 duration-150 bg-[var(--peer-color)]">
+                  <span>{peer.name}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Cell Right-Click Context Menu (Custom DropdownMenu Component) */}

@@ -6,6 +6,7 @@ export interface CollabPeerUser {
   name: string;
   color: string;
   activeCell?: { key: string; field: string } | null;
+  pointer?: { x: number; y: number } | null;
   clientID?: number;
   lastSeen?: number;
 }

@@ -55,6 +55,8 @@ export function useCollabSession({
   const itemsRef = useRef<TranslationItem[]>(items);
   const languagesRef = useRef<string[]>(languages);
   const projectNameRef = useRef<string | undefined>(projectName);
+  const lastPointerSentRef = useRef<number>(0);
+  const pointerIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     collabSessionRef.current = collabSession;
@@ -215,7 +217,9 @@ export function useCollabSession({
                 p.name === peers[i]?.name &&
                 p.color === peers[i]?.color &&
                 p.activeCell?.key === peers[i]?.activeCell?.key &&
-                p.activeCell?.field === peers[i]?.activeCell?.field
+                p.activeCell?.field === peers[i]?.activeCell?.field &&
+                p.pointer?.x === peers[i]?.pointer?.x &&
+                p.pointer?.y === peers[i]?.pointer?.y
             )
           ) {
             return prevPeers;
@@ -326,6 +330,10 @@ export function useCollabSession({
           clearTimeout(connectTimeoutTimerRef.current);
           connectTimeoutTimerRef.current = null;
         }
+        if (pointerIdleTimerRef.current) {
+          clearTimeout(pointerIdleTimerRef.current);
+          pointerIdleTimerRef.current = null;
+        }
         clearInterval(heartbeatTimer);
         window.removeEventListener('focus', handleWindowFocus);
         window.removeEventListener('online', handleWindowFocus);
@@ -416,6 +424,57 @@ export function useCollabSession({
     },
     [localPeerProfile]
   );
+
+  const handlePointerMove = useCallback(
+    (x: number, y: number) => {
+      if (!collabSessionRef.current) return;
+      const now = Date.now();
+      // Throttle to ~30fps (33ms) to maintain high performance with minimal bandwidth
+      if (now - lastPointerSentRef.current < 33) return;
+      lastPointerSentRef.current = now;
+
+      const awareness = collabSessionRef.current.provider.awareness;
+      const currentUser = awareness.getLocalState()?.user;
+
+      awareness.setLocalStateField('user', {
+        ...(currentUser || localPeerProfile),
+        pointer: { x: Math.round(x), y: Math.round(y) },
+        lastSeen: now,
+      });
+
+      // Clear pointer after 3 seconds of inactivity
+      if (pointerIdleTimerRef.current) {
+        clearTimeout(pointerIdleTimerRef.current);
+      }
+      pointerIdleTimerRef.current = setTimeout(() => {
+        if (!collabSessionRef.current) return;
+        const current = awareness.getLocalState()?.user;
+        if (current?.pointer) {
+          awareness.setLocalStateField('user', {
+            ...current,
+            pointer: null,
+          });
+        }
+      }, 3000);
+    },
+    [localPeerProfile]
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    if (!collabSessionRef.current) return;
+    if (pointerIdleTimerRef.current) {
+      clearTimeout(pointerIdleTimerRef.current);
+      pointerIdleTimerRef.current = null;
+    }
+    const awareness = collabSessionRef.current.provider.awareness;
+    const currentUser = awareness.getLocalState()?.user;
+    if (currentUser?.pointer) {
+      awareness.setLocalStateField('user', {
+        ...currentUser,
+        pointer: null,
+      });
+    }
+  }, []);
 
   const startCollabSessionRef = useRef(startCollabSession);
   useEffect(() => {
@@ -520,5 +579,7 @@ export function useCollabSession({
     joinCollabWithPin,
     cancelCollabPin,
     handleActiveCellChange,
+    handlePointerMove,
+    handlePointerLeave,
   };
 }
