@@ -317,10 +317,9 @@ export function getLanguageDisplayName(code: string): string {
   return LANGUAGE_NAMES[code.toLowerCase()] || code.toUpperCase();
 }
 
-/**
- * Translates a batch of localization strings while strictly preserving ICU parameters.
- */
-export async function translateBatchWithOpenRouter({
+export const BATCH_CHUNK_SIZE = 25;
+
+async function executeSingleChunkTranslate({
   apiKey,
   model,
   sourceLang,
@@ -328,10 +327,6 @@ export async function translateBatchWithOpenRouter({
   items,
   glossary,
 }: TranslateBatchOptions): Promise<Record<string, string>> {
-  if (!apiKey.trim()) {
-    throw new Error('Please provide an OpenRouter API key.');
-  }
-
   if (items.length === 0) {
     return {};
   }
@@ -383,7 +378,7 @@ CRITICAL RULES:
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey.trim()}`,
-      'HTTP-Referer': window.location.origin || 'https://jsonlink.dev',
+      'HTTP-Referer': typeof window !== 'undefined' ? window.location?.origin || 'https://jsonlink.dev' : 'https://jsonlink.dev',
       'X-Title': 'JSON Link Localization Tool',
     },
     body: JSON.stringify({
@@ -415,6 +410,47 @@ CRITICAL RULES:
 
   const expectedKeys = items.map(it => it.key);
   return parseAiJsonResponse(rawContent, expectedKeys);
+}
+
+/**
+ * Translates a batch of localization strings while strictly preserving ICU parameters.
+ * Automatically chunks requests into batches of 25 with bounded concurrency to avoid token limit overflow.
+ */
+export async function translateBatchWithOpenRouter(
+  options: TranslateBatchOptions
+): Promise<Record<string, string>> {
+  const { apiKey, items } = options;
+  if (!apiKey.trim()) {
+    throw new Error('Please provide an OpenRouter API key.');
+  }
+
+  if (items.length === 0) {
+    return {};
+  }
+
+  if (items.length <= BATCH_CHUNK_SIZE) {
+    return executeSingleChunkTranslate(options);
+  }
+
+  // Chunk items into slices of BATCH_CHUNK_SIZE
+  const chunks: TranslationRequestItem[][] = [];
+  for (let i = 0; i < items.length; i += BATCH_CHUNK_SIZE) {
+    chunks.push(items.slice(i, i + BATCH_CHUNK_SIZE));
+  }
+
+  const results: Record<string, string> = {};
+  // Process up to 2 chunks concurrently
+  for (let i = 0; i < chunks.length; i += 2) {
+    const pair = chunks.slice(i, i + 2);
+    const pairOutputs = await Promise.all(
+      pair.map(chunk => executeSingleChunkTranslate({ ...options, items: chunk }))
+    );
+    for (const chunkRes of pairOutputs) {
+      Object.assign(results, chunkRes);
+    }
+  }
+
+  return results;
 }
 
 /**

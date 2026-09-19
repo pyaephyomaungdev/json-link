@@ -225,7 +225,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
         <DialogBody className="space-y-4 text-xs">
           {/* Dropzone */}
-          <div
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            multiple
+            accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
+            className="hidden"
+          />
+          <button
+            type="button"
             onDragOver={e => {
               e.preventDefault();
               setDragOver(true);
@@ -233,20 +242,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
+            className={`w-full border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
               dragOver
                 ? 'border-primary bg-primary/5'
                 : 'border-border hover:border-primary/50 hover:bg-muted/30'
             }`}
           >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              multiple
-              accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
-              className="hidden"
-            />
             <div className="p-3 rounded-full bg-primary/10 text-primary">
               <UploadCloud className="size-6" />
             </div>
@@ -258,7 +259,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">Flutter ARB</span>, Excel, CSV, YAML, Android XML, or iOS Strings
               </p>
             </div>
-          </div>
+          </button>
 
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-xs">

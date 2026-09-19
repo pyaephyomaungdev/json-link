@@ -81,8 +81,9 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-[11px] text-muted-foreground block mb-0.5">Source Term</label>
+              <label htmlFor="glossary-source-term" className="text-[11px] text-muted-foreground block mb-0.5">Source Term</label>
               <Input
+                id="glossary-source-term"
                 placeholder="e.g. KBZPay, Sign In"
                 value={newTerm}
                 onChange={e => setNewTerm(e.target.value)}
@@ -90,9 +91,9 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
               />
             </div>
             <div>
-              <label className="text-[11px] text-muted-foreground block mb-0.5">
+              <span className="text-[11px] text-muted-foreground block mb-0.5">
                 {newDoNotTranslate ? 'Behavior' : 'Target Translation'}
-              </label>
+              </span>
               {newDoNotTranslate ? (
                 <div className="h-8 px-2 rounded border border-border bg-background/50 flex items-center text-[11px] text-primary font-medium">
                   Keep original as-is (Do not translate)
@@ -109,8 +110,9 @@ export const GlossaryModal: React.FC<GlossaryModalProps> = ({
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-foreground">
+            <label htmlFor="glossary-do-not-translate" className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-foreground">
               <Checkbox
+                id="glossary-do-not-translate"
                 checked={newDoNotTranslate}
                 onCheckedChange={checked => setNewDoNotTranslate(!!checked)}
               />

@@ -18,7 +18,7 @@ describe('AboutPage', () => {
 
   it('renders application version, highlights, and back button', () => {
     render(<AboutPage {...baseProps} />);
-    expect(screen.getAllByText('v1.0.0').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('v1.1.0').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Authentic Spreadsheet UX')).not.toBeNull();
     expect(screen.getByText('11+ Formats & Vite Starter')).not.toBeNull();
     expect(screen.getByText('React + Vite Starter & Drop-In i18n')).not.toBeNull();

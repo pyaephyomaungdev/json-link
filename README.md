@@ -5,17 +5,19 @@
   <p>Zero-backend spreadsheet studio, two-way disk synchronization, lossless AST variable protection, and native Model Context Protocol (MCP) server.</p>
 
   <p>
+    <a href="https://github.com/pyaephyomaungdev/json-link/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/Version-v1.1.0-blue?style=for-the-badge&logo=git&logoColor=white" alt="Version 1.1.0" /></a>
     <a href="https://json-link.pages.dev"><img src="https://img.shields.io/badge/Live_Demo-json--link.pages.dev-blue?style=for-the-badge&logo=cloudflarepages&logoColor=white" alt="Live Demo" /></a>
     <a href="https://www.npmjs.com/package/create-jsonlink"><img src="https://img.shields.io/npm/v/create-jsonlink?style=for-the-badge&logo=npm&color=CB3837" alt="npm version" /></a>
-    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-417%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
+    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-455%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
     <a href="SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy_&_Audit-brightgreen?style=for-the-badge&logo=shield&logoColor=white" alt="Security Policy" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" /></a>
     <a href="https://github.com/pyaephyomaungdev/json-link"><img src="https://img.shields.io/badge/Zero--Backend-100%25%20Private-purple?style=for-the-badge" alt="Privacy" /></a>
   </p>
 
   <p>
-    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
+    <a href="https://github.com/sponsors/pyaephyomaungdev"><img src="https://img.shields.io/badge/Sponsor-pyaephyomaungdev-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor pyaephyomaungdev" /></a>
     <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
+    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
   </p>
 
   <p>
@@ -26,7 +28,8 @@
     <a href="#developer-integration-react--vite">Developer Guide</a> •
     <a href="#community--contributing">Contributing</a> •
     <a href="#security-policy">Security</a> •
-    <a href="#testing--verification">Tests & CI</a>
+    <a href="#testing--verification">Tests & CI</a> •
+    <a href="#changelog">Changelog</a>
   </p>
 </div>
 
@@ -78,10 +81,11 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 
 | Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | JSON Link (Open Source) |
 | :--- | :--- | :--- | :--- |
-| **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **AST-locked visual chips & live linter** |
+| **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Visual chips & live linter** |
 | **Local Disk Sync & HMR** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Manual export & copy-paste | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> CLI polling / webhooks | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct disk write (`Cmd+S`) with instant Vite HMR** |
-| **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Zero-dependency reactive client (<2KB)** |
+| **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **~120-line reactive client, 0 external runtime deps** |
 | **AI Translation (BYOK)** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> High per-token markup | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct OpenRouter (Gemini, Claude, DeepSeek)** |
+| **P2P Live Collaboration** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> No real-time co-authoring | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Requires paid cloud seats ($15–$50/seat) | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **WebRTC DataChannels + Yjs CRDT (signaling relay to connect; optional AES-GCM E2EE)** |
 | **Data Privacy & Storage** | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Plaintext on external cloud | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Third-party server hosting | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **100% Client-Side AES-GCM 256 + Zero Backend** |
 | **AI Coding Assistant Tools** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Native Model Context Protocol (MCP) server** |
 | **Myanmar Font Support** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Garbled Zawgyi rendering | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Unsupported | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
@@ -105,6 +109,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 <summary><strong><img src=".github/assets/icons/table.svg" width="18" height="18" align="absmiddle" /> 1. Authentic Spreadsheet Grid & Keyboard Navigation</strong> (Click to expand)</summary>
 
 * **Edge-to-Edge Grid**: Full viewport spreadsheet with zero outer margins, clean gridlines, row numbers (`1, 2, 3...`), and column letters (`A, B, C...`).
+* **Zero-Dependency DOM Virtualization (`useVirtualRows`)**: Smooth 60fps windowing engine rendering 5,000+ translation keys with sub-500 active DOM elements and zero typing input lag.
 * **Freeze Panes**:
   * Sticky Top: Headers stay pinned during vertical scrolling.
   * Freeze Left: Key column stays fixed while scrolling horizontally across languages.
@@ -217,6 +222,19 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 
 </details>
 
+<details>
+<summary><strong><img src=".github/assets/icons/users.svg" width="18" height="18" align="absmiddle" /> 9. Serverless WebRTC Live Collaboration & Peer Awareness</strong> (Click to expand)</summary>
+
+* **Peer Data over WebRTC**: Multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels. Public/local signaling relays are used solely for initial peer handshakes; all keystrokes and translation edits stream peer-to-peer with zero server storage.
+* **Optional End-to-End Encryption (E2EE)**: Setting an optional room password derives 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). When enabled, document updates and awareness messages are completely unreadable to intermediary signaling relays. Open rooms without a PIN remain unencrypted for instant frictionless sharing.
+* **Human-Friendly Room IDs**: Canonical hyphenated 3-4-3 segmented room format (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
+* **Live Peer Awareness & Follow Mode**: Real-time cursor coordinates with deterministic peer palette assignment (12 distinct colors), user avatar initials badges, and one-click viewport jump to follow collaborator selections.
+* **Figma-Style Live Multiplayer Cursors**: Ultra-fluid ~33fps mouse pointer tracking with high-contrast colored arrow pointers (↖) and peer name pill badges. Pointers are mapped to spreadsheet canvas coordinates, automatically fade after 3 seconds of inactivity, and cleanly slide underneath sticky table headers when scrolling.
+* **Full Data Sync & Independent Filter Views**: Synchronizes translation cells, developer context notes, review statuses (Draft/Needs Review/Approved), and project metadata in real time, while keeping personal filter views (namespace, search, missing keys) independent per peer so collaborators never disrupt each other's focus.
+* **Dedicated Multi-Stage Auth Modals**: Clean separate screens for PIN entry, connection loading with spinner, and authentication failure recovery with auto-focused "Try Again".
+
+</details>
+
 ---
 
 ## <img src=".github/assets/icons/code.svg" width="22" height="22" align="absmiddle" /> Developer Integration (React + Vite)
@@ -282,16 +300,17 @@ npm test
 
 ```
  ✓ src/components/__tests__/SpreadsheetTable.test.tsx (8 tests)
+ ✓ src/components/__tests__/CollabPinDialog.test.tsx (8 tests)
+ ✓ src/hooks/__tests__/useCollabSession.test.ts (9 tests)
+ ✓ src/lib/__tests__/collaboration.test.ts (10 tests)
  ✓ src/lib/__tests__/variables.test.ts (31 tests)
  ✓ src/lib/__tests__/linter.test.ts (20 tests)
  ✓ src/lib/__tests__/myanmarFont.test.ts (16 tests)
  ✓ src/lib/__tests__/exporter.test.ts (23 tests)
- ✓ packages/vite-plugin/src/__tests__/init.test.ts (12 tests)
- ✓ packages/create-jsonlink/src/__tests__/create.test.ts (2 tests)
  ...
 
- Test Files  54 passed (54)
-      Tests  417 passed (417)
+ Test Files  60 passed (60)
+      Tests  455 passed (455)
 ```
 
 ---
@@ -312,7 +331,7 @@ npm run dev
 # Run quality checks (Linter, Typecheck, Test suite)
 npm run lint
 npm run typecheck
-npm run test
+npm test
 
 # Build all packages (Web app, Vite Plugin, MCP Server, Starter CLI)
 npm run build
@@ -320,6 +339,54 @@ npm run plugin:build
 npm run mcp:build
 npm run create:build
 ```
+
+---
+
+## <a id="changelog"></a><img src=".github/assets/icons/file-text.svg" width="22" height="22" align="absmiddle" /> Changelog
+
+All notable changes to **JSON Link** are documented here. The project adheres to [Semantic Versioning](https://semver.org/).
+
+<details open>
+<summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.1.0] - 2026-09-19 — WebRTC Live Collaboration, DOM Virtualization & E2EE</strong> (Latest Release)</summary>
+
+#### Added
+* **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels (`useCollabSession`), using lightweight signaling relays for initial connection negotiation.
+* **Optional End-to-End Room Encryption (E2EE)**: Client-side AES-GCM 256-bit encryption derived via PBKDF2-SHA256 (100,000 iterations) from optional room passwords. Open rooms remain unencrypted for frictionless sharing.
+* **Segmented Room Identifiers**: Human-friendly 3-4-3 segmented room format (`yfq-khjt-efn`) with canonical hyphenated room codes and smart alphanumeric normalization.
+* **Live Peer Awareness & Follow Mode**: Deterministic 12-color avatar palette, peer initials badges, real-time active cell cursor markers, and one-click Follow Mode viewport synchronization.
+* **Figma-Style Live Multiplayer Cursors**: Fluid real-time peer pointer tracking (~33fps over WebRTC DataChannels) with colored SVG pointers, name badges, and native sticky header z-index layering.
+* **Project Name Metadata Synchronization**: Multi-user real-time synchronization of project names across all active peers via Yjs metadata.
+* **Multi-Stage Collab Dialog**: Redesigned `CollabPinDialog` with 3 dedicated modal screens (PIN Input, Connecting with spinner, and Authentication Failed with auto-focus "Try Again").
+* **Spreadsheet DOM Virtualization (`useVirtualRows`)**: Zero-dependency windowing hook rendering 5,000+ keys with sub-500 active DOM elements at 60fps.
+* **Bounded AI Translation Batching**: Added `chunkArray` (size 25) and bounded concurrency in OpenRouter translation engine to eliminate token limit overflows.
+
+#### Fixed
+* **False-Alarm PIN Error**: Resolved stale error persistence when opening collaboration links without keys.
+* **Premature Workspace Activation**: Gated guest workspace activation until remote translation items or peers are verified, preventing empty grid states on join.
+* **Host Session Protection**: Host nodes now emit `{ type: 'auth-rejected' }` signaling messages instead of dropping sessions when receiving undecryptable guest packets.
+* **Modal Focus Ring Elimination**: Removed Chromium default white focus ring on dialog containers via `outline-none focus:outline-none ring-0`.
+* **Fail-Closed Security**: Prevented unencrypted plaintext GitHub token storage when encryption fails.
+* **Accessibility Remediation**: Resolved 100+ a11y lint warnings across table divider handles, keyboard handlers, and modal form attributes.
+
+#### Changed
+* Test suite expanded to 60 test files and 456 passing tests (100% Vitest pass rate).
+* Complete zero-warning codebase compliance across 155 files with 128 oxlint rules.
+
+</details>
+
+<details>
+<summary><strong><img src=".github/assets/icons/box.svg" width="18" height="18" align="absmiddle" /> [1.0.0] - 2026-09-01 — Initial Public Release</strong> (Click to expand)</summary>
+
+* Initial public release of JSON Link.
+* Zero-backend spreadsheet studio with edge-to-edge grid and keyboard navigation.
+* Two-way disk synchronization via File System Access API with instant Vite HMR.
+* AST Tokenizer with ICU MessageFormat, Mustache, and Printf variable protection.
+* Rabbit Zawgyi ⇄ Unicode transcoding engine.
+* Model Context Protocol (MCP) server for Cursor, Claude Desktop, and Antigravity.
+* Multi-platform export (Web JSON, Flutter ARB, iOS Strings, Android XML, TypeScript, Excel, CSV, YAML).
+* Client-side zero-knowledge encrypted URL fragment sharing (`#share=...`).
+
+</details>
 
 ---
 
@@ -344,17 +411,19 @@ RFC 9116 Vulnerability Disclosure metadata is published at `https://json-link.pa
 
 ## <img src="public/buy-me-a-coffee-icon.svg" width="22" height="22" align="absmiddle" /> Support the Project
 
-JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider keeping me caffeinated:
+JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider supporting the project:
 
 <p align="center">
+  <a href="https://github.com/sponsors/pyaephyomaungdev" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Sponsor_on_GitHub-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors" />
+  </a>
+  &nbsp;&nbsp;
   <a href="https://www.buymeacoffee.com/pyaephyomaa" target="_blank" rel="noopener noreferrer">
-    <img src="public/buy-me-a-coffee-icon.svg" width="48" height="48" align="absmiddle" alt="BMC Logo" />
-    <br /><br />
     <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_JSON_Link-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" />
   </a>
 </p>
 
-Every cup fuels late-night Zawgyi converter fixes, new exporter formats, and zero-backend features that never lock you into a vendor. 🙏
+Every sponsor and cup of coffee fuels late-night Zawgyi converter fixes, new exporter formats, and zero-backend features that never lock you into a vendor. 🙏
 
 ---
 

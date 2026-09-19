@@ -128,9 +128,10 @@ export function NotFoundPage({
           {/* Quick Navigation Cards */}
           <div className={`grid grid-cols-1 ${onOpenAbout ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 text-left`}>
             {/* Workspace Card */}
-            <div
+            <button
+              type="button"
               onClick={onBack}
-              className="p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
             >
               <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <FileSpreadsheet className="size-4" />
@@ -143,12 +144,13 @@ export function NotFoundPage({
                   Open your side-by-side localization spreadsheet grid.
                 </p>
               </div>
-            </div>
+            </button>
 
             {/* Docs Card */}
-            <div
+            <button
+              type="button"
               onClick={onOpenDocs ? onOpenDocs : onBack}
-              className="p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
             >
               <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <BookOpen className="size-4" />
@@ -161,13 +163,14 @@ export function NotFoundPage({
                   Browse quick start, format guides & keyboard shortcuts.
                 </p>
               </div>
-            </div>
+            </button>
 
             {/* About Card */}
             {onOpenAbout && (
-              <div
+              <button
+                type="button"
                 onClick={onOpenAbout}
-                className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+                className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
               >
                 <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Info className="size-4" />
@@ -180,7 +183,7 @@ export function NotFoundPage({
                     Read about offline privacy, architecture & highlights.
                   </p>
                 </div>
-              </div>
+              </button>
             )}
           </div>
 

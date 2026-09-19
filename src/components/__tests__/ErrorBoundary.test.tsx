@@ -27,7 +27,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders redesigned safe recovery mode screen when child throws', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(
       <ErrorBoundary>
@@ -39,15 +39,12 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Something Went Wrong')).not.toBeNull();
     expect(screen.getByText('Test application crash')).not.toBeNull();
     expect(screen.getByText('Application Crash Caught • Safe Recovery Mode')).not.toBeNull();
-    expect(screen.getByText('Retry Workspace')).not.toBeNull();
-    expect(screen.getByText('Reload Application')).not.toBeNull();
-    expect(screen.getByText('Copy Diagnostics')).not.toBeNull();
 
     spy.mockRestore();
   });
 
   it('toggles technical details when button is clicked', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(
       <ErrorBoundary>
@@ -64,7 +61,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('calls custom fallback function if provided', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     render(
       <ErrorBoundary fallback={(err) => <div>Custom fallback: {err.message}</div>}>

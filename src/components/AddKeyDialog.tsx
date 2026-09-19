@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,13 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
   const [description, setDescription] = useState('');
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
 
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
@@ -64,7 +71,7 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Add New Translation Key</DialogTitle>
           <DialogDescription>
@@ -75,10 +82,12 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <DialogBody className="flex flex-col gap-4 text-xs">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label htmlFor="add-key-name" className="text-xs font-semibold text-foreground">
                 Key Name <span className="text-destructive">*</span>
               </label>
               <Input
+                id="add-key-name"
+                ref={inputRef}
                 value={keyName}
                 onChange={e => {
                   setKeyName(e.target.value);
@@ -86,16 +95,16 @@ export const AddKeyDialog: React.FC<AddKeyDialogProps> = ({
                 }}
                 placeholder="e.g. actionConfirm, auth.welcome"
                 className="font-mono text-xs"
-                autoFocus
               />
               {error && <span className="text-xs text-destructive font-medium">{error}</span>}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <label htmlFor="add-key-description" className="text-xs font-semibold text-foreground flex items-center justify-between">
                 <span>Context / Description <span className="text-muted-foreground font-normal">(Optional)</span></span>
               </label>
               <Input
+                id="add-key-description"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="e.g. Shown on navbar header, translator note"

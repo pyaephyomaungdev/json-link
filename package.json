@@ -1,7 +1,7 @@
 {
   "name": "json-link",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -34,7 +34,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "y-webrtc": "^10.3.0",
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "@shadcn/lint": "^0.1.0",
@@ -43,6 +45,7 @@
     "@types/node": "^22.13.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^30.0.1",
     "oxlint": "^1.83.0",

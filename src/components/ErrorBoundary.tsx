@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   RotateCcw,
   Home,
-  Copy,
-  Check,
   FileDown,
   ChevronDown,
   ChevronRight,
@@ -37,12 +35,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const initialDark =
       typeof window !== 'undefined'
         ? (localStorage.getItem('json_link_theme') ||
-            localStorage.getItem('json-link-theme')) === 'dark' ||
-          (!(
-            localStorage.getItem('json_link_theme') ||
-            localStorage.getItem('json-link-theme')
-          ) &&
-            window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+          localStorage.getItem('json-link-theme')) === 'dark' ||
+        (!(
+          localStorage.getItem('json_link_theme') ||
+          localStorage.getItem('json-link-theme')
+        ) &&
+          window.matchMedia?.('(prefers-color-scheme: dark)').matches)
         : false;
 
     this.state = {
@@ -158,7 +156,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   };
 
   render() {
-    const { hasError, error, errorInfo, copied, showDetails, isDark } = this.state;
+    const { hasError, error, errorInfo, showDetails, isDark } = this.state;
 
     if (!hasError) {
       return this.props.children;
@@ -172,14 +170,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       typeof window !== 'undefined' &&
       Boolean(
         localStorage.getItem('jsonlink_current_project') ||
-          localStorage.getItem('json-link-draft')
+        localStorage.getItem('json-link-draft')
       );
 
     return (
       <div
-        className={`h-screen w-full max-w-full flex flex-col overflow-hidden bg-background text-foreground ${
-          isDark ? 'dark' : ''
-        }`}
+        className={`h-screen w-full max-w-full flex flex-col overflow-hidden bg-background text-foreground ${isDark ? 'dark' : ''
+          }`}
         data-testid="error-boundary-screen"
       >
         {/* Top Header matching App, Docs & 404 header tokens */}
@@ -287,69 +284,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                     )}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* 3-Column Recovery Cards — identical grid pattern to NotFoundPage */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-              {/* Card 1: Reload / Retry */}
-              <div
-                onClick={this.handleReset}
-                className="p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
-              >
-                <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <RotateCcw className="size-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    Retry Workspace
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                    Reset application state and restore the translation grid.
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 2: Return Home */}
-              <div
-                onClick={this.handleGoHome}
-                className="p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
-              >
-                <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <Home className="size-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    Reload Application
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                    Navigate back to root URL and reload the workspace cleanly.
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 3: Copy Diagnostics */}
-              <div
-                onClick={this.handleCopyDetails}
-                className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
-              >
-                <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  {copied ? (
-                    <Check className="size-4 text-emerald-500" />
-                  ) : (
-                    <Copy className="size-4" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                    {copied ? 'Copied to Clipboard!' : 'Copy Diagnostics'}
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                    {copied
-                      ? 'Error details ready to paste in bug report or issue.'
-                      : 'Copy error stack and environment info for debugging.'}
-                  </p>
-                </div>
               </div>
             </div>
 

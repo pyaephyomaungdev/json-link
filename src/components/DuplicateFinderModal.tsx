@@ -86,8 +86,9 @@ export function DuplicateFinderModal({
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <label className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground select-none">
+              <label htmlFor="dup-case-sensitive" className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground select-none">
                 <Checkbox
+                  id="dup-case-sensitive"
                   checked={caseSensitive}
                   onCheckedChange={(checked) => setCaseSensitive(Boolean(checked))}
                   className="size-3.5"

@@ -68,9 +68,6 @@ describe('pseudoloc.ts', () => {
     const records = generatePseudoLocaleRecords(items, 'en');
     // normal.key must be present
     expect(records['normal.key']).toBeDefined();
-    // empty key may be absent or empty
-    if (records['empty.key'] !== undefined) {
-      expect(records['empty.key']).toBeDefined(); // at minimum doesn't crash
-    }
+    expect(records['empty.key']).toBeDefined();
   });
 });

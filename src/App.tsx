@@ -10,6 +10,7 @@ import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { LandingPage } from '@/components/LandingPage';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
+import { GithubIcon } from '@/components/GithubIcon';
 import { decodeSharePayload, isPayloadEncrypted, ShareProjectData } from '@/lib/shareUrl';
 import type { LegalTab } from '@/components/LegalPage';
 import type { DiffResult } from '@/components/DiffMergeModal';
@@ -37,6 +38,13 @@ const DuplicateFinderModal = lazy(() => import('@/components/DuplicateFinderModa
 const IcuTesterModal = lazy(() => import('@/components/IcuTesterModal').then(m => ({ default: m.IcuTesterModal })));
 const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ default: m.ShareModal })));
 const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
+const LiveCollabModal = lazy(() => import('@/components/LiveCollabModal').then(m => ({ default: m.LiveCollabModal })));
+const CollabPinDialog = lazy(() => import('@/components/CollabPinDialog').then(m => ({ default: m.CollabPinDialog })));
+import { useCollabSession } from '@/hooks/useCollabSession';
+import {
+  CollabPeerUser,
+  generateRandomPeerProfile,
+} from '@/lib/collaboration';
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -47,6 +55,7 @@ import {
 } from '@/lib/fileSystem';
 import { upsertMemoryEntry } from '@/lib/translationMemory';
 import { Logo } from '@/components/Logo';
+import { CollabHeaderControl } from '@/components/CollabHeaderControl';
 import { runLocalizationLinter } from '@/lib/linter';
 import { isEffectivelyMissing } from '@/lib/variables';
 import {
@@ -89,8 +98,11 @@ import {
   ArrowLeft,
   X,
   Lightbulb,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 
 // Helper to get dev base route (e.g. /__jsonlink) when running via Vite dev plugin
 function getDevBase(): string {
@@ -338,6 +350,11 @@ export function App() {
   const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
   const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
 
+  // Live WebRTC Collaboration state
+  const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
+  const [localPeerProfile, setLocalPeerProfile] = useState<CollabPeerUser>(() => generateRandomPeerProfile());
+  const [followingPeerName, setFollowingPeerName] = useState<string | null>(null);
+
   // Local Folder Direct Sync state
   const [linkedDirHandle, setLinkedDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [linkedFolderName, setLinkedFolderName] = useState<string | null>(null);
@@ -416,6 +433,56 @@ export function App() {
       }
     }
   };
+
+  // WebRTC Live Collaboration Session Hook
+  const {
+    collabSession,
+    collabPeers,
+    collabPassword,
+    pendingCollabRoomId,
+    collabAuthError,
+    isCollabConnecting,
+    clearCollabAuthError,
+    startCollabSession: handleStartCollabSession,
+    endCollabSession: handleEndCollabSession,
+    joinCollabWithPin,
+    cancelCollabPin,
+    handleActiveCellChange,
+    handlePointerMove,
+    handlePointerLeave,
+    handleScroll: handleCollabScroll,
+  } = useCollabSession({
+    items,
+    languages,
+    projectName,
+    localPeerProfile,
+    setLocalPeerProfile,
+    onRemoteItemsChange: setItemsWithoutHistory,
+    onRemoteLanguagesChange: setLanguages,
+    onRemoteProjectNameChange: setProjectName,
+    onActivateWorkspace: () => setIsWorkspaceActive(true),
+    onDeactivateWorkspace: () => setIsWorkspaceActive(false),
+  });
+
+  const handleJumpToPeerCell = useCallback((key: string, field: string) => {
+    const rowIdx = items.findIndex(i => i.key === key);
+    if (rowIdx !== -1) {
+      requestAnimationFrame(() => {
+        const cellEl = document.querySelector(
+          `[data-cell-key="${CSS.escape(key)}"][data-cell-field="${CSS.escape(field)}"]`
+        ) as HTMLElement | null;
+
+        if (cellEl) {
+          cellEl.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+          cellEl.click();
+        }
+      });
+    }
+  }, [items]);
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -814,6 +881,8 @@ export function App() {
     setIsAddKeyOpen(false);
     setIsAddLanguageOpen(false);
     setIsUnlockDialogOpen(false);
+    setIsCollabModalOpen(false);
+    handleEndCollabSession();
     setPendingShareHash(null);
     setPendingEncryptedFile(null);
     shareDecodeSeqRef.current += 1;
@@ -1827,11 +1896,13 @@ export function App() {
                     }
                   }}
                   className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-20 xs:w-28 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
-                  autoFocus
                 />
               ) : (
                 <button
-                  onClick={() => setIsEditingProjectName(true)}
+                  onClick={() => {
+                    setIsEditingProjectName(true);
+                    setTimeout(() => projectNameInputRef.current?.focus(), 0);
+                  }}
                   className="group flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer min-w-0"
                   title="Click to rename project"
                 >
@@ -1894,6 +1965,19 @@ export function App() {
         </div>
 
         <nav aria-label="Header Actions" className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {(items.length > 0 || isWorkspaceActive) && (
+            <CollabHeaderControl
+              isCollabConnected={Boolean(collabSession)}
+              collabPeerCount={collabPeers.length + 1}
+              onOpenCollab={() => setIsCollabModalOpen(true)}
+              localPeerProfile={localPeerProfile}
+              collabPeers={collabPeers}
+              followingPeerName={followingPeerName}
+              onFollowPeer={setFollowingPeerName}
+              onJumpToPeerCell={handleJumpToPeerCell}
+            />
+          )}
+
           {items.length > 0 && (
             <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
               <Button
@@ -1925,20 +2009,46 @@ export function App() {
             </div>
           )}
 
-          <div className="hidden md:block">
-            <PwaInstallButton />
-          </div>
+          {/* Install App: Only shown on landing page, hidden in spreadsheet view */}
+          {items.length === 0 && !isWorkspaceActive && (
+            <div className="hidden md:block">
+              <PwaInstallButton />
+            </div>
+          )}
 
           <Button
-            variant="ghost"
+            asChild
+            variant="outline"
             size="sm"
-            onClick={openDocs}
-            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            title="User Guide & Documentation"
+            className="h-7 px-2 sm:px-2.5 text-xs gap-1.5 cursor-pointer border-border hover:bg-accent/80 hover:border-amber-500/40 text-foreground transition-all shadow-2xs group shrink-0"
           >
-            <BookOpen className="size-3.5" />
-            <span className="hidden md:inline font-medium">Docs</span>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star JSON Link on GitHub"
+              aria-label="Star JSON Link on GitHub"
+            >
+              <GithubIcon className="size-3.5 text-foreground shrink-0" />
+              <span className="hidden sm:inline font-medium text-xs">Star on GitHub</span>
+              <span className="sm:hidden font-medium text-xs">Star</span>
+              <Star className="size-3 text-amber-500 fill-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
           </Button>
+
+          {/* Docs button: Only shown on landing page, hidden in spreadsheet view */}
+          {items.length === 0 && !isWorkspaceActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openDocs}
+              className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
+              title="User Guide & Documentation"
+            >
+              <BookOpen className="size-3.5" />
+              <span className="hidden md:inline font-medium">Docs</span>
+            </Button>
+          )}
 
           <Button
             variant="ghost"
@@ -1994,6 +2104,9 @@ export function App() {
             onOpenExport={() => setIsExportOpen(true)}
             onOpenSaveProject={() => setIsSaveProjectOpen(true)}
             onOpenShare={() => setIsShareModalOpen(true)}
+            onOpenCollab={() => setIsCollabModalOpen(true)}
+            isCollabConnected={Boolean(collabSession)}
+            collabPeerCount={collabPeers.length + 1}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -2073,6 +2186,13 @@ export function App() {
             searchQuery={searchQuery}
             totalItemCount={items.length}
             onClearFilters={handleClearFilters}
+            collabPeers={collabPeers}
+            onActiveCellChange={handleActiveCellChange}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+            onScrollPositionChange={handleCollabScroll}
+            followingPeerName={followingPeerName}
+            onStopFollowing={() => setFollowingPeerName(null)}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}
@@ -2177,6 +2297,19 @@ export function App() {
               window.history.replaceState(null, '', window.location.pathname);
             }
           }}
+        />
+
+        <CollabPinDialog
+          open={Boolean(pendingCollabRoomId)}
+          onOpenChange={open => {
+            if (!open) cancelCollabPin();
+          }}
+          roomId={pendingCollabRoomId || ''}
+          onJoin={joinCollabWithPin}
+          onCancel={cancelCollabPin}
+          errorMessage={collabAuthError}
+          onClearError={clearCollabAuthError}
+          isConnecting={isCollabConnecting}
         />
 
         {/* AI Auto-Translation Modal */}
@@ -2318,6 +2451,21 @@ export function App() {
           onClose={() => setIsIcuTesterOpen(false)}
           items={items}
           languages={languages}
+        />
+
+        {/* Real-time WebRTC Collaboration Modal */}
+        <LiveCollabModal
+          isOpen={isCollabModalOpen}
+          onClose={() => setIsCollabModalOpen(false)}
+          isConnected={Boolean(collabSession)}
+          currentRoomId={collabSession?.roomId || null}
+          currentRoomPassword={collabPassword}
+          peers={collabPeers}
+          localUser={localPeerProfile}
+          onStartSession={(roomId, password, userName) =>
+            handleStartCollabSession(roomId, password, userName, true)
+          }
+          onEndSession={handleEndCollabSession}
         />
       </Suspense>
     </div>

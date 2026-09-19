@@ -3,6 +3,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { GithubIcon } from '@/components/GithubIcon';
 import { SpreadsheetTable } from '@/components/SpreadsheetTable';
 import { Toolbar } from '@/components/Toolbar';
 import { TranslationItem, RowStatus } from '@/types';
@@ -32,6 +33,13 @@ import {
   Globe,
   GitPullRequest,
   Zap,
+  Star,
+  Terminal,
+  ExternalLink,
+  Lock,
+  Wifi,
+  Radio,
+  Users,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -48,7 +56,8 @@ interface DocsPageProps {
   onToggleTheme: () => void;
 }
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
+const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 
 type DocSectionId =
   | 'getting-started'
@@ -58,7 +67,9 @@ type DocSectionId =
   | 'linter-scorecard'
   | 'exporters'
   | 'github-sync'
-  | 'keyboard-shortcuts';
+  | 'keyboard-shortcuts'
+  | 'live-collab'
+  | 'mcp-server';
 
 interface DocSection {
   id: DocSectionId;
@@ -115,6 +126,18 @@ const SECTIONS: DocSection[] = [
     title: 'Shortcuts & Power Tips',
     badge: 'Step 8',
     icon: <Keyboard className="size-4" />,
+  },
+  {
+    id: 'live-collab',
+    title: 'P2P Live Collaboration',
+    badge: 'New v1.1',
+    icon: <Zap className="size-4" />,
+  },
+  {
+    id: 'mcp-server',
+    title: 'MCP Server for AI IDEs',
+    badge: 'New v1.1',
+    icon: <Layers className="size-4" />,
   },
 ];
 
@@ -330,6 +353,25 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
           </Badge>
 
           <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 sm:px-2.5 text-xs gap-1.5 cursor-pointer border-border hover:bg-accent/80 hover:border-amber-500/40 text-foreground transition-all shadow-2xs group hidden sm:inline-flex shrink-0"
+          >
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star JSON Link on GitHub"
+              aria-label="Star JSON Link on GitHub"
+            >
+              <GithubIcon className="size-3.5 text-foreground shrink-0" />
+              <span className="font-medium text-xs">Star on GitHub</span>
+              <Star className="size-3 text-amber-500 fill-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
+          </Button>
+
+          <Button
             variant="ghost"
             size="icon"
             onClick={onToggleTheme}
@@ -479,6 +521,8 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
           {activeSection === 'exporters' && <ExportersSection />}
           {activeSection === 'github-sync' && <GitHubSyncSection />}
           {activeSection === 'keyboard-shortcuts' && <ShortcutsSection />}
+          {activeSection === 'live-collab' && <LiveCollabSection />}
+          {activeSection === 'mcp-server' && <McpServerSection />}
 
           {/* Apple-style Step Navigation Footer */}
           <AppleStepFooter
@@ -573,6 +617,20 @@ function GettingStartedSection() {
             Download your localized project as a multi-platform bundle ZIP, individual Flutter ARB files, iOS .strings, Android strings.xml, Excel workbooks, or CSV.
           </p>
         </div>
+      </div>
+
+      {/* MCP Server Callout */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">AI IDE Integration</span>
+          <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">@jsonlink/mcp</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Expose JSON Link tools (Zawgyi converter, linter, parsers, exporters) to Claude Desktop, Cursor, or any MCP-compatible AI IDE via <code className="font-mono text-primary text-[10px]">stdio JSON-RPC 2.0</code>.
+        </p>
+        <code className="block rounded-lg bg-muted px-3 py-2 text-[11px] font-mono text-foreground select-all">
+          npx -y @jsonlink/mcp
+        </code>
       </div>
     </div>
   );
@@ -1264,6 +1322,298 @@ function ShortcutsSection() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+/* =========================================================================
+   Section 9: P2P Live Collaboration
+   ========================================================================= */
+function LiveCollabSection() {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-xs">
+            New in v1.1
+          </Badge>
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs">
+            Beta
+          </Badge>
+        </div>
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          P2P Live Collaboration
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Work on the same translation file simultaneously with your team. Changes sync in real-time peer-to-peer via WebRTC DataChannels powered by Yjs CRDT. A signaling relay is used to connect peers. Optional AES-GCM end-to-end encryption when a room PIN is set.
+        </p>
+      </div>
+
+      {/* How it works */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Radio className="size-3.5 text-violet-500" />
+          How It Works
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            {
+              step: '1',
+              icon: <Wifi className="size-4 text-violet-500" />,
+              title: 'Create or Join a Room',
+              desc: 'Click the Live button in the top nav. Enter a Room ID (or share the auto-generated one) and an optional PIN for encryption.',
+            },
+            {
+              step: '2',
+              icon: <Users className="size-4 text-blue-500" />,
+              title: 'Peers Connect',
+              desc: 'A signaling relay (wss://y-webrtc.fly.dev) exchanges connection metadata. Once connected, data flows directly peer-to-peer — the relay is no longer involved.',
+            },
+            {
+              step: '3',
+              icon: <Zap className="size-4 text-emerald-500" />,
+              title: 'Real-Time Sync',
+              desc: 'Every cell edit is encoded as a Yjs CRDT update and streamed over WebRTC DataChannels. Conflicts are resolved automatically — last-write-wins per character.',
+            },
+          ].map(item => (
+            <div key={item.step} className="p-4 rounded-xl border border-border bg-background space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="size-6 rounded-full bg-violet-500/10 text-violet-600 font-bold text-xs flex items-center justify-center">
+                  {item.step}
+                </div>
+                {item.icon}
+              </div>
+              <h4 className="text-xs font-bold text-foreground">{item.title}</h4>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Encryption callout */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Lock className="size-3.5 text-emerald-500" />
+          Optional End-to-End Encryption
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-3.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <Lock className="size-3.5 text-emerald-500 shrink-0" />
+              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">With PIN — Encrypted</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              When you set a Room PIN, Yjs updates are encrypted with <code className="font-mono text-primary text-[10px]">AES-GCM 256-bit</code> before being sent over WebRTC. Peers need the same PIN to decrypt.
+            </p>
+          </div>
+          <div className="p-3.5 rounded-lg border border-border bg-muted/30 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <Radio className="size-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs font-semibold text-foreground">No PIN — Unencrypted</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Open rooms (no PIN) send plaintext CRDT updates. Anyone with the Room ID can join and see changes. Use a PIN for sensitive translation work.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Live Multiplayer Cursors Feature Card */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <MousePointerClick className="size-3.5 text-primary" />
+          Figma-Style Live Multiplayer Cursors
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          See teammates navigate the spreadsheet in real time with high-contrast colored arrow pointers (↖) and color-coded name badges matching their avatar palette. Mouse coordinates are throttled to ~33ms over WebRTC DataChannels for buttery-smooth 30fps tracking with zero server overhead. Pointers are bound directly to spreadsheet table coordinates, automatically fade out after 3 seconds of inactivity, and gracefully slide underneath sticky table headers when scrolling.
+        </p>
+      </div>
+
+      {/* Quick steps table */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
+        <div className="px-4 py-2.5 bg-muted/60 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          Quick Start
+        </div>
+        <div className="divide-y divide-border/60">
+          {[
+            { action: 'Open the Live Collab panel', how: 'Click ⟨Live⟩ in the top navigation bar' },
+            { action: 'Create a new room', how: 'Click "New Room" — a random Room ID is generated' },
+            { action: 'Share the room', how: 'Share the Room ID (and optional PIN) with teammates' },
+            { action: 'Join an existing room', how: 'Enter the Room ID + PIN in the join form, click Connect' },
+            { action: 'Live multiplayer cursors', how: 'Move your mouse over the grid — peers see your colored cursor and name badge in real time' },
+            { action: 'Follow a peer\'s screen', how: 'Click a peer avatar in the collab header to lock your viewport to their active cell' },
+            { action: 'Leave the room', how: 'Click Disconnect or close the browser tab' },
+          ].map((row, i) => (
+            <div key={i} className="px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 hover:bg-muted/20 transition-colors">
+              <span className="font-semibold text-foreground sm:w-56 shrink-0">{row.action}</span>
+              <span className="text-muted-foreground">{row.how}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Architecture note: Full Sync & Independent Views */}
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-primary/20 bg-primary/5 text-[11px] text-muted-foreground leading-relaxed">
+        <CheckCircle2 className="size-4 text-primary shrink-0 mt-0.5" />
+        <div>
+          <strong className="text-foreground font-semibold block mb-1">Collaborative Architecture &amp; Independent Views</strong>
+          Translations, developer notes, row review statuses (Draft / Needs Review / Approved), and project names are synchronized in real time across peers via Yjs CRDTs. Search queries, namespace filters, and missing-key filters are intentionally kept independent per user (Google Sheets-style Filter Views) so teammates can work on different sections simultaneously without interrupting each other.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================================
+   Section 10: MCP Server for AI IDEs
+   ========================================================================= */
+function McpServerSection() {
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="space-y-1.5">
+        <div>
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-xs">
+            New in v1.1
+          </Badge>
+        </div>
+        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+          MCP Server for AI IDEs
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          <code className="font-mono text-primary text-[11px]">@jsonlink/mcp</code> exposes JSON Link's core tools — Zawgyi↔Unicode converter, QA linter, parsers, and exporters — to any MCP-compatible AI IDE via <code className="font-mono text-primary text-[11px]">stdio JSON-RPC 2.0</code>. Works with Claude Desktop, Cursor, Windsurf, and any editor that supports the Model Context Protocol.
+        </p>
+      </div>
+
+      {/* Install card */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Terminal className="size-3.5 text-primary" />
+          Installation
+        </div>
+        <div className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">Run directly with npx — no global install needed:</p>
+          <code className="block rounded-lg bg-muted px-3.5 py-2.5 text-[12px] font-mono text-foreground select-all border border-border">
+            npx -y @jsonlink/mcp
+          </code>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          The server starts on <code className="font-mono text-primary text-[10px]">stdio</code> and registers all available tools immediately. Point your AI IDE's MCP config to this command.
+        </p>
+      </div>
+
+      {/* Claude Desktop config */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <FileCode className="size-3.5 text-primary" />
+          Claude Desktop Config
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Add this block to your <code className="font-mono text-primary text-[10px]">claude_desktop_config.json</code>:
+        </p>
+        <pre className="rounded-lg bg-muted px-3.5 py-3 text-[11px] font-mono text-foreground overflow-x-auto border border-border leading-relaxed select-all whitespace-pre">{`{
+  "mcpServers": {
+    "jsonlink": {
+      "command": "npx",
+      "args": ["-y", "@jsonlink/mcp"]
+    }
+  }
+}`}</pre>
+      </div>
+
+      {/* Available tools */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
+        <div className="px-4 py-2.5 bg-muted/60 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
+          Available MCP Tools
+        </div>
+        <div className="divide-y divide-border/60">
+          {[
+            {
+              name: 'zawgyi_to_unicode',
+              desc: 'Convert Zawgyi-encoded Myanmar text to Unicode (NFC). Handles mixed content and partial strings.',
+              badge: 'Myanmar',
+              color: 'text-rose-500',
+            },
+            {
+              name: 'unicode_to_zawgyi',
+              desc: 'Convert Unicode Myanmar text back to Zawgyi encoding for legacy system compatibility.',
+              badge: 'Myanmar',
+              color: 'text-rose-500',
+            },
+            {
+              name: 'lint_translations',
+              desc: 'Run QA linter on a JSON/ARB translation object. Returns per-key issues: missing values, trailing spaces, placeholder mismatches.',
+              badge: 'QA',
+              color: 'text-amber-500',
+            },
+            {
+              name: 'parse_json',
+              desc: 'Parse a flat or nested JSON locale file into a normalized key-value list with namespace detection.',
+              badge: 'Parser',
+              color: 'text-blue-500',
+            },
+            {
+              name: 'parse_arb',
+              desc: 'Parse a Flutter ARB file into a normalized key-value list, preserving @metadata blocks.',
+              badge: 'Parser',
+              color: 'text-blue-500',
+            },
+            {
+              name: 'export_json',
+              desc: 'Export a key-value list back to a formatted JSON locale file string.',
+              badge: 'Exporter',
+              color: 'text-emerald-500',
+            },
+            {
+              name: 'export_arb',
+              desc: 'Export a key-value list to Flutter ARB format with optional @metadata entries.',
+              badge: 'Exporter',
+              color: 'text-emerald-500',
+            },
+          ].map(tool => (
+            <div key={tool.name} className="px-4 py-3 text-xs flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4 hover:bg-muted/20 transition-colors">
+              <div className="sm:w-52 shrink-0 flex items-center gap-2">
+                <code className="font-mono text-primary text-[11px] font-semibold">{tool.name}</code>
+                <span className={`text-[10px] font-mono font-medium ${tool.color}`}>{tool.badge}</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground leading-relaxed">{tool.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Compatible IDEs */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <Globe className="size-3.5 text-primary" />
+          Compatible AI IDEs
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {[
+            { name: 'Claude Desktop', note: 'Anthropic' },
+            { name: 'Cursor', note: 'cursor.sh' },
+            { name: 'Windsurf', note: 'Codeium' },
+            { name: 'Any MCP IDE', note: 'stdio JSON-RPC 2.0' },
+          ].map(ide => (
+            <div key={ide.name} className="p-3 rounded-lg border border-border bg-background space-y-0.5">
+              <div className="text-xs font-semibold text-foreground">{ide.name}</div>
+              <div className="text-[10px] text-muted-foreground">{ide.note}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* npm link */}
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <ExternalLink className="size-3.5 shrink-0" />
+        <span>View on npm:</span>
+        <a
+          href="https://www.npmjs.com/package/@jsonlink/mcp"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono text-primary hover:underline"
+        >
+          npmjs.com/package/@jsonlink/mcp
+        </a>
       </div>
     </div>
   );

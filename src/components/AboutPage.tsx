@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { GithubIcon } from '@/components/GithubIcon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ArrowLeft,
@@ -37,7 +38,7 @@ interface AboutPageProps {
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'cookies') => void;
 }
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 const LIVE_URL = 'https://json-link.pages.dev';
 
@@ -118,7 +119,7 @@ const developerFeatures = [
   {
     icon: <Terminal className="size-4 text-primary" />,
     title: 'MCP Server for AI IDEs',
-    description: 'Connect Zawgyi converter, linter, parsers, and exporters to Claude Desktop or Cursor via stdio JSON-RPC 2.0.',
+    description: 'Run `npx -y @jsonlink/mcp` to expose Zawgyi converter, linter, parsers, and exporters to Claude Desktop or Cursor via stdio JSON-RPC 2.0.',
   },
   {
     icon: <Zap className="size-4 text-primary" />,
@@ -189,9 +190,27 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
         </Button>
 
         <div className="flex items-center gap-2">
-          <Badge variant="success" className="font-mono text-[10px] py-0 h-5">
+          <Badge variant="success" className="font-mono text-[10px]">
             {APP_VERSION}
           </Badge>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 sm:px-2.5 text-xs gap-1.5 cursor-pointer border-border hover:bg-accent/80 hover:border-amber-500/40 text-foreground transition-all shadow-2xs group hidden sm:inline-flex shrink-0"
+          >
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Star JSON Link on GitHub"
+              aria-label="Star JSON Link on GitHub"
+            >
+              <GithubIcon className="size-3.5 text-foreground shrink-0" />
+              <span className="font-medium text-xs">Star on GitHub</span>
+              <Star className="size-3 text-amber-500 fill-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+            </a>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -236,7 +255,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             {/* Badges Strip */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
               <Badge variant="success">Free & Open Source</Badge>
-              <Badge variant="secondary">MIT License</Badge>
+              <Badge variant="outline">MIT License</Badge>
               <Badge variant="warning">370+ Automated Tests</Badge>
               <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <Lock className="size-3 text-emerald-500" /> 100% Client-Side &amp; Offline
@@ -433,7 +452,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
           <section className="rounded-2xl border border-border/80 bg-card/60 p-5 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-xs">
             <div className="flex flex-col gap-2 text-left">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-sm text-foreground">Crafted by Pyae Phyo Maung</span>
+                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-bold text-sm text-foreground hover:text-primary transition-colors">Crafted by Pyae Phyo Maung</a>
                 <Badge variant="outline" className="text-[10px] font-mono py-0 h-4 border-primary/30 text-primary shrink-0">
                   Creator
                 </Badge>
@@ -483,7 +502,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
                 <span>Developed with</span>
                 <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
                 <span>by</span>
-                <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors hover:underline">Pyae Phyo Maung</a>
               </div>
               <span className="hidden sm:inline">·</span>
               <a

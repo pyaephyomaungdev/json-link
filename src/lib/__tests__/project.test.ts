@@ -35,16 +35,16 @@ describe('project.ts', () => {
       );
       expect(() =>
         parseProjectFile(JSON.stringify({ format: 'jsonlink', items: 'not-an-array' }))
-      ).toThrow();
+      ).toThrow(/Invalid.*project/i);
     });
 
     it('throws when given completely non-JSON input', () => {
-      expect(() => parseProjectFile('not json at all!!!')).toThrow();
+      expect(() => parseProjectFile('not json at all!!!')).toThrow(/JSON/i);
     });
 
     it('throws when items field is missing entirely', () => {
       const payload = { format: 'jsonlink', languages: ['en'] }; // no items
-      expect(() => parseProjectFile(JSON.stringify(payload))).toThrow();
+      expect(() => parseProjectFile(JSON.stringify(payload))).toThrow(/Invalid.*project/i);
     });
 
     it('parses project with optional fields absent (description, status)', () => {
