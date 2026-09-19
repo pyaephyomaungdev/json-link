@@ -226,7 +226,7 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 
 * **Peer Data over WebRTC**: Multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels. Public/local signaling relays are used solely for initial peer handshakes; all keystrokes and translation edits stream peer-to-peer with zero server storage.
 * **Optional End-to-End Encryption (E2EE)**: Setting an optional room password derives 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). When enabled, document updates and awareness messages are completely unreadable to intermediary signaling relays. Open rooms without a PIN remain unencrypted for instant frictionless sharing.
-* **Human-Friendly Room IDs**: Google Meet style 3-4-3 canonical segmented identifiers (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
+* **Human-Friendly Room IDs**: Canonical hyphenated 3-4-3 segmented room format (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Real-time cursor coordinates with deterministic peer palette assignment (12 distinct colors), user avatar initials badges, and one-click viewport jump to follow collaborator selections.
 * **Figma-Style Live Multiplayer Cursors**: Ultra-fluid ~33fps mouse pointer tracking with high-contrast colored arrow pointers (↖) and peer name pill badges. Pointers are mapped to spreadsheet canvas coordinates, automatically fade after 3 seconds of inactivity, and cleanly slide underneath sticky table headers when scrolling.
 * **Full Data Sync & Independent Filter Views**: Synchronizes translation cells, developer context notes, review statuses (Draft/Needs Review/Approved), and project metadata in real time, while keeping personal filter views (namespace, search, missing keys) independent per peer so collaborators never disrupt each other's focus.
@@ -351,7 +351,7 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 #### Added
 * **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels (`useCollabSession`), using lightweight signaling relays for initial connection negotiation.
 * **Optional End-to-End Room Encryption (E2EE)**: Client-side AES-GCM 256-bit encryption derived via PBKDF2-SHA256 (100,000 iterations) from optional room passwords. Open rooms remain unencrypted for frictionless sharing.
-* **Segmented Room Identifiers**: Human-friendly Google Meet style 3-4-3 canonical format (`yfq-khjt-efn`) with smart alphanumeric normalization.
+* **Segmented Room Identifiers**: Human-friendly 3-4-3 segmented room format (`yfq-khjt-efn`) with canonical hyphenated room codes and smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Deterministic 12-color avatar palette, peer initials badges, real-time active cell cursor markers, and one-click Follow Mode viewport synchronization.
 * **Figma-Style Live Multiplayer Cursors**: Fluid real-time peer pointer tracking (~33fps over WebRTC DataChannels) with colored SVG pointers, name badges, and native sticky header z-index layering.
 * **Project Name Metadata Synchronization**: Multi-user real-time synchronization of project names across all active peers via Yjs metadata.

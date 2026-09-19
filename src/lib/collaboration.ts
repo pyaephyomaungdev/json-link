@@ -129,7 +129,7 @@ export function normalizeCollabRoomId(roomId: string): string {
 }
 
 /**
- * Generates a Google Meet style 3-4-3 random room ID (e.g. 'yfq-khjt-efn')
+ * Generates a human-friendly 3-4-3 segmented room format (e.g. 'yfq-khjt-efn')
  */
 export function generateCollabRoomId(): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz';
