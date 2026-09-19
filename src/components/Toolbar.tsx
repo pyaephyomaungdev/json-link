@@ -241,7 +241,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Compact Filter Segmented Group */}
         {hasItems && (
-          <div className="flex items-center rounded-md border border-border/80 p-0.5 bg-muted/60 h-7 shrink-0 shadow-xs">
+          <div className="flex items-center rounded-md border border-border p-0.5 bg-background h-7 shrink-0 shadow-sm">
             <button
               onClick={() => {
                 onFilterChange('all');
