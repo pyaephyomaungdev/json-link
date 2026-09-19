@@ -1151,23 +1151,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
                 <div className="flex items-center justify-between px-0.5">
-                  <button
-                    type="button"
-                    aria-label="Toggle all rows selection"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleToggleSelectAll();
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (e.target === e.currentTarget) {
-                        handleToggleSelectAll();
-                      }
-                    }}
-                    className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
-                    title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
+                  <div
+                    role="presentation"
+                    className="p-1 -m-1 flex items-center justify-center"
                   >
                     <Checkbox
                       checked={
@@ -1181,9 +1167,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       }
                       onCheckedChange={handleToggleSelectAll}
                       className="size-4 rounded-[3px] border-2 cursor-pointer transition-opacity"
-                      aria-label="Select all rows checkbox"
+                      aria-label={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
+                      title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
                     />
-                  </button>
+                  </div>
                   <span className="text-[11px] text-muted-foreground font-mono font-semibold">#</span>
                   <span className="w-2.5" />
                 </div>
@@ -1676,25 +1663,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                     >
                       <div className="flex items-center justify-between px-0.5">
-                        <button
-                          type="button"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              isShiftHeldRef.current = e.shiftKey;
-                              handleToggleRowSelect(item.key);
-                            }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            isShiftHeldRef.current = e.shiftKey;
-                            if (e.target === e.currentTarget) {
-                              handleToggleRowSelect(item.key);
-                            }
-                          }}
-                          className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
-                          title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
-                          aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
+                        <div
+                          role="presentation"
+                          className="p-1 -m-1 flex items-center justify-center"
                         >
                           <Checkbox
                             checked={isRowSelected}
@@ -1704,9 +1675,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 ? 'opacity-100 border-primary'
                                 : 'opacity-35 group-hover:opacity-100 hover:opacity-100 border-muted-foreground/50'
                             }`}
-                            aria-label={`Select row ${rowNumber}`}
+                            aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
+                            title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
                           />
-                        </button>
+                        </div>
                         <span className="text-[11px] font-mono select-none">{rowNumber}</span>
 
                         {/* Row Review Status Dropdown Indicator */}
