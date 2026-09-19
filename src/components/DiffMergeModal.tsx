@@ -63,9 +63,10 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
 
         {/* Summary Stats Badges */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-3 my-2 text-xs">
-          <div
+          <button
+            type="button"
             onClick={() => setSelectedTab('new')}
-            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all text-left ${
               selectedTab === 'new'
                 ? 'border-emerald-500 bg-emerald-500/10'
                 : 'border-border bg-muted/40 hover:bg-muted/70'
@@ -78,11 +79,12 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
             <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
               Keys not in current
             </p>
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             onClick={() => setSelectedTab('modified')}
-            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all text-left ${
               selectedTab === 'modified'
                 ? 'border-amber-500 bg-amber-500/10'
                 : 'border-border bg-muted/40 hover:bg-muted/70'
@@ -95,7 +97,7 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
             <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
               Altered translations
             </p>
-          </div>
+          </button>
 
           <div className="p-2 sm:p-3 rounded-lg border border-border bg-muted/40">
             <div className="flex items-center gap-1 sm:gap-1.5 font-semibold text-muted-foreground text-[11px] sm:text-xs">

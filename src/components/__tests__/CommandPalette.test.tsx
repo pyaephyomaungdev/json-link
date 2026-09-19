@@ -97,7 +97,7 @@ describe('CommandPalette', () => {
 
   it('updates selection on mouse move', () => {
     render(<CommandPalette {...defaultProps} />);
-    const secondItem = screen.getByText('Export Multi-language JSON').closest('div[class*="group"]');
+    const secondItem = screen.getByText('Export Multi-language JSON').closest('[class*="group"]');
     expect(secondItem).not.toBeNull();
 
     fireEvent.mouseMove(secondItem!, { clientX: 100, clientY: 200 });

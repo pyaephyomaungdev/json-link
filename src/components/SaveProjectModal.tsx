@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,13 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (enablePassword) {
+      setTimeout(() => passwordInputRef.current?.focus(), 50);
+    }
+  }, [enablePassword]);
 
   const isPasswordMismatch = enablePassword && Boolean(confirmPassword) && password !== confirmPassword;
   const passwordStrength = useMemo(() => evaluatePasswordStrength(password), [password]);
@@ -93,11 +100,12 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
 
           {/* File Name Input */}
           <div className="flex flex-col gap-1.5 border-t border-border pt-3">
-            <label className="text-xs font-semibold text-foreground">
+            <label htmlFor="save-project-name" className="text-xs font-semibold text-foreground">
               Project Name:
             </label>
             <div className="flex items-center gap-1.5">
               <Input
+                id="save-project-name"
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="translations-backup"
@@ -112,8 +120,9 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
           {/* Password Protection Section */}
           <div>
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+              <label htmlFor="save-enable-password" className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
                 <Checkbox
+                  id="save-enable-password"
                   checked={enablePassword}
                   onCheckedChange={(checked) => {
                     const isChecked = Boolean(checked);
@@ -141,12 +150,12 @@ export const SaveProjectModal: React.FC<SaveProjectModalProps> = ({
               <div className="space-y-2 pl-5.5 mt-2">
                 <div className="relative">
                   <Input
+                    ref={passwordInputRef}
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter backup encryption password..."
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     className={`text-xs h-8 pr-8 bg-muted/20 ${!password.trim() ? 'border-amber-500/50' : ''}`}
-                    autoFocus
                   />
                   <button
                     type="button"

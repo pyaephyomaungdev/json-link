@@ -38,12 +38,10 @@ const IcuTesterModal = lazy(() => import('@/components/IcuTesterModal').then(m =
 const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ default: m.ShareModal })));
 const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
 const LiveCollabModal = lazy(() => import('@/components/LiveCollabModal').then(m => ({ default: m.LiveCollabModal })));
+const CollabPinDialog = lazy(() => import('@/components/CollabPinDialog').then(m => ({ default: m.CollabPinDialog })));
+import { useCollabSession } from '@/hooks/useCollabSession';
 import {
-  CollabSession,
   CollabPeerUser,
-  initCollabSession,
-  applyLocalChangeToYDoc,
-  extractItemsFromYDoc,
   generateRandomPeerProfile,
 } from '@/lib/collaboration';
 import {
@@ -56,6 +54,7 @@ import {
 } from '@/lib/fileSystem';
 import { upsertMemoryEntry } from '@/lib/translationMemory';
 import { Logo } from '@/components/Logo';
+import { CollabHeaderControl } from '@/components/CollabHeaderControl';
 import { runLocalizationLinter } from '@/lib/linter';
 import { isEffectivelyMissing } from '@/lib/variables';
 import {
@@ -349,12 +348,8 @@ export function App() {
 
   // Live WebRTC Collaboration state
   const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
-  const [collabSession, setCollabSession] = useState<CollabSession | null>(null);
-  const [collabPeers, setCollabPeers] = useState<CollabPeerUser[]>([]);
-  const [collabPassword, setCollabPassword] = useState<string | null>(null);
   const [localPeerProfile, setLocalPeerProfile] = useState<CollabPeerUser>(() => generateRandomPeerProfile());
   const [followingPeerName, setFollowingPeerName] = useState<string | null>(null);
-  const isRemoteCollabUpdateRef = useRef(false);
 
   // Local Folder Direct Sync state
   const [linkedDirHandle, setLinkedDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
@@ -435,204 +430,30 @@ export function App() {
     }
   };
 
-  // Start / Join WebRTC collaboration session
-  const prevItemsRef = useRef<TranslationItem[]>(items);
-  const prevLanguagesRef = useRef<string[]>(languages);
-
-  const collabSessionRef = useRef<CollabSession | null>(null);
-  const itemsRef = useRef<TranslationItem[]>(items);
-  const languagesRef = useRef<string[]>(languages);
-
-  useEffect(() => {
-    collabSessionRef.current = collabSession;
-    itemsRef.current = items;
-    languagesRef.current = languages;
-  }, [collabSession, items, languages]);
-
-  const handleStartCollabSession = useCallback(
-    (roomId: string, password: string | null, userName: string, isInitiator = false) => {
-      const cleanRoomId = roomId.trim().toLowerCase();
-
-      if (collabSessionRef.current) {
-        collabSessionRef.current.destroy();
-      }
-
-      const cleanUserName = userName.trim() || localPeerProfile.name;
-      setLocalPeerProfile(prev => ({ ...prev, name: cleanUserName }));
-
-      const session = initCollabSession(cleanRoomId, {
-        password: password || null,
-        initialItems: isInitiator ? itemsRef.current : undefined,
-        initialLanguages: isInitiator ? languagesRef.current : undefined,
-        isInitiator,
-      });
-
-      collabSessionRef.current = session;
-
-      // Initialize peer awareness
-      const awareness = session.provider.awareness;
-      awareness.setLocalStateField('user', {
-        name: cleanUserName,
-        color: localPeerProfile.color,
-        activeCell: null,
-      });
-
-      const handleAwarenessChange = () => {
-        const states = awareness.getStates();
-        const peers: CollabPeerUser[] = [];
-        states.forEach((state: any, clientID: number) => {
-          if (clientID !== awareness.clientID && state.user) {
-            peers.push(state.user);
-          }
-        });
-        setCollabPeers(peers);
-      };
-      awareness.on('change', handleAwarenessChange);
-      awareness.on('update', handleAwarenessChange);
-      session.provider.on('peers', handleAwarenessChange);
-
-      // Synchronize Yjs document data to React state
-      const syncDocToReact = () => {
-        const { items: remoteItems, languages: remoteLangs } = extractItemsFromYDoc(session.ydoc);
-        if (remoteItems.length > 0 || session.yKeys.length > 0) {
-          isRemoteCollabUpdateRef.current = true;
-          prevItemsRef.current = remoteItems;
-          setItemsWithoutHistory(remoteItems);
-          if (remoteLangs.length > 0) {
-            prevLanguagesRef.current = remoteLangs;
-            setLanguages(remoteLangs);
-          }
-          setTimeout(() => {
-            isRemoteCollabUpdateRef.current = false;
-          }, 100);
-        }
-      };
-
-      // Listen for remote Yjs updates
-      const handleDocChange = (_events: any, transaction: any) => {
-        if (transaction && transaction.origin === 'local') return;
-        syncDocToReact();
-      };
-
-      session.yTranslations.observeDeep(handleDocChange);
-      session.yKeys.observe(handleDocChange);
-      session.yLanguages.observe(handleDocChange);
-
-      const handleYDocUpdate = (_update: Uint8Array, origin: any) => {
-        if (origin !== 'local') {
-          syncDocToReact();
-        }
-      };
-      session.ydoc.on('update', handleYDocUpdate);
-
-      const handleProviderSynced = (event: any) => {
-        if (event && event.synced) {
-          syncDocToReact();
-          handleAwarenessChange();
-        }
-      };
-      session.provider.on('synced', handleProviderSynced);
-
-      // Attempt initial read if already populated
-      syncDocToReact();
-      handleAwarenessChange();
-
-      // Keepalive heartbeat: send awareness ping every 10s to prevent NAT/router idle timeout
-      // and prevent y-protocols awareness outdatedTimeout (30s) from marking peer offline
-      const heartbeatTimer = setInterval(() => {
-        if (session.provider.connected || session.provider.room) {
-          awareness.setLocalStateField('user', {
-            name: cleanUserName,
-            color: localPeerProfile.color,
-            activeCell: awareness.getLocalState()?.user?.activeCell || null,
-            lastSeen: Date.now(),
-          });
-        }
-      }, 10000);
-
-      // Re-announce on window focus or network reconnect
-      const handleWindowFocus = () => {
-        if (session.provider.connected || session.provider.room) {
-          awareness.setLocalStateField('user', {
-            name: cleanUserName,
-            color: localPeerProfile.color,
-            activeCell: awareness.getLocalState()?.user?.activeCell || null,
-            lastSeen: Date.now(),
-          });
-        }
-      };
-      window.addEventListener('focus', handleWindowFocus);
-      window.addEventListener('online', handleWindowFocus);
-
-      const originalDestroy = session.destroy;
-      session.destroy = () => {
-        clearInterval(heartbeatTimer);
-        window.removeEventListener('focus', handleWindowFocus);
-        window.removeEventListener('online', handleWindowFocus);
-        originalDestroy();
-      };
-
-      setCollabSession(session);
-      setCollabPassword(password || null);
-      setIsWorkspaceActive(true);
-    },
-    [localPeerProfile.name, localPeerProfile.color, setItemsWithoutHistory]
-  );
-
-  const handleEndCollabSession = useCallback(() => {
-    if (collabSessionRef.current) {
-      collabSessionRef.current.destroy();
-      collabSessionRef.current = null;
-      setCollabSession(null);
-    }
-    setCollabPeers([]);
-    setCollabPassword(null);
-    if (typeof window !== 'undefined' && window.location.hash.includes('collab=')) {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  }, []);
-
-  // Clean up session when session changes or on unmount
-  useEffect(() => {
-    return () => {
-      collabSession?.destroy();
-    };
-  }, [collabSession]);
-
-  // Sync local changes to Yjs doc (only when user actively modifies items or languages)
-  useEffect(() => {
-    if (!collabSession) {
-      prevItemsRef.current = items;
-      prevLanguagesRef.current = languages;
-      return;
-    }
-
-    if (isRemoteCollabUpdateRef.current) {
-      prevItemsRef.current = items;
-      prevLanguagesRef.current = languages;
-      return;
-    }
-
-    const itemsChanged = prevItemsRef.current !== items;
-    const languagesChanged = prevLanguagesRef.current !== languages;
-
-    prevItemsRef.current = items;
-    prevLanguagesRef.current = languages;
-
-    if (itemsChanged || languagesChanged) {
-      applyLocalChangeToYDoc(collabSession.ydoc, items, languages, 'local');
-    }
-  }, [items, languages, collabSession]);
-
-  // Active cell awareness handler
-  const handleActiveCellChange = useCallback((key: string | null, field: string | null) => {
-    if (collabSessionRef.current) {
-      collabSessionRef.current.provider.awareness.setLocalStateField('user', {
-        ...localPeerProfile,
-        activeCell: key && field ? { key, field } : null,
-      });
-    }
-  }, [localPeerProfile]);
+  // WebRTC Live Collaboration Session Hook
+  const {
+    collabSession,
+    collabPeers,
+    collabPassword,
+    pendingCollabRoomId,
+    collabAuthError,
+    isCollabConnecting,
+    clearCollabAuthError,
+    startCollabSession: handleStartCollabSession,
+    endCollabSession: handleEndCollabSession,
+    joinCollabWithPin,
+    cancelCollabPin,
+    handleActiveCellChange,
+  } = useCollabSession({
+    items,
+    languages,
+    localPeerProfile,
+    setLocalPeerProfile,
+    onRemoteItemsChange: setItemsWithoutHistory,
+    onRemoteLanguagesChange: setLanguages,
+    onActivateWorkspace: () => setIsWorkspaceActive(true),
+    onDeactivateWorkspace: () => setIsWorkspaceActive(false),
+  });
 
   const handleJumpToPeerCell = useCallback((key: string, field: string) => {
     const rowIdx = items.findIndex(i => i.key === key);
@@ -653,31 +474,6 @@ export function App() {
       });
     }
   }, [items]);
-
-  // Check for collab room in URL hash (#collab=...) on initial load and hashchange
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkCollabHash = () => {
-      const hash = window.location.hash;
-      if (hash && (hash.startsWith('#collab=') || hash.startsWith('#/collab='))) {
-        const match = hash.match(/^#\/?collab=([^&]+)(?:&key=([^&]+))?/);
-        if (match) {
-          const roomId = decodeURIComponent(match[1]).trim().toLowerCase();
-          const key = match[2] ? decodeURIComponent(match[2]) : null;
-          if (collabSessionRef.current && collabSessionRef.current.roomId.toLowerCase() === roomId) {
-            return;
-          }
-          setIsWorkspaceActive(true);
-          handleStartCollabSession(roomId, key, localPeerProfile.name, false);
-        }
-      }
-    };
-
-    checkCollabHash();
-    window.addEventListener('hashchange', checkCollabHash);
-    return () => window.removeEventListener('hashchange', checkCollabHash);
-  }, [handleStartCollabSession, localPeerProfile.name]);
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -1077,12 +873,7 @@ export function App() {
     setIsAddLanguageOpen(false);
     setIsUnlockDialogOpen(false);
     setIsCollabModalOpen(false);
-    if (collabSession) {
-      collabSession.destroy();
-      setCollabSession(null);
-    }
-    setCollabPeers([]);
-    setCollabPassword(null);
+    handleEndCollabSession();
     setPendingShareHash(null);
     setPendingEncryptedFile(null);
     shareDecodeSeqRef.current += 1;
@@ -2096,11 +1887,13 @@ export function App() {
                     }
                   }}
                   className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-20 xs:w-28 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
-                  autoFocus
                 />
               ) : (
                 <button
-                  onClick={() => setIsEditingProjectName(true)}
+                  onClick={() => {
+                    setIsEditingProjectName(true);
+                    setTimeout(() => projectNameInputRef.current?.focus(), 0);
+                  }}
                   className="group flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer min-w-0"
                   title="Click to rename project"
                 >
@@ -2163,6 +1956,19 @@ export function App() {
         </div>
 
         <nav aria-label="Header Actions" className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {(items.length > 0 || isWorkspaceActive) && (
+            <CollabHeaderControl
+              isCollabConnected={Boolean(collabSession)}
+              collabPeerCount={collabPeers.length + 1}
+              onOpenCollab={() => setIsCollabModalOpen(true)}
+              localPeerProfile={localPeerProfile}
+              collabPeers={collabPeers}
+              followingPeerName={followingPeerName}
+              onFollowPeer={setFollowingPeerName}
+              onJumpToPeerCell={handleJumpToPeerCell}
+            />
+          )}
+
           {items.length > 0 && (
             <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
               <Button
@@ -2266,11 +2072,6 @@ export function App() {
             onOpenCollab={() => setIsCollabModalOpen(true)}
             isCollabConnected={Boolean(collabSession)}
             collabPeerCount={collabPeers.length + 1}
-            collabPeers={collabPeers}
-            localPeerProfile={localPeerProfile}
-            followingPeerName={followingPeerName}
-            onFollowPeer={setFollowingPeerName}
-            onJumpToPeerCell={handleJumpToPeerCell}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -2458,6 +2259,19 @@ export function App() {
               window.history.replaceState(null, '', window.location.pathname);
             }
           }}
+        />
+
+        <CollabPinDialog
+          open={Boolean(pendingCollabRoomId)}
+          onOpenChange={open => {
+            if (!open) cancelCollabPin();
+          }}
+          roomId={pendingCollabRoomId || ''}
+          onJoin={joinCollabWithPin}
+          onCancel={cancelCollabPin}
+          errorMessage={collabAuthError}
+          onClearError={clearCollabAuthError}
+          isConnecting={isCollabConnecting}
         />
 
         {/* AI Auto-Translation Modal */}

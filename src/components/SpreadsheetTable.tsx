@@ -60,6 +60,7 @@ import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from 
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
 import { CollabPeerUser } from '@/lib/collaboration';
+import { useVirtualRows } from '@/hooks/useVirtualRows';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -164,6 +165,19 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Virtualization windowing for large catalogs
+  const {
+    startIndex: virtualStartIndex,
+    endIndex: virtualEndIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+  } = useVirtualRows({
+    containerRef: tableContainerRef,
+    totalItems: items.length,
+    rowHeight: 38,
+    overscan: 12,
+  });
 
   // Sync active cell to collaboration awareness
   useEffect(() => {
@@ -688,6 +702,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       return languages[langIdx] || 'key';
     };
 
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+      if (followingPeerName) {
+        onStopFollowing?.();
+      }
+    }
+
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       const newRow = Math.max(0, selectedCell.rowIndex - 1);
@@ -950,6 +970,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   return (
     <div
+      role="grid"
+      aria-label="Localization spreadsheet"
       className="flex-1 flex flex-col w-full h-full min-h-0 select-none bg-background outline-none"
       onPaste={handlePaste}
       onKeyDown={handleTableKeyDown}
@@ -1123,18 +1145,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {/* Row Number & Multi-Select Header */}
               <th
+                scope="col"
+                aria-label="Row selection header"
                 style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
                 <div className="flex items-center justify-between px-0.5">
-                  <div
+                  <button
+                    type="button"
+                    aria-label="Toggle all rows selection"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleToggleSelectAll();
+                      }
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (e.target === e.currentTarget) {
                         handleToggleSelectAll();
                       }
                     }}
-                    className="p-1 -m-1 flex items-center justify-center cursor-pointer"
+                    className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
                     title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
                   >
                     <Checkbox
@@ -1148,10 +1180,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               : false
                       }
                       onCheckedChange={handleToggleSelectAll}
-                      className="size-4 rounded-[3px] border-2 border-muted-foreground/60 shadow-xs cursor-pointer"
-                      aria-label="Select all rows"
+                      className="size-4 rounded-[3px] border-2 cursor-pointer transition-opacity"
+                      aria-label="Select all rows checkbox"
                     />
-                  </div>
+                  </button>
                   <span className="text-[11px] text-muted-foreground font-mono font-semibold">#</span>
                   <span className="w-2.5" />
                 </div>
@@ -1232,12 +1264,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => setSelectedRowKeys(new Set(items.map(i => i.key)))}
+                        onClick={() => {
+                          const newFreeze = safeFrozenCount === 1 ? 0 : 1;
+                          setFrozenCount(newFreeze);
+                        }}
                         className="gap-2 cursor-pointer text-xs"
                       >
-                        <CheckCircle2 className="size-3.5 text-primary" />
-                        <span>Select All Rows</span>
+                        <Pin className="size-3.5" />
+                        <span>{safeFrozenCount >= 1 ? 'Unfreeze Key Column' : 'Freeze Key Column'}</span>
                       </DropdownMenuItem>
+
                       {selectedRowKeys.size > 0 && (
                         <DropdownMenuItem
                           onClick={() => {
@@ -1255,9 +1291,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </div>
 
                 {/* Resizable Divider Handle */}
-                <div
+                <button
+                  type="button"
+                  aria-label="Resize key column"
                   onMouseDown={(e) => handleStartResize('key', KEY_COL_WIDTH, e)}
-                  className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                  className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                   title="Drag to resize column"
                 />
               </th>
@@ -1290,9 +1328,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   </div>
 
                   {/* Resizable Divider Handle */}
-                  <div
+                  <button
+                    type="button"
+                    aria-label="Resize description column"
                     onMouseDown={(e) => handleStartResize('description', DESC_COL_WIDTH, e)}
-                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                     title="Drag to resize column"
                   />
                 </th>
@@ -1512,9 +1552,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </div>
 
                     {/* Resizable Divider Handle */}
-                    <div
+                    <button
+                      type="button"
+                      aria-label={`Resize ${lang} column`}
                       onMouseDown={(e) => handleStartResize(lang, currentWidth, e)}
-                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                       title="Drag to resize column"
                     />
                   </th>
@@ -1523,6 +1565,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
               {/* Action Column Header (Frozen on Right) */}
               <th
+                scope="col"
+                aria-label="Row actions"
                 style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
                 className="py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 right-0 z-50 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
@@ -1536,6 +1580,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             {items.length === 0 ? (
               <tr>
                 <td
+                  aria-label="Empty translation grid"
                   colSpan={3 + (showDescription ? 1 : 0) + languages.length}
                   className="p-6 sm:p-14 text-center select-none bg-background/50 border-b border-border"
                 >
@@ -1590,8 +1635,19 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </td>
               </tr>
             ) : (
-              items.map((item, rowIdx) => {
-                const rowNumber = rowIdx + 1;
+              <>
+                {topSpacerHeight > 0 && (
+                  <tr style={{ height: topSpacerHeight }} aria-hidden="true">
+                    <td
+                      colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                      className="p-0 border-0 pointer-events-none"
+                      aria-label="Spacer row"
+                    />
+                  </tr>
+                )}
+                {items.slice(virtualStartIndex, virtualEndIndex).map((item, sliceIdx) => {
+                  const rowIdx = virtualStartIndex + sliceIdx;
+                  const rowNumber = rowIdx + 1;
                 const isKeySelected =
                   selectedCell?.key === item.key && selectedCell.field === 'key';
                 const rowStatus: RowStatus = item.status || 'draft';
@@ -1620,7 +1676,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                     >
                       <div className="flex items-center justify-between px-0.5">
-                        <div
+                        <button
+                          type="button"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              isShiftHeldRef.current = e.shiftKey;
+                              handleToggleRowSelect(item.key);
+                            }
+                          }}
                           onClick={(e) => {
                             e.stopPropagation();
                             isShiftHeldRef.current = e.shiftKey;
@@ -1628,8 +1692,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               handleToggleRowSelect(item.key);
                             }
                           }}
-                          className="p-1 -m-1 flex items-center justify-center cursor-pointer"
+                          className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
                           title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
+                          aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
                         >
                           <Checkbox
                             checked={isRowSelected}
@@ -1641,7 +1706,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             }`}
                             aria-label={`Select row ${rowNumber}`}
                           />
-                        </div>
+                        </button>
                         <span className="text-[11px] font-mono select-none">{rowNumber}</span>
 
                         {/* Row Review Status Dropdown Indicator */}
@@ -1704,14 +1769,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             minWidth: KEY_COL_WIDTH,
                             left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
                           }}
-                          onClick={() =>
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
                             setSelectedCell({
                               key: item.key,
                               field: 'key',
                               colIndex: 0,
                               rowIndex: rowIdx,
-                            })
-                          }
+                            });
+                          }}
                           onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                           className={`py-1.5 px-3 font-mono text-xs ${
                             isRowSelected
@@ -1727,7 +1793,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
                               style={{ '--peer-color': keyPeer.color } as React.CSSProperties}
                             >
-                              <span className="absolute -top-2 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
                                 {keyPeer.name}
                               </span>
                             </div>
@@ -1771,14 +1837,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             width: DESC_COL_WIDTH,
                             minWidth: DESC_COL_WIDTH,
                           }}
-                          onClick={() =>
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
                             setSelectedCell({
                               key: item.key,
                               field: 'description',
                               colIndex: 1,
                               rowIndex: rowIdx,
-                            })
-                          }
+                            });
+                          }}
                           onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
                           className={`py-1.5 px-3 text-xs relative ${
                             isRowSelected
@@ -1794,7 +1861,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
                               style={{ '--peer-color': descPeer.color } as React.CSSProperties}
                             >
-                              <span className="absolute -top-2 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
                                 {descPeer.name}
                               </span>
                             </div>
@@ -1877,14 +1944,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             minWidth: getLangColWidth(lang),
                             left: langLeft,
                           }}
-                          onClick={() =>
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
                             setSelectedCell({
                               key: item.key,
                               field: lang,
                               colIndex: colIdx + (showDescription ? 2 : 1),
                               rowIndex: rowIdx,
-                            })
-                          }
+                            });
+                          }}
                           onContextMenu={(e) =>
                             handleCellContextMenu(
                               e,
@@ -1910,7 +1978,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
                               style={{ '--peer-color': cellPeer.color } as React.CSSProperties}
                             >
-                              <span className="absolute -top-2.5 right-1 z-30 px-1 py-0.2 text-[9px] font-medium text-white rounded shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                              <span
+                                className={`absolute top-0 ${
+                                  isRtl ? 'left-0 rounded-br' : 'right-0 rounded-bl'
+                                } z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]`}
+                              >
                                 {cellPeer.name}
                               </span>
                             </div>
@@ -2049,6 +2121,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
                     {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
                     <td
+                      aria-label={`Row actions for row ${rowNumber}`}
                       style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
                       className={`py-1 px-1 text-center border-b border-l border-border ${
                         isRowSelected
@@ -2181,7 +2254,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </td>
                   </tr>
                 );
-              }))}
+              })}
+              {bottomSpacerHeight > 0 && (
+                <tr style={{ height: bottomSpacerHeight }} aria-hidden="true">
+                  <td
+                    colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                    className="p-0 border-0 pointer-events-none"
+                    aria-label="Spacer row"
+                  />
+                </tr>
+              )}
+            </>
+          )}
           </tbody>
         </table>
       </div>
@@ -2508,15 +2592,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           >
             <DialogBody className="space-y-3 text-xs">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label htmlFor="rename-lang-code-input" className="text-xs font-semibold text-foreground">
                   Language Code:
                 </label>
                 <Input
+                  id="rename-lang-code-input"
                   value={renameLangValue}
                   onChange={e => setRenameLangValue(e.target.value)}
                   placeholder="e.g. es, fr, ja, th"
                   className="h-8 text-xs font-mono"
-                  autoFocus
                 />
               </div>
             </DialogBody>

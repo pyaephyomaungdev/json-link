@@ -23,6 +23,7 @@ import {
 import {
   generateCollabRoomId,
   generateRandomPeerProfile,
+  normalizeCollabRoomId,
   CollabPeerUser,
 } from '@/lib/collaboration';
 
@@ -53,6 +54,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
   const [password, setPassword] = useState('');
   const [userName, setUserName] = useState(localUser.name);
   const [copied, setCopied] = useState(false);
+  const [includeKeyInLink, setIncludeKeyInLink] = useState(true);
 
   useEffect(() => {
     if (isOpen && !isConnected && !roomId) {
@@ -70,7 +72,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
     if (!currentRoomId) return;
     const url = new URL(window.location.origin + window.location.pathname);
     let hash = `#collab=${currentRoomId}`;
-    if (currentRoomPassword) {
+    if (currentRoomPassword && includeKeyInLink) {
       hash += `&key=${encodeURIComponent(currentRoomPassword)}`;
     }
     url.hash = hash;
@@ -89,7 +91,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
     e.preventDefault();
     if (!roomId.trim()) return;
     onStartSession(
-      roomId.trim().toLowerCase(),
+      normalizeCollabRoomId(roomId),
       password.trim() || null,
       userName.trim() || localUser.name
     );
@@ -145,9 +147,9 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
 
               {/* Peers List */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground block">
+                <span className="text-xs font-semibold text-foreground block">
                   Collaborators in this room
-                </label>
+                </span>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                   {/* Local user */}
                   <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/80 bg-muted/30 text-xs">
@@ -192,14 +194,17 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
 
               {/* Invite Link */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground block">
+                <label htmlFor="collab-share-link" className="text-xs font-semibold text-foreground block">
                   Share Invite Link
                 </label>
                 <div className="flex items-center gap-2">
                   <Input
+                    id="collab-share-link"
                     readOnly
                     value={`${window.location.origin}${window.location.pathname}#collab=${currentRoomId}${
-                      currentRoomPassword ? `&key=${encodeURIComponent(currentRoomPassword)}` : ''
+                      currentRoomPassword && includeKeyInLink
+                        ? `&key=${encodeURIComponent(currentRoomPassword)}`
+                        : ''
                     }`}
                     className="h-9 text-xs font-mono bg-muted/40 cursor-text"
                   />
@@ -213,6 +218,23 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                     {copied ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
+                {currentRoomPassword && (
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <input
+                      type="checkbox"
+                      id="collab-include-key"
+                      checked={includeKeyInLink}
+                      onChange={e => setIncludeKeyInLink(e.target.checked)}
+                      className="size-3.5 rounded border-muted-foreground/30 accent-primary cursor-pointer"
+                    />
+                    <label
+                      htmlFor="collab-include-key"
+                      className="text-[11px] text-muted-foreground cursor-pointer select-none"
+                    >
+                      Include PIN code in link (recipients join directly)
+                    </label>
+                  </div>
+                )}
               </div>
             </DialogBody>
 
@@ -283,8 +305,8 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                   id="collab-room"
                   value={roomId}
                   onChange={e => setRoomId(e.target.value)}
-                  placeholder="e.g. collab-9x2a"
-                  className="h-9 text-xs font-mono uppercase bg-background"
+                  placeholder="e.g. yfq-khjt-efn"
+                  className="h-9 text-xs font-mono lowercase bg-background"
                   required
                 />
               </div>

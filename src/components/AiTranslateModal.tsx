@@ -437,10 +437,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             <div className="space-y-2.5 bg-muted/40 p-3 rounded-lg border border-border">
               {/* Header with Title and Switch Action */}
               <div className="flex items-center justify-between">
-                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
                   <Sparkles className="size-3.5 text-primary" />
                   <span>Target Row: <code className="font-mono text-primary font-bold">{activeTargetKey}</code></span>
-                </label>
+                </span>
                 <button
                   type="button"
                   onClick={() => setActiveTargetKey(undefined)}
@@ -499,10 +499,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           {activeTargetKeys && activeTargetKeys.length > 0 && !activeTargetKey && (
             <div className="space-y-2.5 bg-muted/40 p-3 rounded-lg border border-border">
               <div className="flex items-center justify-between">
-                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
                   <Sparkles className="size-3.5 text-primary" />
                   <span>Selected Scope: <code className="font-mono text-primary font-bold">{activeTargetKeys.length} keys selected</code></span>
-                </label>
+                </span>
                 <button
                   type="button"
                   onClick={() => setActiveTargetKeys(undefined)}
@@ -517,7 +517,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           {/* OpenRouter API Key Input & Security Vault */}
           <div className="space-y-2 bg-muted/40 p-3 rounded-lg border border-border">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-foreground flex items-center gap-1.5">
+              <label htmlFor="openrouter-api-key" className="font-semibold text-foreground flex items-center gap-1.5">
                 <Key className="size-3.5 text-primary" />
                 OpenRouter API Key
               </label>
@@ -549,6 +549,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
+                  id="openrouter-api-key"
                   type={showKey ? 'text' : 'password'}
                   placeholder="sk-or-v1-..."
                   value={apiKey}
@@ -641,10 +642,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           {/* Model Selection via Custom Dropdown Menu with Search & Custom Model input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label className="font-semibold text-foreground flex items-center gap-1.5">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
                 <Cpu className="size-3.5 text-muted-foreground" />
                 Translation Model
-              </label>
+              </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -669,7 +670,6 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                   onChange={e => handleModelChange(e.target.value)}
                   disabled={isTranslating}
                   className="h-8 text-xs font-mono"
-                  autoFocus
                 />
               </div>
             ) : (
@@ -696,7 +696,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                   {/* Search Header inside Dropdown Menu */}
                   <div
                     className="p-2 border-b border-border bg-popover sticky top-0 z-10 shrink-0"
-                    onClick={e => e.stopPropagation()}
+                    onPointerDown={e => e.stopPropagation()}
                   >
                     <div className="relative flex items-center">
                       <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -707,7 +707,6 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                         onKeyDown={e => e.stopPropagation()}
                         placeholder={`Search ${allModels.length}+ OpenRouter models...`}
                         className="w-full h-7 pl-8 pr-7 bg-background border border-border rounded text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                        autoFocus
                       />
                       {modelSearch && (
                         <button
@@ -800,10 +799,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             {/* Source Language */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1 text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1 text-xs">
                 <Globe className="size-3 text-muted-foreground" />
                 Source Language
-              </label>
+              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -838,10 +837,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
 
             {/* Target Language */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1 text-xs">
+              <span className="font-semibold text-foreground flex items-center gap-1 text-xs">
                 <Globe className="size-3 text-primary" />
                 Target Language
-              </label>
+              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -905,10 +904,10 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           {!activeTargetKey ? (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                <span className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
                   <SlidersHorizontal className="size-3.5 text-primary" />
                   Translation Scope
-                </label>
+                </span>
                 <span className="text-[11px] text-muted-foreground">
                   {scope === 'missing'
                     ? `${missingCount} empty cell${missingCount !== 1 ? 's' : ''} to fill`

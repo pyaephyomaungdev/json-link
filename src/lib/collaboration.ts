@@ -39,6 +39,7 @@ export interface CollabSession {
   yKeys: Y.Array<string>;
   yLanguages: Y.Array<string>;
   destroy: () => void;
+  isEstablished?: boolean;
 }
 
 export const DEFAULT_SIGNALING_SERVERS = [
@@ -70,15 +71,19 @@ export const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:global.stun.twilio.com:3478' },
 ];
 
-const AVATAR_COLORS = [
-  '#10b981', // emerald
-  '#3b82f6', // blue
-  '#8b5cf6', // violet
-  '#f59e0b', // amber
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#84cc16', // lime
-  '#f97316', // orange
+export const COLLAB_PALETTE = [
+  '#3b82f6', // 1. Blue
+  '#10b981', // 2. Emerald
+  '#f97316', // 3. Orange
+  '#8b5cf6', // 4. Violet
+  '#ec4899', // 5. Pink
+  '#06b6d4', // 6. Cyan
+  '#f59e0b', // 7. Amber
+  '#14b8a6', // 8. Teal
+  '#e11d48', // 9. Rose
+  '#6366f1', // 10. Indigo
+  '#84cc16', // 11. Lime
+  '#a855f7', // 12. Purple
 ];
 
 const ANIMAL_NAMES = [
@@ -95,28 +100,70 @@ const ANIMAL_NAMES = [
 ];
 
 /**
- * Generates an 8-character random room ID
+ * Finds the first unused color from the palette to guarantee distinct colors for up to 12 peers
+ */
+export function getNextAvailablePeerColor(usedColors: string[] = []): string {
+  const usedSet = new Set(usedColors.map(c => c.toLowerCase()));
+  for (const color of COLLAB_PALETTE) {
+    if (!usedSet.has(color.toLowerCase())) {
+      return color;
+    }
+  }
+  // Fallback if room exceeds palette size: cycle deterministically
+  return COLLAB_PALETTE[usedColors.length % COLLAB_PALETTE.length];
+}
+
+/**
+ * Normalizes room IDs by stripping extra spaces, converting to lowercase.
+ * If 10 alpha characters are provided without hyphens, formats into canonical 'xxx-xxxx-xxx'.
+ */
+export function normalizeCollabRoomId(roomId: string): string {
+  const trimmed = roomId.trim().toLowerCase();
+  const alphanumericOnly = trimmed.replace(/[^a-z0-9]/g, '');
+  if (alphanumericOnly.length === 10 && /^[a-z]+$/.test(alphanumericOnly)) {
+    return `${alphanumericOnly.slice(0, 3)}-${alphanumericOnly.slice(3, 7)}-${alphanumericOnly.slice(7, 10)}`;
+  }
+  return trimmed.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+}
+
+/**
+ * Generates a Google Meet style 3-4-3 random room ID (e.g. 'yfq-khjt-efn')
  */
 export function generateCollabRoomId(): string {
-  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
-  let id = '';
-  for (let i = 0; i < 8; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return id;
+  const chars = 'abcdefghijklmnopqrstuvwxyz';
+  const part = (len: number) => {
+    let res = '';
+    for (let i = 0; i < len; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return res;
+  };
+  return `${part(3)}-${part(4)}-${part(3)}`;
 }
 
 /**
  * Generates a random peer username and distinct avatar color
  */
-export function generateRandomPeerProfile(): { name: string; color: string } {
+export function generateRandomPeerProfile(usedColors: string[] = []): { name: string; color: string } {
   const animal = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
   const num = Math.floor(10 + Math.random() * 90);
-  const color = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+  const color = getNextAvailablePeerColor(usedColors);
   return {
     name: `${animal}-${num}`,
     color,
   };
+}
+
+// Internal registry of active collaboration sessions to avoid duplicate WebrtcProvider errors
+const activeSessions = new Map<string, CollabSession>();
+
+/**
+ * Returns an existing active session for a given room, if open
+ */
+export function getActiveCollabSession(roomId: string): CollabSession | undefined {
+  const cleanRoomId = normalizeCollabRoomId(roomId);
+  const roomName = `jsonlink-collab-${cleanRoomId}`;
+  return activeSessions.get(roomName);
 }
 
 /**
@@ -130,20 +177,122 @@ export function initCollabSession(
     initialItems?: TranslationItem[];
     initialLanguages?: string[];
     isInitiator?: boolean;
+    onAuthError?: (errorMessage: string) => void;
   }
 ): CollabSession {
+  const cleanRoomId = normalizeCollabRoomId(roomId);
+  const roomName = `jsonlink-collab-${cleanRoomId}`;
+
+  // If a session for this exact room is already active, reuse it to prevent "already exists" error
+  const existing = activeSessions.get(roomName);
+  if (existing) {
+    if (!existing.ydoc.isDestroyed) {
+      return existing;
+    }
+    try {
+      existing.destroy();
+    } catch {
+      // Safe disposal
+    }
+    activeSessions.delete(roomName);
+  }
+
   const ydoc = new Y.Doc();
-  const roomName = `jsonlink-collab-${roomId.trim().toLowerCase()}`;
   const signaling = getEffectiveSignalingServers(options?.signalingServers);
+  const cleanPassword = options?.password ? options.password.trim() : null;
 
   const provider = new WebrtcProvider(roomName, ydoc, {
     signaling,
-    password: options?.password ? options.password.trim() : undefined,
+    password: cleanPassword || undefined,
     peerOpts: {
       config: {
         iceServers: DEFAULT_ICE_SERVERS,
       },
     },
+  });
+
+  const isInitiator = options?.isInitiator !== false;
+  const isEstablished = isInitiator;
+
+  let authErrorFired = false;
+  const triggerAuthError = (msg: string) => {
+    if (authErrorFired) return;
+    authErrorFired = true;
+    options?.onAuthError?.(msg);
+  };
+
+  // 1. Detect AES-GCM decryption failure (DOMException: OperationError in unhandled rejection)
+  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const reason = event.reason;
+    const isCryptoError =
+      reason?.name === 'OperationError' ||
+      (reason instanceof DOMException && reason.name === 'OperationError') ||
+      (typeof reason?.message === 'string' &&
+        (reason.message.toLowerCase().includes('decrypt') ||
+         reason.message.toLowerCase().includes('operation-specific')));
+
+    if (isCryptoError) {
+      try {
+        event.preventDefault();
+      } catch {
+        // Safe ignore
+      }
+
+      if (session.isEstablished) {
+        // Host or established peer: someone else sent invalid ciphertext.
+        // Broadcast auth rejection via signaling to notify the connecting guest without killing our own session!
+        const rejectMsg = {
+          type: 'publish',
+          topic: roomName,
+          data: {
+            type: 'auth-rejected',
+            roomId: cleanRoomId,
+            reason: 'invalid_password',
+          },
+        };
+        provider.signalingConns.forEach(conn => {
+          try {
+            conn.send(rejectMsg);
+          } catch {
+            // Safe ignore
+          }
+        });
+      } else {
+        // Guest attempting to join who cannot decrypt room data
+        triggerAuthError('Incorrect room PIN or password. Please verify and try again.');
+      }
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+  }
+
+  // 2. Detect password presence mismatches on the signaling server
+  const handleSignalingMessage = (m: any) => {
+    if (m && m.type === 'publish' && m.topic === roomName && m.data) {
+      if (m.data.type === 'auth-rejected') {
+        if (!session.isEstablished) {
+          triggerAuthError('Incorrect room PIN or password. Please verify and try again.');
+        }
+        return;
+      }
+      if (cleanPassword) {
+        // Local peer provided a password, but remote peer sent an unencrypted plain announce
+        if (typeof m.data === 'object' && m.data.type === 'announce') {
+          triggerAuthError('This room is public and does not require a PIN code.');
+        }
+      } else {
+        // Local peer provided NO password, but remote peer sent a base64 ciphertext string
+        if (typeof m.data === 'string' && m.data.length > 20) {
+          triggerAuthError('This room is password-protected. Please enter the room PIN code.');
+        }
+      }
+    }
+  };
+
+  provider.signalingConns.forEach(conn => {
+    conn.on('message', handleSignalingMessage);
   });
 
   const yTranslations = ydoc.getMap<any>('translations');
@@ -177,15 +326,23 @@ export function initCollabSession(
     });
   }
 
-  return {
-    roomId,
+  const session: CollabSession = {
+    roomId: cleanRoomId,
     ydoc,
     provider,
     yTranslations,
     yKeys,
     yLanguages,
+    isEstablished,
     destroy: () => {
       try {
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        }
+        provider.signalingConns.forEach(conn => {
+          conn.off('message', handleSignalingMessage);
+        });
+        activeSessions.delete(roomName);
         provider.destroy();
         ydoc.destroy();
       } catch {
@@ -193,6 +350,9 @@ export function initCollabSession(
       }
     },
   };
+
+  activeSessions.set(roomName, session);
+  return session;
 }
 
 /**
@@ -216,6 +376,9 @@ export function extractItemsFromYDoc(ydoc: Y.Doc): {
       key,
       description: itemData.description || '',
     };
+    if (itemData.status) {
+      item.status = itemData.status;
+    }
     for (const lang of languages) {
       item[lang] = itemData[lang] || '';
     }
@@ -268,17 +431,23 @@ export function applyLocalChangeToYDoc(
       }
     }
 
-    // 4. Sync cell values
+    // 4. Sync cell values and status
     for (const item of items) {
       const existing = yTranslations.get(item.key) || {};
       let changed = false;
       const updated: Record<string, string> = { ...existing };
 
       for (const [k, v] of Object.entries(item)) {
-        if (k !== 'key' && existing[k] !== v) {
+        if (k !== 'key' && existing[k] !== (v || '')) {
           updated[k] = v || '';
           changed = true;
         }
+      }
+
+      // Handle status removal or clearing
+      if (existing.status && !item.status) {
+        delete updated.status;
+        changed = true;
       }
 
       if (changed || !yTranslations.has(item.key)) {

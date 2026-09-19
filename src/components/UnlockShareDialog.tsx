@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,13 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
 
   const handleUnlock = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -98,12 +105,14 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
         <form onSubmit={handleUnlock}>
           <DialogBody className="space-y-4 text-xs">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <label htmlFor="unlock-password-input" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <KeyRound className="size-3.5 text-primary" />
                 Enter Decryption Password
               </label>
               <div className="relative">
                 <Input
+                  id="unlock-password-input"
+                  ref={inputRef}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter workspace password..."
                   value={password}
@@ -112,7 +121,6 @@ export const UnlockShareDialog: React.FC<UnlockShareDialogProps> = ({
                     if (errorMessage) setErrorMessage(null);
                   }}
                   className="pr-10 text-xs h-9 bg-muted/20"
-                  autoFocus
                   disabled={isDecrypting}
                 />
                 <button

@@ -29,11 +29,7 @@ import {
   Sliders,
   Share2,
   Radio,
-  Eye,
-  EyeOff,
-  UserCheck,
 } from 'lucide-react';
-import { CollabPeerUser, getPeerInitials } from '@/lib/collaboration';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -64,11 +60,6 @@ interface ToolbarProps {
   onOpenCollab?: () => void;
   isCollabConnected?: boolean;
   collabPeerCount?: number;
-  collabPeers?: CollabPeerUser[];
-  localPeerProfile?: CollabPeerUser;
-  followingPeerName?: string | null;
-  onFollowPeer?: (peerName: string | null) => void;
-  onJumpToPeerCell?: (key: string, field: string) => void;
   onResetToSample: () => void;
   onClearAll: () => void;
   hasItems: boolean;
@@ -116,11 +107,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenCollab,
   isCollabConnected,
   collabPeerCount,
-  collabPeers,
-  localPeerProfile,
-  followingPeerName,
-  onFollowPeer,
-  onJumpToPeerCell,
   onResetToSample,
   onClearAll,
   hasItems,
@@ -799,134 +785,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Live Collab Section with Peer Avatars Stack & Follow Mode */}
-        {onOpenCollab && (
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenCollab}
-              className={`gap-1.5 text-xs h-7 px-2.5 font-medium shrink-0 cursor-pointer transition-all ${
-                isCollabConnected
-                  ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
-                  : 'shadow-2xs text-muted-foreground hover:text-foreground hidden sm:inline-flex'
-              }`}
-              title={
-                isCollabConnected
-                  ? `Live WebRTC Room Active (${collabPeerCount || 1} online) - Click to manage`
-                  : 'Real-Time Peer-to-Peer Collaboration (WebRTC)'
-              }
-            >
-              <Radio className={`size-3 ${isCollabConnected ? 'text-emerald-500 animate-pulse' : ''}`} />
-              <span>{isCollabConnected ? `Live (${collabPeerCount || 1})` : 'Live'}</span>
-            </Button>
 
-            {/* Peer Avatars Stack (Figma/Google Docs style) */}
-            {isCollabConnected && (
-              <div className="hidden sm:flex items-center -space-x-1.5 overflow-visible px-0.5">
-                {/* Local user avatar */}
-                {localPeerProfile && (
-                  <div
-                    className="relative size-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-background shadow-xs select-none cursor-default bg-[var(--peer-color)]"
-                    style={{ '--peer-color': localPeerProfile.color } as React.CSSProperties}
-                    title={`You: ${localPeerProfile.name} (Active)`}
-                  >
-                    {getPeerInitials(localPeerProfile.name)}
-                    <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 ring-1 ring-background" />
-                  </div>
-                )}
-
-                {/* Remote peer avatars with Follow Mode Dropdown */}
-                {collabPeers?.map((peer) => {
-                  const isFollowingThis = followingPeerName === peer.name;
-                  return (
-                    <DropdownMenu key={peer.name}>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          type="button"
-                          className={`relative size-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 transition-transform hover:scale-110 hover:z-30 shadow-xs select-none cursor-pointer outline-none bg-[var(--peer-color)] ${
-                            isFollowingThis
-                              ? 'ring-amber-400 scale-110 z-20 animate-pulse'
-                              : 'ring-background'
-                          }`}
-                          style={{ '--peer-color': peer.color } as React.CSSProperties}
-                          title={`${peer.name}${
-                            peer.activeCell ? ` (Editing: ${peer.activeCell.key})` : ' (Viewing)'
-                          } - Click for Follow & Jump`}
-                        >
-                          {getPeerInitials(peer.name)}
-                          {isFollowingThis ? (
-                            <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-amber-400 flex items-center justify-center text-[8px] text-black">
-                              <Eye className="size-2 text-black stroke-[3]" />
-                            </span>
-                          ) : (
-                            <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 ring-1 ring-background" />
-                          )}
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                          <span
-                            className="size-2.5 rounded-full shrink-0 bg-[var(--peer-color)]"
-                            style={{ '--peer-color': peer.color } as React.CSSProperties}
-                          />
-                          <span className="font-semibold text-foreground truncate">{peer.name}</span>
-                          <span className="ml-auto text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            Online
-                          </span>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-
-                        {peer.activeCell && (
-                          <div className="px-2 py-1.5 text-[11px] bg-muted/50 rounded-md mx-1 my-1 border border-border/60">
-                            <span className="text-muted-foreground block text-[10px]">Active Location:</span>
-                            <span className="font-mono font-semibold text-foreground truncate block">
-                              {peer.activeCell.key}
-                            </span>
-                            <span className="text-[10px] text-primary font-mono uppercase">
-                              [{peer.activeCell.field}]
-                            </span>
-                          </div>
-                        )}
-
-                        {peer.activeCell && onJumpToPeerCell && (
-                          <DropdownMenuItem
-                            onClick={() => onJumpToPeerCell(peer.activeCell!.key, peer.activeCell!.field)}
-                            className="gap-2 cursor-pointer text-xs"
-                          >
-                            <UserCheck className="size-3.5 text-primary" />
-                            <span>Jump to Active Cell</span>
-                          </DropdownMenuItem>
-                        )}
-
-                        {onFollowPeer && (
-                          <DropdownMenuItem
-                            onClick={() => onFollowPeer(isFollowingThis ? null : peer.name)}
-                            className={`gap-2 cursor-pointer text-xs ${
-                              isFollowingThis ? 'text-amber-600 dark:text-amber-400 font-semibold' : ''
-                            }`}
-                          >
-                            {isFollowingThis ? (
-                              <>
-                                <EyeOff className="size-3.5" />
-                                <span>Stop Following {peer.name}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="size-3.5 text-amber-500" />
-                                <span>Follow {peer.name}'s Cursor</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Share Button (Desktop & Tablet) */}
         {onOpenShare && (

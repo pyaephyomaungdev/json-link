@@ -175,12 +175,18 @@ export function GitHubSyncModal({
           localStorage.setItem('jsonlink_github_token_enc', encrypted);
           localStorage.removeItem('jsonlink_github_token');
         } else {
-          localStorage.setItem('jsonlink_github_token', newToken);
+          // Fail-closed: Never store sensitive Personal Access Tokens in plaintext
+          localStorage.removeItem('jsonlink_github_token');
+          setStatusMessage('Failed to securely encrypt token. Token was not saved.');
+          setTimeout(() => setStatusMessage(null), 4000);
+          return;
         }
       }
       if (newRepo) localStorage.setItem('jsonlink_github_repo', newRepo);
     } catch (err) {
       console.warn('Failed to save encrypted GitHub credentials:', err);
+      setStatusMessage('Security error: Failed to encrypt credentials.');
+      setTimeout(() => setStatusMessage(null), 4000);
     }
   };
 
@@ -583,7 +589,7 @@ export function GitHubSyncModal({
             <TabsContent value="connect" className="flex flex-col gap-4 pt-3.5">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">
+                  <label htmlFor="github-pat-input" className="text-xs font-semibold text-foreground">
                     GitHub Personal Access Token (PAT)
                   </label>
                   <a
@@ -598,6 +604,7 @@ export function GitHubSyncModal({
                 </div>
                 <div className="relative">
                   <Input
+                    id="github-pat-input"
                     type={showToken ? 'text' : 'password'}
                     value={token}
                     onChange={e => setToken(e.target.value)}
@@ -632,8 +639,9 @@ export function GitHubSyncModal({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-foreground">Target Repository</label>
+                <label htmlFor="github-repo-input" className="text-xs font-semibold text-foreground">Target Repository</label>
                 <Input
+                  id="github-repo-input"
                   type="text"
                   value={repoInput}
                   onChange={e => setRepoInput(e.target.value)}
@@ -644,11 +652,12 @@ export function GitHubSyncModal({
 
               {branches.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <label htmlFor="github-branch-select" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <GitBranch className="size-3.5 text-muted-foreground" />
                     Target Branch
                   </label>
                   <select
+                    id="github-branch-select"
                     value={selectedBranch}
                     onChange={e => handleBranchChange(e.target.value)}
                     className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
@@ -833,8 +842,9 @@ export function GitHubSyncModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Target Directory in Repo</label>
+                  <label htmlFor="github-target-folder" className="text-xs font-semibold text-foreground">Target Directory in Repo</label>
                   <Input
+                    id="github-target-folder"
                     type="text"
                     value={targetFolder}
                     onChange={e => setTargetFolder(e.target.value)}
@@ -844,8 +854,9 @@ export function GitHubSyncModal({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">File Format</label>
+                  <label htmlFor="github-file-format" className="text-xs font-semibold text-foreground">File Format</label>
                   <select
+                    id="github-file-format"
                     value={targetFormat}
                     onChange={e => setTargetFormat(e.target.value as any)}
                     className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-xs font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
@@ -861,10 +872,10 @@ export function GitHubSyncModal({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground flex items-center justify-between">
                   <span>Commit Mode</span>
                   <span className="text-[10px] text-muted-foreground">Base: {selectedBranch}</span>
-                </label>
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -907,8 +918,9 @@ export function GitHubSyncModal({
               {commitMode === 'pr' && (
                 <>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-foreground">New Feature Branch Name</label>
+                    <label htmlFor="github-new-branch" className="text-xs font-semibold text-foreground">New Feature Branch Name</label>
                     <Input
+                      id="github-new-branch"
                       type="text"
                       value={newBranchName}
                       onChange={e => setNewBranchName(e.target.value)}
@@ -918,8 +930,9 @@ export function GitHubSyncModal({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-foreground">Pull Request Title</label>
+                    <label htmlFor="github-pr-title" className="text-xs font-semibold text-foreground">Pull Request Title</label>
                     <Input
+                      id="github-pr-title"
                       type="text"
                       value={prTitle}
                       onChange={e => setPrTitle(e.target.value)}
@@ -929,7 +942,7 @@ export function GitHubSyncModal({
 
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-foreground">Pull Request Description</label>
+                      <label htmlFor="github-pr-body" className="text-xs font-semibold text-foreground">Pull Request Description</label>
                       <button
                         type="button"
                         onClick={() =>
@@ -948,6 +961,7 @@ export function GitHubSyncModal({
                       </button>
                     </div>
                     <textarea
+                      id="github-pr-body"
                       rows={5}
                       value={prBody}
                       onChange={e => setPrBody(e.target.value)}
@@ -963,8 +977,9 @@ export function GitHubSyncModal({
 
               {commitMode === 'direct' && (
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">Commit Message</label>
+                  <label htmlFor="github-commit-message" className="text-xs font-semibold text-foreground">Commit Message</label>
                   <Input
+                    id="github-commit-message"
                     type="text"
                     value={commitMessage}
                     onChange={e => setCommitMessage(e.target.value)}
