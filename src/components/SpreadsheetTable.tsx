@@ -2268,7 +2268,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <div
                 key={`${peer.name}-${peer.clientID ?? peer.color}`}
-                className="absolute top-0 left-0 pointer-events-none z-60 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
+                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
                 style={
                   {
                     '--pointer-x': `${peer.pointer.x}px`,
