@@ -19,8 +19,6 @@ build/
 .gemini/
 .claude/
 skills-lock.json
-plans/
-advisor-plans/
 
 # Environment variables & local secrets
 .env
