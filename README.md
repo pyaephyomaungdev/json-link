@@ -228,6 +228,7 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 * **Optional End-to-End Encryption (E2EE)**: Setting an optional room password derives 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). When enabled, document updates and awareness messages are completely unreadable to intermediary signaling relays. Open rooms without a PIN remain unencrypted for instant frictionless sharing.
 * **Human-Friendly Room IDs**: Google Meet style 3-4-3 canonical segmented identifiers (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Real-time cursor coordinates with deterministic peer palette assignment (12 distinct colors), user avatar initials badges, and one-click viewport jump to follow collaborator selections.
+* **Figma-Style Live Multiplayer Cursors**: Ultra-fluid ~33fps mouse pointer tracking with high-contrast colored arrow pointers (↖) and peer name pill badges. Pointers are mapped to spreadsheet canvas coordinates, automatically fade after 3 seconds of inactivity, and cleanly slide underneath sticky table headers when scrolling.
 * **Full Data Sync & Independent Filter Views**: Synchronizes translation cells, developer context notes, review statuses (Draft/Needs Review/Approved), and project metadata in real time, while keeping personal filter views (namespace, search, missing keys) independent per peer so collaborators never disrupt each other's focus.
 * **Dedicated Multi-Stage Auth Modals**: Clean separate screens for PIN entry, connection loading with spinner, and authentication failure recovery with auto-focused "Try Again".
 
@@ -352,6 +353,8 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 * **Optional End-to-End Room Encryption (E2EE)**: Client-side AES-GCM 256-bit encryption derived via PBKDF2-SHA256 (100,000 iterations) from optional room passwords. Open rooms remain unencrypted for frictionless sharing.
 * **Segmented Room Identifiers**: Human-friendly Google Meet style 3-4-3 canonical format (`yfq-khjt-efn`) with smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Deterministic 12-color avatar palette, peer initials badges, real-time active cell cursor markers, and one-click Follow Mode viewport synchronization.
+* **Figma-Style Live Multiplayer Cursors**: Fluid real-time peer pointer tracking (~33fps over WebRTC DataChannels) with colored SVG pointers, name badges, and native sticky header z-index layering.
+* **Project Name Metadata Synchronization**: Multi-user real-time synchronization of project names across all active peers via Yjs metadata.
 * **Multi-Stage Collab Dialog**: Redesigned `CollabPinDialog` with 3 dedicated modal screens (PIN Input, Connecting with spinner, and Authentication Failed with auto-focus "Try Again").
 * **Spreadsheet DOM Virtualization (`useVirtualRows`)**: Zero-dependency windowing hook rendering 5,000+ keys with sub-500 active DOM elements at 60fps.
 * **Bounded AI Translation Batching**: Added `chunkArray` (size 25) and bounded concurrency in OpenRouter translation engine to eliminate token limit overflows.
@@ -365,8 +368,8 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 * **Accessibility Remediation**: Resolved 100+ a11y lint warnings across table divider handles, keyboard handlers, and modal form attributes.
 
 #### Changed
-* Test suite expanded to 60 test files and 455 passing tests (100% Vitest pass rate).
-* Complete zero-warning codebase compliance across 154 files with 128 oxlint rules.
+* Test suite expanded to 60 test files and 456 passing tests (100% Vitest pass rate).
+* Complete zero-warning codebase compliance across 155 files with 128 oxlint rules.
 
 </details>
 

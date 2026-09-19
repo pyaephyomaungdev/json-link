@@ -1418,6 +1418,17 @@ function LiveCollabSection() {
         </div>
       </div>
 
+      {/* Live Multiplayer Cursors Feature Card */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <MousePointerClick className="size-3.5 text-primary" />
+          Figma-Style Live Multiplayer Cursors
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          See teammates navigate the spreadsheet in real time with high-contrast colored arrow pointers (↖) and color-coded name badges matching their avatar palette. Mouse coordinates are throttled to ~33ms over WebRTC DataChannels for buttery-smooth 30fps tracking with zero server overhead. Pointers are bound directly to spreadsheet table coordinates, automatically fade out after 3 seconds of inactivity, and gracefully slide underneath sticky table headers when scrolling.
+        </p>
+      </div>
+
       {/* Quick steps table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden shadow-xs">
         <div className="px-4 py-2.5 bg-muted/60 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -1429,7 +1440,8 @@ function LiveCollabSection() {
             { action: 'Create a new room', how: 'Click "New Room" — a random Room ID is generated' },
             { action: 'Share the room', how: 'Share the Room ID (and optional PIN) with teammates' },
             { action: 'Join an existing room', how: 'Enter the Room ID + PIN in the join form, click Connect' },
-            { action: 'Follow a peer\'s cursor', how: 'Click a peer avatar in the collab header to lock your view to their active cell' },
+            { action: 'Live multiplayer cursors', how: 'Move your mouse over the grid — peers see your colored cursor and name badge in real time' },
+            { action: 'Follow a peer\'s screen', how: 'Click a peer avatar in the collab header to lock your viewport to their active cell' },
             { action: 'Leave the room', how: 'Click Disconnect or close the browser tab' },
           ].map((row, i) => (
             <div key={i} className="px-4 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 hover:bg-muted/20 transition-colors">
