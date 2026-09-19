@@ -241,15 +241,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Compact Filter Segmented Group */}
         {hasItems && (
-          <div className="flex items-center rounded-md border border-border p-0.5 bg-background h-7 shrink-0 shadow-sm">
+          <div className="flex items-center rounded-md border border-border p-1 bg-background h-7 shrink-0 shadow-sm">
             <button
               onClick={() => {
                 onFilterChange('all');
                 onClearFilterMissingLang?.();
               }}
               className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${activeFilter === 'all' && !filterMissingLang
-                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
             >
               All
@@ -257,8 +257,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <button
               onClick={() => onFilterChange('missing')}
               className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${activeFilter === 'missing'
-                  ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50 font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
             >
               Missing
@@ -445,8 +445,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               variant="outline"
               size="sm"
               className={`hidden xl:inline-flex gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer ${linkedFolderName
-                  ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
-                  : ''
+                ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10'
+                : ''
                 }`}
             >
               <Upload className="size-3 text-muted-foreground" />
@@ -806,8 +806,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onClick={onSaveToDevDisk}
             disabled={isSavingToDevDisk}
             className={`gap-1.5 text-xs h-7 px-3 font-semibold shadow-xs shrink-0 cursor-pointer transition-all ${isDevDiskDirty
-                ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
               }`}
             title={isDevDiskDirty ? 'Unsaved changes to src/locales! Click or press ⌘S to save.' : 'All changes saved to disk with instant Vite HMR'}
           >

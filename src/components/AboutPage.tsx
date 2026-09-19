@@ -190,7 +190,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
         </Button>
 
         <div className="flex items-center gap-2">
-          <Badge variant="success" className="font-mono text-[10px] py-0 h-5">
+          <Badge variant="success" className="font-mono text-[10px]">
             {APP_VERSION}
           </Badge>
           <Button
@@ -255,7 +255,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             {/* Badges Strip */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
               <Badge variant="success">Free & Open Source</Badge>
-              <Badge variant="secondary">MIT License</Badge>
+              <Badge variant="outline">MIT License</Badge>
               <Badge variant="warning">370+ Automated Tests</Badge>
               <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <Lock className="size-3 text-emerald-500" /> 100% Client-Side &amp; Offline
@@ -502,7 +502,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
                 <span>Developed with</span>
                 <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
                 <span>by</span>
-                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Pyae Phyo Maung</a>
+                <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors hover:underline">Pyae Phyo Maung</a>
               </div>
               <span className="hidden sm:inline">·</span>
               <a
