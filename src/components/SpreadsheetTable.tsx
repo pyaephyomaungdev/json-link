@@ -2279,11 +2279,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               >
                 {/* Figma-style SVG Arrow Pointer */}
                 <svg
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  className="drop-shadow-md -translate-x-1 -translate-y-1"
+                  className="drop-shadow-md"
                 >
                   <path
                     d="M3 3L10.5 21L14 13.5L21.5 10L3 3Z"
@@ -2294,8 +2294,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   />
                 </svg>
 
-                {/* Peer Name Tag Badge with Avatar Color */}
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap ml-3.5 -mt-2 tracking-tight animate-in fade-in zoom-in-90 duration-150 bg-[var(--peer-color)]">
+                {/* Peer Name Tag Badge with Avatar Color - positioned snugly at arrow notch */}
+                <div className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap tracking-tight animate-in fade-in zoom-in-90 duration-150 bg-[var(--peer-color)]">
                   <span>{peer.name}</span>
                 </div>
               </div>
