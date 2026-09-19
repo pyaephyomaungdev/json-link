@@ -130,14 +130,16 @@ export function normalizeCollabRoomId(roomId: string): string {
 }
 
 /**
- * Generates a human-friendly 3-4-3 segmented room format (e.g. 'yfq-khjt-efn')
+ * Generates a cryptographically secure, human-friendly 3-4-3 segmented room format (e.g. 'yfq-khjt-efn')
  */
 export function generateCollabRoomId(): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz';
   const part = (len: number) => {
+    const bytes = new Uint8Array(len);
+    crypto.getRandomValues(bytes);
     let res = '';
     for (let i = 0; i < len; i++) {
-      res += chars.charAt(Math.floor(Math.random() * chars.length));
+      res += chars.charAt(bytes[i] % chars.length);
     }
     return res;
   };
@@ -145,11 +147,13 @@ export function generateCollabRoomId(): string {
 }
 
 /**
- * Generates a random peer username and distinct avatar color
+ * Generates a random peer username and distinct avatar color using cryptographically secure random values
  */
 export function generateRandomPeerProfile(usedColors: string[] = []): { name: string; color: string } {
-  const animal = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
-  const num = Math.floor(10 + Math.random() * 90);
+  const bytes = new Uint8Array(2);
+  crypto.getRandomValues(bytes);
+  const animal = ANIMAL_NAMES[bytes[0] % ANIMAL_NAMES.length];
+  const num = 10 + (bytes[1] % 90);
   const color = getNextAvailablePeerColor(usedColors);
   return {
     name: `${animal}-${num}`,

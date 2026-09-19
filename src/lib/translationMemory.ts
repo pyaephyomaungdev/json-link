@@ -66,6 +66,12 @@ export function saveTranslationMemory(entries: TranslationMemoryEntry[]): void {
   }
 }
 
+function generateTmId(): string {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return `tm_${Date.now()}_${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
 /** Record or update a single translation entry in memory */
 export function upsertMemoryEntry(
   sourceText: string,
@@ -90,7 +96,7 @@ export function upsertMemoryEntry(
     existing.updatedAt = now;
   } else {
     memory.push({
-      id: `tm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateTmId(),
       sourceText: cleanSource,
       sourceLang,
       translations: { [targetLang]: cleanTarget },
@@ -130,7 +136,7 @@ export function seedMemoryFromItems(
 
     if (!entry) {
       entry = {
-        id: `tm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        id: generateTmId(),
         sourceText: src,
         sourceLang,
         translations: {},
