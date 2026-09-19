@@ -450,6 +450,96 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     }
   }, [followingPeerName, collabPeers, items, languages, showDescription]);
 
+  // Follow Mode: smooth auto-scroll when followed peer's cursor moves outside the viewport
+  const lastCursorScrollTimeRef = useRef<number>(0);
+  const cursorScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const followedPeer = collabPeers?.find(p => p.name === followingPeerName);
+  const followedPointerX = followedPeer?.pointer?.x;
+  const followedPointerY = followedPeer?.pointer?.y;
+
+  useEffect(() => {
+    if (!followingPeerName) return;
+    if (typeof followedPointerX !== 'number' || typeof followedPointerY !== 'number') return;
+    if (isNaN(followedPointerX) || isNaN(followedPointerY)) return;
+
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    const checkAndScroll = () => {
+      const { scrollLeft, scrollTop, clientWidth, clientHeight } = container;
+      if (clientWidth <= 0 || clientHeight <= 0) return;
+
+      const cursorViewportX = followedPointerX - scrollLeft;
+      const cursorViewportY = followedPointerY - scrollTop;
+
+      const PADDING_LEFT = 60;
+      const PADDING_RIGHT = 60;
+      const PADDING_TOP = 80; // account for sticky thead header (~40px) and follow banner
+      const PADDING_BOTTOM = 60;
+
+      let needScroll = false;
+      let newScrollLeft = scrollLeft;
+      let newScrollTop = scrollTop;
+
+      if (cursorViewportX < PADDING_LEFT) {
+        newScrollLeft = Math.max(0, followedPointerX - Math.round(clientWidth / 3));
+        needScroll = true;
+      } else if (cursorViewportX > clientWidth - PADDING_RIGHT) {
+        newScrollLeft = Math.max(0, followedPointerX - Math.round((clientWidth * 2) / 3));
+        needScroll = true;
+      }
+
+      if (cursorViewportY < PADDING_TOP) {
+        newScrollTop = Math.max(0, followedPointerY - Math.round(clientHeight / 3));
+        needScroll = true;
+      } else if (cursorViewportY > clientHeight - PADDING_BOTTOM) {
+        newScrollTop = Math.max(0, followedPointerY - Math.round((clientHeight * 2) / 3));
+        needScroll = true;
+      }
+
+      if (needScroll) {
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({
+            left: newScrollLeft,
+            top: newScrollTop,
+            behavior: 'smooth',
+          });
+        } else {
+          container.scrollLeft = newScrollLeft;
+          container.scrollTop = newScrollTop;
+        }
+        lastCursorScrollTimeRef.current = Date.now();
+      }
+    };
+
+    const now = Date.now();
+    const elapsed = now - lastCursorScrollTimeRef.current;
+    const THROTTLE_MS = 250;
+
+    if (elapsed >= THROTTLE_MS) {
+      if (cursorScrollTimeoutRef.current) {
+        clearTimeout(cursorScrollTimeoutRef.current);
+        cursorScrollTimeoutRef.current = null;
+      }
+      checkAndScroll();
+    } else {
+      if (cursorScrollTimeoutRef.current) {
+        clearTimeout(cursorScrollTimeoutRef.current);
+      }
+      cursorScrollTimeoutRef.current = setTimeout(() => {
+        checkAndScroll();
+      }, THROTTLE_MS - elapsed);
+    }
+
+    return () => {
+      if (cursorScrollTimeoutRef.current) {
+        clearTimeout(cursorScrollTimeoutRef.current);
+        cursorScrollTimeoutRef.current = null;
+      }
+    };
+  }, [followingPeerName, followedPointerX, followedPointerY]);
+
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
 

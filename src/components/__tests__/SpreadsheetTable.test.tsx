@@ -185,5 +185,60 @@ describe('SpreadsheetTable', () => {
     fireEvent.change(textarea, { target: { value: 'Si In' } });
     expect(selectSpy).toHaveBeenCalledTimes(1);
   });
-});
 
+  it('renders peer cursors with color badge and smoothly auto-scrolls when followed peer cursor moves out of view', () => {
+    const scrollToSpy = vi.fn();
+
+    // Initial render with Alice inside view
+    const { container, rerender } = render(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        collabPeers={[
+          {
+            clientID: 1,
+            name: 'Alice',
+            color: '#10b981',
+            pointer: { x: 100, y: 120 },
+          },
+        ]}
+      />
+    );
+
+    // Alice cursor and name pill badge should be visible (along with following banner)
+    expect(screen.getAllByText('Alice').length).toBeGreaterThanOrEqual(2);
+
+    const scrollContainer = container.querySelector('.overflow-auto') as HTMLDivElement;
+    expect(scrollContainer).not.toBeNull();
+
+    Object.defineProperty(scrollContainer, 'clientWidth', { value: 400, configurable: true });
+    Object.defineProperty(scrollContainer, 'clientHeight', { value: 400, configurable: true });
+    Object.defineProperty(scrollContainer, 'scrollLeft', { value: 0, writable: true, configurable: true });
+    Object.defineProperty(scrollContainer, 'scrollTop', { value: 0, writable: true, configurable: true });
+    scrollContainer.scrollTo = scrollToSpy;
+
+    // When Alice moves cursor far off screen (e.g. x: 800, y: 900)
+    rerender(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        collabPeers={[
+          {
+            clientID: 1,
+            name: 'Alice',
+            color: '#10b981',
+            pointer: { x: 800, y: 900 },
+          },
+        ]}
+      />
+    );
+
+    expect(scrollToSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        behavior: 'smooth',
+      })
+    );
+    expect(scrollToSpy.mock.calls[0][0].left).toBeGreaterThan(0);
+    expect(scrollToSpy.mock.calls[0][0].top).toBeGreaterThan(0);
+  });
+});
