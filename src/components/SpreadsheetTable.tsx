@@ -89,6 +89,8 @@ interface SpreadsheetTableProps {
   onActiveCellChange?: (key: string | null, field: string | null) => void;
   followingPeerName?: string | null;
   onStopFollowing?: () => void;
+  onPointerMove?: (x: number, y: number) => void;
+  onPointerLeave?: () => void;
 }
 
 interface EditingCell {
@@ -155,6 +157,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onActiveCellChange,
   followingPeerName,
   onStopFollowing,
+  onPointerMove,
+  onPointerLeave,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -165,6 +169,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement | null>(null);
 
   // Virtualization windowing for large catalogs
   const {
@@ -1040,8 +1045,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           type="button"
           onClick={() => setShowDescription(!showDescription)}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors cursor-pointer shrink-0 ${showDescription
-              ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 font-medium'
-              : 'bg-background border-border text-muted-foreground hover:text-foreground'
+            ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 font-medium'
+            : 'bg-background border-border text-muted-foreground hover:text-foreground'
             }`}
           title="Toggle Developer Context / Description Column"
         >
@@ -1126,7 +1131,21 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <ChevronRight className="size-3 text-primary" />
           </div>
         )}
-        <table className="min-w-full w-max border-separate border-spacing-0 text-left">
+        <div
+          ref={tableWrapperRef}
+          className="relative min-w-full w-max"
+          onPointerMove={(e) => {
+            if (!onPointerMove) return;
+            const wrapper = tableWrapperRef.current;
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            onPointerMove(e.clientX - rect.left, e.clientY - rect.top);
+          }}
+          onPointerLeave={() => {
+            onPointerLeave?.();
+          }}
+        >
+          <table className="min-w-full w-max border-separate border-spacing-0 text-left">
           {/* Column widths group to ensure columns never squish on multiple languages */}
           <colgroup>
             <col style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH }} />
@@ -1151,23 +1170,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
                 <div className="flex items-center justify-between px-0.5">
-                  <button
-                    type="button"
-                    aria-label="Toggle all rows selection"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleToggleSelectAll();
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (e.target === e.currentTarget) {
-                        handleToggleSelectAll();
-                      }
-                    }}
-                    className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
-                    title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
+                  <div
+                    role="presentation"
+                    className="p-1 -m-1 flex items-center justify-center"
                   >
                     <Checkbox
                       checked={
@@ -1181,9 +1186,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       }
                       onCheckedChange={handleToggleSelectAll}
                       className="size-4 rounded-[3px] border-2 cursor-pointer transition-opacity"
-                      aria-label="Select all rows checkbox"
+                      aria-label={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
+                      title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
                     />
-                  </button>
+                  </div>
                   <span className="text-[11px] text-muted-foreground font-mono font-semibold">#</span>
                   <span className="w-2.5" />
                 </div>
@@ -1404,8 +1410,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 : `Click to filter ${missingCount} missing keys in ${lang.toUpperCase()}`
                             }
                             className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer shrink-0 ${filterMissingLang === lang
-                                ? 'bg-amber-500 text-white font-bold shadow-2xs'
-                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
+                              ? 'bg-amber-500 text-white font-bold shadow-2xs'
+                              : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
                               }`}
                           >
                             <AlertCircle className="size-2.5 shrink-0" />
@@ -1648,626 +1654,654 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 {items.slice(virtualStartIndex, virtualEndIndex).map((item, sliceIdx) => {
                   const rowIdx = virtualStartIndex + sliceIdx;
                   const rowNumber = rowIdx + 1;
-                const isKeySelected =
-                  selectedCell?.key === item.key && selectedCell.field === 'key';
-                const rowStatus: RowStatus = item.status || 'draft';
-                const isRowSelected = selectedRowKeys.has(item.key);
+                  const isKeySelected =
+                    selectedCell?.key === item.key && selectedCell.field === 'key';
+                  const rowStatus: RowStatus = item.status || 'draft';
+                  const isRowSelected = selectedRowKeys.has(item.key);
 
-                return (
-                  <tr
-                    key={item.key}
-                    className="group transition-colors"
-                  >
-                    {/* Row Number, Selection Checkbox & Review Status Indicator */}
-                    <td
-                      style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
-                      onClick={() =>
-                        setSelectedCell({
-                          key: item.key,
-                          field: 'key',
-                          colIndex: 0,
-                          rowIndex: rowIdx,
-                        })
-                      }
-                      onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                      className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${isRowSelected
+                  return (
+                    <tr
+                      key={item.key}
+                      className="group transition-colors"
+                    >
+                      {/* Row Number, Selection Checkbox & Review Status Indicator */}
+                      <td
+                        style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
+                        onClick={() =>
+                          setSelectedCell({
+                            key: item.key,
+                            field: 'key',
+                            colIndex: 0,
+                            rowIndex: rowIdx,
+                          })
+                        }
+                        onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
+                        className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${isRowSelected
                           ? 'bg-primary/15 dark:bg-primary/25 text-foreground font-medium'
                           : 'bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground'
-                        } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
-                    >
-                      <div className="flex items-center justify-between px-0.5">
-                        <button
-                          type="button"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              isShiftHeldRef.current = e.shiftKey;
-                              handleToggleRowSelect(item.key);
-                            }
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            isShiftHeldRef.current = e.shiftKey;
-                            if (e.target === e.currentTarget) {
-                              handleToggleRowSelect(item.key);
-                            }
-                          }}
-                          className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
-                          title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
-                          aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
-                        >
-                          <Checkbox
-                            checked={isRowSelected}
-                            onCheckedChange={() => handleToggleRowSelect(item.key)}
-                            className={`size-4 rounded-[3px] border-2 shrink-0 transition-opacity cursor-pointer ${
-                              isRowSelected
-                                ? 'opacity-100 border-primary'
-                                : 'opacity-35 group-hover:opacity-100 hover:opacity-100 border-muted-foreground/50'
-                            }`}
-                            aria-label={`Select row ${rowNumber}`}
-                          />
-                        </button>
-                        <span className="text-[11px] font-mono select-none">{rowNumber}</span>
-
-                        {/* Row Review Status Dropdown Indicator */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-0.5 rounded hover:bg-muted/80 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
-                              title={`Review Status: ${rowStatus}. Click to change.`}
-                            >
-                              {rowStatus === 'approved' ? (
-                                <span className="size-2 rounded-full bg-emerald-500 inline-block shadow-2xs" />
-                              ) : rowStatus === 'needs-review' ? (
-                                <span className="size-2 rounded-full bg-amber-500 inline-block shadow-2xs" />
-                              ) : (
-                                <span className="size-1.5 rounded-full bg-border group-hover:bg-muted-foreground/50 inline-block transition-colors" />
-                              )}
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-36">
-                            <DropdownMenuLabel className="text-[10px]">Row Review Status</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => onUpdateRowStatus?.(item.key, 'draft')}
-                              className="text-xs cursor-pointer gap-1.5"
-                            >
-                              <span className="size-2 rounded-full bg-slate-400" />
-                              <span>Draft</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onUpdateRowStatus?.(item.key, 'needs-review')}
-                              className="text-xs cursor-pointer gap-1.5 text-amber-600 dark:text-amber-400"
-                            >
-                              <span className="size-2 rounded-full bg-amber-500" />
-                              <span>Needs Review</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onUpdateRowStatus?.(item.key, 'approved')}
-                              className="text-xs cursor-pointer gap-1.5 text-emerald-600 dark:text-emerald-400"
-                            >
-                              <span className="size-2 rounded-full bg-emerald-500" />
-                              <span>Approved</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
-
-                    {/* Translation Key Column */}
-                    {(() => {
-                      const keyPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'key');
-
-                      return (
-                        <td
-                          key="key"
-                          data-cell-key={item.key}
-                          data-cell-field="key"
-                          style={{
-                            width: KEY_COL_WIDTH,
-                            minWidth: KEY_COL_WIDTH,
-                            left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
-                          }}
-                          onClick={() => {
-                            if (followingPeerName) onStopFollowing?.();
-                            setSelectedCell({
-                              key: item.key,
-                              field: 'key',
-                              colIndex: 0,
-                              rowIndex: rowIdx,
-                            });
-                          }}
-                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                          className={`py-1.5 px-3 font-mono text-xs ${
-                            isRowSelected
-                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                          } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
-                              ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
-                              : ''
-                            }`}
-                        >
-                          {keyPeer && (
-                            <div
-                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
-                              style={{ '--peer-color': keyPeer.color } as React.CSSProperties}
-                            >
-                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
-                                {keyPeer.name}
-                              </span>
-                            </div>
-                          )}
-                          {editingCell?.key === item.key && editingCell.field === 'key' ? (
-                            <input
-                              ref={inputRef as React.RefObject<HTMLInputElement>}
-                              type="text"
-                              value={editingCell.value}
-                              onChange={e =>
-                                setEditingCell({ ...editingCell, value: e.target.value })
-                              }
-                              onBlur={handleSaveEdit}
-                              onKeyDown={handleKeyDown}
-                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
+                          } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
+                      >
+                        <div className="flex items-center justify-between px-0.5">
+                          <div
+                            role="presentation"
+                            className="p-1 -m-1 flex items-center justify-center"
+                          >
+                            <Checkbox
+                              checked={isRowSelected}
+                              onCheckedChange={() => handleToggleRowSelect(item.key)}
+                              className={`size-4 rounded-[3px] border-2 shrink-0 transition-opacity cursor-pointer ${isRowSelected
+                                  ? 'opacity-100 border-primary'
+                                  : 'opacity-35 group-hover:opacity-100 hover:opacity-100 border-muted-foreground/50'
+                                }`}
+                              aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
+                              title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
                             />
-                          ) : (
-                            <div
-                              className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
-                              onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
-                              title="Double-click to edit key name"
-                            >
-                              <span className="font-semibold truncate text-foreground">
-                                {item.key}
-                              </span>
-                              <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })()}
+                          </div>
+                          <span className="text-[11px] font-mono select-none">{rowNumber}</span>
 
-                    {/* Context / Description Cell */}
-                    {showDescription && (() => {
-                      const descPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'description');
-                      return (
-                        <td
-                          data-cell-key={item.key}
-                          data-cell-field="description"
-                          style={{
-                            width: DESC_COL_WIDTH,
-                            minWidth: DESC_COL_WIDTH,
-                          }}
-                          onClick={() => {
-                            if (followingPeerName) onStopFollowing?.();
-                            setSelectedCell({
-                              key: item.key,
-                              field: 'description',
-                              colIndex: 1,
-                              rowIndex: rowIdx,
-                            });
-                          }}
-                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
-                          className={`py-1.5 px-3 text-xs relative ${
-                            isRowSelected
-                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                          } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
-                              ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
-                              : ''
-                            }`}
-                        >
-                          {descPeer && (
-                            <div
-                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
-                              style={{ '--peer-color': descPeer.color } as React.CSSProperties}
-                            >
-                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
-                                {descPeer.name}
-                              </span>
-                            </div>
-                          )}
-                          {editingCell?.key === item.key && editingCell.field === 'description' ? (
-                            <input
-                              ref={inputRef as React.RefObject<HTMLInputElement>}
-                              type="text"
-                              value={editingCell.value}
-                              onChange={e =>
-                                setEditingCell({ ...editingCell, value: e.target.value })
-                              }
-                              onBlur={handleSaveEdit}
-                              onKeyDown={handleKeyDown}
-                              placeholder="Context for translators..."
-                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
-                            />
-                          ) : (
-                            <div
-                              className="min-h-[24px] flex items-center cursor-pointer"
-                              onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
-                              title="Double-click to edit context"
-                            >
-                              <span
-                                className={`truncate text-xs ${item.description
-                                    ? 'text-muted-foreground'
-                                    : 'text-muted-foreground/40 italic'
-                                  }`}
+                          {/* Row Review Status Dropdown Indicator */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-0.5 rounded hover:bg-muted/80 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
+                                title={`Review Status: ${rowStatus}. Click to change.`}
                               >
-                                {item.description || 'Add context...'}
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })()}
+                                {rowStatus === 'approved' ? (
+                                  <span className="size-2 rounded-full bg-emerald-500 inline-block shadow-2xs" />
+                                ) : rowStatus === 'needs-review' ? (
+                                  <span className="size-2 rounded-full bg-amber-500 inline-block shadow-2xs" />
+                                ) : (
+                                  <span className="size-1.5 rounded-full bg-border group-hover:bg-muted-foreground/50 inline-block transition-colors" />
+                                )}
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-36">
+                              <DropdownMenuLabel className="text-[10px]">Row Review Status</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onUpdateRowStatus?.(item.key, 'draft')}
+                                className="text-xs cursor-pointer gap-1.5"
+                              >
+                                <span className="size-2 rounded-full bg-slate-400" />
+                                <span>Draft</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onUpdateRowStatus?.(item.key, 'needs-review')}
+                                className="text-xs cursor-pointer gap-1.5 text-amber-600 dark:text-amber-400"
+                              >
+                                <span className="size-2 rounded-full bg-amber-500" />
+                                <span>Needs Review</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onUpdateRowStatus?.(item.key, 'approved')}
+                                className="text-xs cursor-pointer gap-1.5 text-emerald-600 dark:text-emerald-400"
+                              >
+                                <span className="size-2 rounded-full bg-emerald-500" />
+                                <span>Approved</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
 
-                    {/* Language Translation Cells */}
-                    {languages.map((lang, colIdx) => {
-                      const val = item[lang] || '';
-                      const isZawgyiCell = isZawgyi(val);
-                      const isEditing =
-                        editingCell?.key === item.key && editingCell.field === lang;
-                      const isCellSelected =
-                        selectedCell?.key === item.key && selectedCell.field === lang;
-                      const isMyanmar = lang === 'my';
-                      const isRtl = isRtlLanguage(lang);
-                      const isLangFrozen = safeFrozenCount >= colIdx + 2;
-                      const isLangLastFrozen = safeFrozenCount === colIdx + 2;
-                      const descOffset = showDescription ? DESC_COL_WIDTH : 0;
-                      let prevLangsWidth = 0;
-                      for (let p = 0; p < colIdx; p++) {
-                        prevLangsWidth += getLangColWidth(languages[p]);
-                      }
-                      const langLeft = isLangFrozen
-                        ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + prevLangsWidth
-                        : undefined;
+                      {/* Translation Key Column */}
+                      {(() => {
+                        const keyPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'key');
 
-                      const sourceLang = languages.includes('en') ? 'en' : languages[0];
-                      const sourceVal = item[sourceLang] || '';
-                      const varValidation =
-                        lang !== sourceLang && val ? validateVariables(sourceVal, val) : { isValid: true, missingVariables: [] };
-
-                      const hasPrevious =
-                        previousValues[item.key]?.[lang] !== undefined &&
-                        previousValues[item.key][lang] !== val;
-
-                      const cellPeer = collabPeers?.find(
-                        p => p.activeCell?.key === item.key && p.activeCell?.field === lang
-                      );
-
-                      return (
-                        <td
-                          key={lang}
-                          data-cell-key={item.key}
-                          data-cell-field={lang}
-                          dir={isRtl ? 'rtl' : 'ltr'}
-                          style={{
-                            width: getLangColWidth(lang),
-                            minWidth: getLangColWidth(lang),
-                            left: langLeft,
-                          }}
-                          onClick={() => {
-                            if (followingPeerName) onStopFollowing?.();
-                            setSelectedCell({
-                              key: item.key,
-                              field: lang,
-                              colIndex: colIdx + (showDescription ? 2 : 1),
-                              rowIndex: rowIdx,
-                            });
-                          }}
-                          onContextMenu={(e) =>
-                            handleCellContextMenu(
-                              e,
-                              item.key,
-                              lang,
-                              rowIdx,
-                              colIdx + (showDescription ? 2 : 1)
-                            )
-                          }
-                          className={`py-2 px-3 border-b border-border transition-colors cursor-pointer ${
-                            isRowSelected
-                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                              : !val
-                                ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
+                        return (
+                          <td
+                            key="key"
+                            data-cell-key={item.key}
+                            data-cell-field="key"
+                            style={{
+                              width: KEY_COL_WIDTH,
+                              minWidth: KEY_COL_WIDTH,
+                              left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
+                            }}
+                            onClick={() => {
+                              if (followingPeerName) onStopFollowing?.();
+                              setSelectedCell({
+                                key: item.key,
+                                field: 'key',
+                                colIndex: 0,
+                                rowIndex: rowIdx,
+                              });
+                            }}
+                            onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
+                            className={`py-1.5 px-3 font-mono text-xs ${isRowSelected
+                                ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
                                 : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                          } ${isLangFrozen ? 'sticky z-15' : 'relative z-0'} ${getFreezeLineClass(isLangLastFrozen)} ${isCellSelected
-                              ? `outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-18' : 'z-10'}`
-                              : ''
-                            }`}
-                        >
-                          {cellPeer && (
-                            <div
-                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
-                              style={{ '--peer-color': cellPeer.color } as React.CSSProperties}
-                            >
-                              <span
-                                className={`absolute top-0 ${
-                                  isRtl ? 'left-0 rounded-br' : 'right-0 rounded-bl'
-                                } z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]`}
+                              } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
+                                ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
+                                : ''
+                              }`}
+                          >
+                            {keyPeer && (
+                              <div
+                                className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                                style={{ '--peer-color': keyPeer.color } as React.CSSProperties}
                               >
-                                {cellPeer.name}
-                              </span>
-                            </div>
-                          )}
-                          {/* Excel-style Corner Flag for Zawgyi warning */}
-                          {isZawgyiCell && (
-                            <div
-                              className="absolute top-0 left-0 w-0 h-0 border-t-[8px] border-r-[8px] border-t-amber-500 border-r-transparent pointer-events-none z-20"
-                              title="Zawgyi font detected"
-                            />
-                          )}
-
-                          {isEditing ? (
-                            <div className="w-full">
-                              <textarea
-                                ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                                dir={isRtl ? 'rtl' : 'ltr'}
+                                <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                  {keyPeer.name}
+                                </span>
+                              </div>
+                            )}
+                            {editingCell?.key === item.key && editingCell.field === 'key' ? (
+                              <input
+                                ref={inputRef as React.RefObject<HTMLInputElement>}
+                                type="text"
                                 value={editingCell.value}
                                 onChange={e =>
                                   setEditingCell({ ...editingCell, value: e.target.value })
                                 }
                                 onBlur={handleSaveEdit}
                                 onKeyDown={handleKeyDown}
-                                rows={Math.max(2, editingCell.value.split('\n').length)}
-                                className={`w-full px-2 py-1 bg-background border-2 border-primary rounded text-sm outline-none shadow-xs resize-y ${isMyanmar ? 'leading-relaxed font-sans' : ''
-                                  } ${isRtl ? 'text-right font-sans' : 'text-left'}`}
+                                className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
                               />
-                              {isZawgyi(editingCell.value) && (
-                                <div className="mt-1 flex items-center justify-between">
-                                  <button
-                                    type="button"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      setEditingCell({
-                                        ...editingCell,
-                                        value: zawgyiToUnicode(editingCell.value),
-                                      });
-                                    }}
-                                    className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors"
-                                    title="Convert to Unicode"
-                                  >
-                                    <AlertTriangle className="size-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                                    <span>Convert Zawgyi → Unicode</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div
-                              dir={isRtl ? 'rtl' : 'ltr'}
-                              className="group/valcell min-h-[26px] flex items-start justify-between gap-1.5"
-                              onDoubleClick={() => handleStartEdit(item.key, lang, val)}
-                              title="Double-click to edit"
-                            >
+                            ) : (
                               <div
-                                className={`text-sm select-text whitespace-pre-wrap break-words flex-1 ${isMyanmar
-                                    ? 'leading-relaxed font-sans text-foreground'
-                                    : 'text-foreground'
-                                  } ${!val ? 'text-amber-600/70 italic text-xs' : ''} ${isRtl ? 'text-right' : 'text-left'
-                                  }`}
+                                className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
+                                onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
+                                title="Double-click to edit key name"
                               >
-                                {val ? (
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex flex-wrap items-baseline gap-x-0.5 leading-relaxed">
-                                      {tokenizeVariables(val).map((tok, i) =>
-                                        tok.isVariable ? (
-                                          <span
-                                            key={i}
-                                            className="inline-block px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold border border-primary/20 align-baseline select-text"
-                                            title={`Interpolation Variable: ${tok.text}`}
-                                          >
-                                            {tok.text}
-                                          </span>
-                                        ) : (
-                                          <span key={i}>{tok.text}</span>
-                                        )
-                                      )}
-                                    </div>
+                                <span className="font-semibold truncate text-foreground">
+                                  {item.key}
+                                </span>
+                                <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })()}
 
-                                    {/* Warning Badges & 1-Click Revert Button */}
-                                    {(isZawgyiCell || !varValidation.isValid || hasPrevious) && (
-                                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                        {hasPrevious && (
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleRevertCell(item.key, lang);
-                                            }}
-                                            className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-2xs select-none"
-                                            title={`Revert back to: "${previousValues[item.key][lang]}"`}
-                                          >
-                                            <Undo2 className="size-2.5 shrink-0" />
-                                            <span>Revert</span>
-                                          </button>
-                                        )}
-                                        {isZawgyiCell && (
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleConvertCellZawgyiToUnicode(item.key, lang);
-                                            }}
-                                            title="Zawgyi font detected in this cell! Click to convert to Unicode."
-                                            className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/20 hover:bg-amber-500/35 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all shadow-2xs select-none"
-                                          >
-                                            <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                            <span>Zawgyi (!)</span>
-                                          </button>
-                                        )}
-                                        {!varValidation.isValid && (
-                                          <span
-                                            className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 select-none"
-                                            title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
-                                          >
-                                            <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                            <span>Missing {varValidation.missingVariables.join(', ')}</span>
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
+                      {/* Context / Description Cell */}
+                      {showDescription && (() => {
+                        const descPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'description');
+                        return (
+                          <td
+                            data-cell-key={item.key}
+                            data-cell-field="description"
+                            style={{
+                              width: DESC_COL_WIDTH,
+                              minWidth: DESC_COL_WIDTH,
+                            }}
+                            onClick={() => {
+                              if (followingPeerName) onStopFollowing?.();
+                              setSelectedCell({
+                                key: item.key,
+                                field: 'description',
+                                colIndex: 1,
+                                rowIndex: rowIdx,
+                              });
+                            }}
+                            onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
+                            className={`py-1.5 px-3 text-xs relative ${isRowSelected
+                                ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                                : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                              } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
+                                ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                                : ''
+                              }`}
+                          >
+                            {descPeer && (
+                              <div
+                                className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                                style={{ '--peer-color': descPeer.color } as React.CSSProperties}
+                              >
+                                <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                  {descPeer.name}
+                                </span>
+                              </div>
+                            )}
+                            {editingCell?.key === item.key && editingCell.field === 'description' ? (
+                              <input
+                                ref={inputRef as React.RefObject<HTMLInputElement>}
+                                type="text"
+                                value={editingCell.value}
+                                onChange={e =>
+                                  setEditingCell({ ...editingCell, value: e.target.value })
+                                }
+                                onBlur={handleSaveEdit}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Context for translators..."
+                                className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
+                              />
+                            ) : (
+                              <div
+                                className="min-h-[24px] flex items-center cursor-pointer"
+                                onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
+                                title="Double-click to edit context"
+                              >
+                                <span
+                                  className={`truncate text-xs ${item.description
+                                    ? 'text-muted-foreground'
+                                    : 'text-muted-foreground/40 italic'
+                                    }`}
+                                >
+                                  {item.description || 'Add context...'}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })()}
+
+                      {/* Language Translation Cells */}
+                      {languages.map((lang, colIdx) => {
+                        const val = item[lang] || '';
+                        const isZawgyiCell = isZawgyi(val);
+                        const isEditing =
+                          editingCell?.key === item.key && editingCell.field === lang;
+                        const isCellSelected =
+                          selectedCell?.key === item.key && selectedCell.field === lang;
+                        const isMyanmar = lang === 'my';
+                        const isRtl = isRtlLanguage(lang);
+                        const isLangFrozen = safeFrozenCount >= colIdx + 2;
+                        const isLangLastFrozen = safeFrozenCount === colIdx + 2;
+                        const descOffset = showDescription ? DESC_COL_WIDTH : 0;
+                        let prevLangsWidth = 0;
+                        for (let p = 0; p < colIdx; p++) {
+                          prevLangsWidth += getLangColWidth(languages[p]);
+                        }
+                        const langLeft = isLangFrozen
+                          ? ROW_NUM_WIDTH + (isKeyFrozen ? KEY_COL_WIDTH : 0) + descOffset + prevLangsWidth
+                          : undefined;
+
+                        const sourceLang = languages.includes('en') ? 'en' : languages[0];
+                        const sourceVal = item[sourceLang] || '';
+                        const varValidation =
+                          lang !== sourceLang && val ? validateVariables(sourceVal, val) : { isValid: true, missingVariables: [] };
+
+                        const hasPrevious =
+                          previousValues[item.key]?.[lang] !== undefined &&
+                          previousValues[item.key][lang] !== val;
+
+                        const cellPeer = collabPeers?.find(
+                          p => p.activeCell?.key === item.key && p.activeCell?.field === lang
+                        );
+
+                        return (
+                          <td
+                            key={lang}
+                            data-cell-key={item.key}
+                            data-cell-field={lang}
+                            dir={isRtl ? 'rtl' : 'ltr'}
+                            style={{
+                              width: getLangColWidth(lang),
+                              minWidth: getLangColWidth(lang),
+                              left: langLeft,
+                            }}
+                            onClick={() => {
+                              if (followingPeerName) onStopFollowing?.();
+                              setSelectedCell({
+                                key: item.key,
+                                field: lang,
+                                colIndex: colIdx + (showDescription ? 2 : 1),
+                                rowIndex: rowIdx,
+                              });
+                            }}
+                            onContextMenu={(e) =>
+                              handleCellContextMenu(
+                                e,
+                                item.key,
+                                lang,
+                                rowIdx,
+                                colIdx + (showDescription ? 2 : 1)
+                              )
+                            }
+                            className={`py-2 px-3 border-b border-border transition-colors cursor-pointer ${isRowSelected
+                                ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                                : !val
+                                  ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
+                                  : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                              } ${isLangFrozen ? 'sticky z-15' : 'relative z-0'} ${getFreezeLineClass(isLangLastFrozen)} ${isCellSelected
+                                ? `outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-18' : 'z-10'}`
+                                : ''
+                              }`}
+                          >
+                            {cellPeer && (
+                              <div
+                                className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                                style={{ '--peer-color': cellPeer.color } as React.CSSProperties}
+                              >
+                                <span
+                                  className={`absolute top-0 ${isRtl ? 'left-0 rounded-br' : 'right-0 rounded-bl'
+                                    } z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]`}
+                                >
+                                  {cellPeer.name}
+                                </span>
+                              </div>
+                            )}
+                            {/* Excel-style Corner Flag for Zawgyi warning */}
+                            {isZawgyiCell && (
+                              <div
+                                className="absolute top-0 left-0 w-0 h-0 border-t-[8px] border-r-[8px] border-t-amber-500 border-r-transparent pointer-events-none z-20"
+                                title="Zawgyi font detected"
+                              />
+                            )}
+
+                            {isEditing ? (
+                              <div className="w-full">
+                                <textarea
+                                  ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                                  dir={isRtl ? 'rtl' : 'ltr'}
+                                  value={editingCell.value}
+                                  onChange={e =>
+                                    setEditingCell({ ...editingCell, value: e.target.value })
+                                  }
+                                  onBlur={handleSaveEdit}
+                                  onKeyDown={handleKeyDown}
+                                  rows={Math.max(2, editingCell.value.split('\n').length)}
+                                  className={`w-full px-2 py-1 bg-background border-2 border-primary rounded text-sm outline-none shadow-xs resize-y ${isMyanmar ? 'leading-relaxed font-sans' : ''
+                                    } ${isRtl ? 'text-right font-sans' : 'text-left'}`}
+                                />
+                                {isZawgyi(editingCell.value) && (
+                                  <div className="mt-1 flex items-center justify-between">
+                                    <button
+                                      type="button"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        setEditingCell({
+                                          ...editingCell,
+                                          value: zawgyiToUnicode(editingCell.value),
+                                        });
+                                      }}
+                                      className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors"
+                                      title="Convert to Unicode"
+                                    >
+                                      <AlertTriangle className="size-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                      <span>Convert Zawgyi → Unicode</span>
+                                    </button>
                                   </div>
-                                ) : (
-                                  <span className="flex items-center gap-1 font-sans not-italic text-amber-600 dark:text-amber-400">
-                                    <span className="size-1.5 rounded-full bg-amber-500 shrink-0" />
-                                    Missing
-                                  </span>
                                 )}
                               </div>
-                              <Pencil className="size-3 text-muted-foreground/35 opacity-0 group-hover/valcell:opacity-100 transition-opacity shrink-0 mt-0.5" />
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-
-                    {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
-                    <td
-                      aria-label={`Row actions for row ${rowNumber}`}
-                      style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
-                      className={`py-1 px-1 text-center border-b border-l border-border ${
-                        isRowSelected
-                          ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                          : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234]'
-                      } sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors`}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            aria-label={`Row actions for key ${item.key}`}
-                            title={`Row actions for key ${item.key}`}
-                            className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel className="font-mono text-xs truncate">
-                            {item.key}
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          {selectedRowKeys.size > 1 && selectedRowKeys.has(item.key) ? (
-                            <>
-                              <DropdownMenuItem
-                                onClick={handleBulkApprove}
-                                className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
+                            ) : (
+                              <div
+                                dir={isRtl ? 'rtl' : 'ltr'}
+                                className="group/valcell min-h-[26px] flex items-start justify-between gap-1.5"
+                                onDoubleClick={() => handleStartEdit(item.key, lang, val)}
+                                title="Double-click to edit"
                               >
-                                <CheckCircle2 className="size-3.5" />
-                                Approve Selected ({selectedRowKeys.size})
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={handleBulkNeedsReview}
-                                className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
-                              >
-                                <AlertCircle className="size-3.5" />
-                                Mark Needs Review ({selectedRowKeys.size})
-                              </DropdownMenuItem>
-                              {onOpenAiTranslate && (
-                                <DropdownMenuItem
-                                  onClick={handleBulkAiTranslate}
-                                  className="gap-2 cursor-pointer text-xs"
+                                <div
+                                  className={`text-sm select-text whitespace-pre-wrap break-words flex-1 ${isMyanmar
+                                    ? 'leading-relaxed font-sans text-foreground'
+                                    : 'text-foreground'
+                                    } ${!val ? 'text-amber-600/70 italic text-xs' : ''} ${isRtl ? 'text-right' : 'text-left'
+                                    }`}
                                 >
-                                  <Sparkles className="size-3.5 text-purple-500" />
-                                  AI Translate Selected ({selectedRowKeys.size})
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                            </>
-                          ) : (
-                            onUpdateRowStatus && (
+                                  {val ? (
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex flex-wrap items-baseline gap-x-0.5 leading-relaxed">
+                                        {tokenizeVariables(val).map((tok, i) =>
+                                          tok.isVariable ? (
+                                            <span
+                                              key={i}
+                                              className="inline-block px-1 py-0.5 rounded bg-primary/10 text-primary font-mono text-[11px] font-semibold border border-primary/20 align-baseline select-text"
+                                              title={`Interpolation Variable: ${tok.text}`}
+                                            >
+                                              {tok.text}
+                                            </span>
+                                          ) : (
+                                            <span key={i}>{tok.text}</span>
+                                          )
+                                        )}
+                                      </div>
+
+                                      {/* Warning Badges & 1-Click Revert Button */}
+                                      {(isZawgyiCell || !varValidation.isValid || hasPrevious) && (
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                          {hasPrevious && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRevertCell(item.key, lang);
+                                              }}
+                                              className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-2xs select-none"
+                                              title={`Revert back to: "${previousValues[item.key][lang]}"`}
+                                            >
+                                              <Undo2 className="size-2.5 shrink-0" />
+                                              <span>Revert</span>
+                                            </button>
+                                          )}
+                                          {isZawgyiCell && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleConvertCellZawgyiToUnicode(item.key, lang);
+                                              }}
+                                              title="Zawgyi font detected in this cell! Click to convert to Unicode."
+                                              className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/20 hover:bg-amber-500/35 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all shadow-2xs select-none"
+                                            >
+                                              <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                              <span>Zawgyi (!)</span>
+                                            </button>
+                                          )}
+                                          {!varValidation.isValid && (
+                                            <span
+                                              className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 select-none"
+                                              title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
+                                            >
+                                              <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                              <span>Missing {varValidation.missingVariables.join(', ')}</span>
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="flex items-center gap-1 font-sans not-italic text-amber-600 dark:text-amber-400">
+                                      <span className="size-1.5 rounded-full bg-amber-500 shrink-0" />
+                                      Missing
+                                    </span>
+                                  )}
+                                </div>
+                                <Pencil className="size-3 text-muted-foreground/35 opacity-0 group-hover/valcell:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
+                      <td
+                        aria-label={`Row actions for row ${rowNumber}`}
+                        style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
+                        className={`py-1 px-1 text-center border-b border-l border-border ${isRowSelected
+                            ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                            : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234]'
+                          } sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors`}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Row actions for key ${item.key}`}
+                              title={`Row actions for key ${item.key}`}
+                              className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel className="font-mono text-xs truncate">
+                              {item.key}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {selectedRowKeys.size > 1 && selectedRowKeys.has(item.key) ? (
                               <>
                                 <DropdownMenuItem
-                                  onClick={() => onUpdateRowStatus(item.key, 'approved')}
+                                  onClick={handleBulkApprove}
                                   className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
                                 >
                                   <CheckCircle2 className="size-3.5" />
-                                  Mark as Approved
+                                  Approve Selected ({selectedRowKeys.size})
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
+                                  onClick={handleBulkNeedsReview}
                                   className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
                                 >
                                   <AlertCircle className="size-3.5" />
-                                  Mark for Review
+                                  Mark Needs Review ({selectedRowKeys.size})
                                 </DropdownMenuItem>
+                                {onOpenAiTranslate && (
+                                  <DropdownMenuItem
+                                    onClick={handleBulkAiTranslate}
+                                    className="gap-2 cursor-pointer text-xs"
+                                  >
+                                    <Sparkles className="size-3.5 text-purple-500" />
+                                    AI Translate Selected ({selectedRowKeys.size})
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                               </>
-                            )
-                          )}
-                          {onOpenAiTranslate && (
+                            ) : (
+                              onUpdateRowStatus && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => onUpdateRowStatus(item.key, 'approved')}
+                                    className="gap-2 cursor-pointer text-xs font-medium text-emerald-600 dark:text-emerald-400 focus:text-emerald-600 focus:bg-emerald-500/10"
+                                  >
+                                    <CheckCircle2 className="size-3.5" />
+                                    Mark as Approved
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => onUpdateRowStatus(item.key, 'needs-review')}
+                                    className="gap-2 cursor-pointer text-xs font-medium text-amber-600 dark:text-amber-400 focus:text-amber-600 focus:bg-amber-500/10"
+                                  >
+                                    <AlertCircle className="size-3.5" />
+                                    Mark for Review
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              )
+                            )}
+                            {onOpenAiTranslate && (
+                              <DropdownMenuItem
+                                onClick={() => onOpenAiTranslate(undefined, item.key)}
+                                className="gap-2 cursor-pointer text-xs"
+                              >
+                                <Sparkles className="size-3.5" />
+                                Translate with AI
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
-                              onClick={() => onOpenAiTranslate(undefined, item.key)}
+                              onClick={() => handleCopyText(item.key, 'key name')}
                               className="gap-2 cursor-pointer text-xs"
                             >
-                              <Sparkles className="size-3.5" />
-                              Translate with AI
+                              <Copy className="size-3.5" />
+                              Copy Key Name
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleCopyText(item.key, 'key name')}
-                            className="gap-2 cursor-pointer text-xs"
-                          >
-                            <Copy className="size-3.5" />
-                            Copy Key Name
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              const translations = languages
-                                .map(l => `${l.toUpperCase()}: ${item[l] || ''}`)
-                                .join('\n');
-                              handleCopyText(translations, 'all translations');
-                            }}
-                            className="gap-2 cursor-pointer text-xs"
-                          >
-                            <CopyCheck className="size-3.5" />
-                            Copy All Translations
-                          </DropdownMenuItem>
-                          {onDuplicateRow && (
                             <DropdownMenuItem
-                              onClick={() => onDuplicateRow(item)}
+                              onClick={() => {
+                                const translations = languages
+                                  .map(l => `${l.toUpperCase()}: ${item[l] || ''}`)
+                                  .join('\n');
+                                handleCopyText(translations, 'all translations');
+                              }}
                               className="gap-2 cursor-pointer text-xs"
                             >
-                              <Layers className="size-3.5" />
-                              Duplicate Row
+                              <CopyCheck className="size-3.5" />
+                              Copy All Translations
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              for (const l of languages) {
-                                handleInternalUpdateCell(item.key, l, '');
-                              }
-                            }}
-                            className="gap-2 cursor-pointer text-xs"
-                          >
-                            <Eraser className="size-3.5" />
-                            Clear Translations
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => onDeleteRow(item.key)}
-                            className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
-                          >
-                            <Trash2 className="size-3.5" />
-                            Delete Row
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                            {onDuplicateRow && (
+                              <DropdownMenuItem
+                                onClick={() => onDuplicateRow(item)}
+                                className="gap-2 cursor-pointer text-xs"
+                              >
+                                <Layers className="size-3.5" />
+                                Duplicate Row
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                for (const l of languages) {
+                                  handleInternalUpdateCell(item.key, l, '');
+                                }
+                              }}
+                              className="gap-2 cursor-pointer text-xs"
+                            >
+                              <Eraser className="size-3.5" />
+                              Clear Translations
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onDeleteRow(item.key)}
+                              className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete Row
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {bottomSpacerHeight > 0 && (
+                  <tr style={{ height: bottomSpacerHeight }} aria-hidden="true">
+                    <td
+                      colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                      className="p-0 border-0 pointer-events-none"
+                      aria-label="Spacer row"
+                    />
                   </tr>
-                );
-              })}
-              {bottomSpacerHeight > 0 && (
-                <tr style={{ height: bottomSpacerHeight }} aria-hidden="true">
-                  <td
-                    colSpan={3 + (showDescription ? 1 : 0) + languages.length}
-                    className="p-0 border-0 pointer-events-none"
-                    aria-label="Spacer row"
-                  />
-                </tr>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
           </tbody>
         </table>
+
+          {/* Live Multiplayer Peer Cursors */}
+          {collabPeers?.map((peer) => {
+            if (
+              !peer.pointer ||
+              typeof peer.pointer.x !== 'number' ||
+              typeof peer.pointer.y !== 'number' ||
+              isNaN(peer.pointer.x) ||
+              isNaN(peer.pointer.y)
+            ) {
+              return null;
+            }
+            return (
+              <div
+                key={`${peer.name}-${peer.clientID ?? peer.color}`}
+                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
+                style={
+                  {
+                    '--pointer-x': `${peer.pointer.x}px`,
+                    '--pointer-y': `${peer.pointer.y}px`,
+                    '--peer-color': peer.color,
+                  } as React.CSSProperties
+                }
+              >
+                {/* Figma-style SVG Arrow Pointer */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="drop-shadow-md"
+                >
+                  <path
+                    d="M3 3L10.5 21L14 13.5L21.5 10L3 3Z"
+                    fill="var(--peer-color)"
+                    stroke="#ffffff"
+                    strokeWidth="1.75"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                {/* Peer Name Tag Badge with Avatar Color - positioned snugly at arrow notch */}
+                <div className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap tracking-tight animate-in fade-in zoom-in-90 duration-150 bg-[var(--peer-color)]">
+                  <span>{peer.name}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Cell Right-Click Context Menu (Custom DropdownMenu Component) */}
@@ -2540,7 +2574,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <span className="text-muted-foreground hidden lg:inline">•</span>
           <span className="text-muted-foreground hidden lg:flex items-center gap-1.5 text-[11px]">
             Developed with <Heart className="size-3 text-rose-500 fill-rose-500 inline shrink-0" /> by{' '}
-            <span className="font-semibold text-foreground">Pyae Phyo Maung</span>
+            <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors hover:underline">Pyae Phyo Maung</a>
           </span>
         </div>
 

@@ -448,13 +448,17 @@ export function App() {
     joinCollabWithPin,
     cancelCollabPin,
     handleActiveCellChange,
+    handlePointerMove,
+    handlePointerLeave,
   } = useCollabSession({
     items,
     languages,
+    projectName,
     localPeerProfile,
     setLocalPeerProfile,
     onRemoteItemsChange: setItemsWithoutHistory,
     onRemoteLanguagesChange: setLanguages,
+    onRemoteProjectNameChange: setProjectName,
     onActivateWorkspace: () => setIsWorkspaceActive(true),
     onDeactivateWorkspace: () => setIsWorkspaceActive(false),
   });
@@ -2183,6 +2187,8 @@ export function App() {
             onClearFilters={handleClearFilters}
             collabPeers={collabPeers}
             onActiveCellChange={handleActiveCellChange}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
             followingPeerName={followingPeerName}
             onStopFollowing={() => setFollowingPeerName(null)}
             onToggleFilterMissingLang={(lang) => {

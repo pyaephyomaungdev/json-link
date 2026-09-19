@@ -15,6 +15,7 @@ vi.mock('@/lib/collaboration', async () => {
       const yTranslations = ydoc.getMap<any>('translations');
       const yKeys = ydoc.getArray<string>('keys');
       const yLanguages = ydoc.getArray<string>('languages');
+      const yMeta = ydoc.getMap<any>('metadata');
 
       const provider = {
         awareness: {
@@ -38,6 +39,7 @@ vi.mock('@/lib/collaboration', async () => {
         yTranslations,
         yKeys,
         yLanguages,
+        yMeta,
         destroy: vi.fn(() => {
           ydoc.destroy();
         }),
@@ -267,6 +269,7 @@ describe('useCollabSession', () => {
         yTranslations: ydoc.getMap('translations'),
         yKeys: ydoc.getArray('keys'),
         yLanguages: ydoc.getArray('languages'),
+        yMeta: ydoc.getMap('metadata'),
         destroy: vi.fn(() => ydoc.destroy()),
       };
     });

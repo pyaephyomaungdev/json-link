@@ -80,11 +80,11 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 
 | Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | JSON Link (Open Source) |
 | :--- | :--- | :--- | :--- |
-| **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **AST-locked visual chips & live linter** |
+| **Interpolation Safety** (`{user}`, `%s`) | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Translators corrupt variables | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Complex regex setups | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Visual chips & live linter** |
 | **Local Disk Sync & HMR** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Manual export & copy-paste | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> CLI polling / webhooks | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct disk write (`Cmd+S`) with instant Vite HMR** |
-| **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Zero-dependency reactive client (<2KB)** |
+| **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **~120-line reactive client, 0 external runtime deps** |
 | **AI Translation (BYOK)** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> High per-token markup | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct OpenRouter (Gemini, Claude, DeepSeek)** |
-| **P2P Live Collaboration** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> No real-time co-authoring | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Requires paid cloud seats ($15–$50/seat) | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Zero-backend WebRTC + Yjs CRDT + E2EE AES-GCM** |
+| **P2P Live Collaboration** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> No real-time co-authoring | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Requires paid cloud seats ($15–$50/seat) | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **WebRTC DataChannels + Yjs CRDT (signaling relay to connect; optional AES-GCM E2EE)** |
 | **Data Privacy & Storage** | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Plaintext on external cloud | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Third-party server hosting | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **100% Client-Side AES-GCM 256 + Zero Backend** |
 | **AI Coding Assistant Tools** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Native Model Context Protocol (MCP) server** |
 | **Myanmar Font Support** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Garbled Zawgyi rendering | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Unsupported | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
@@ -224,10 +224,12 @@ One-click multi-format bundle exporter transpiling simultaneously into:
 <details>
 <summary><strong><img src=".github/assets/icons/users.svg" width="18" height="18" align="absmiddle" /> 9. Serverless WebRTC Live Collaboration & Peer Awareness</strong> (Click to expand)</summary>
 
-* **Zero-Backend Real-Time Sync**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and WebRTC DataChannels.
-* **End-to-End Encryption (E2EE)**: Room passwords derive 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). Signaling messages and translations are completely unreadable to intermediary servers.
-* **Human-Friendly Room IDs**: Google Meet style 3-4-3 canonical segmented identifiers (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
+* **Peer Data over WebRTC**: Multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels. Public/local signaling relays are used solely for initial peer handshakes; all keystrokes and translation edits stream peer-to-peer with zero server storage.
+* **Optional End-to-End Encryption (E2EE)**: Setting an optional room password derives 256-bit AES-GCM encryption keys using client-side PBKDF2-SHA256 (100,000 iterations). When enabled, document updates and awareness messages are completely unreadable to intermediary signaling relays. Open rooms without a PIN remain unencrypted for instant frictionless sharing.
+* **Human-Friendly Room IDs**: Canonical hyphenated 3-4-3 segmented room format (e.g., `yfq-khjt-efn`) with smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Real-time cursor coordinates with deterministic peer palette assignment (12 distinct colors), user avatar initials badges, and one-click viewport jump to follow collaborator selections.
+* **Figma-Style Live Multiplayer Cursors**: Ultra-fluid ~33fps mouse pointer tracking with high-contrast colored arrow pointers (↖) and peer name pill badges. Pointers are mapped to spreadsheet canvas coordinates, automatically fade after 3 seconds of inactivity, and cleanly slide underneath sticky table headers when scrolling.
+* **Full Data Sync & Independent Filter Views**: Synchronizes translation cells, developer context notes, review statuses (Draft/Needs Review/Approved), and project metadata in real time, while keeping personal filter views (namespace, search, missing keys) independent per peer so collaborators never disrupt each other's focus.
 * **Dedicated Multi-Stage Auth Modals**: Clean separate screens for PIN entry, connection loading with spinner, and authentication failure recovery with auto-focused "Try Again".
 
 </details>
@@ -347,10 +349,12 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 <summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.1.0] - 2026-09-19 — WebRTC Live Collaboration, DOM Virtualization & E2EE</strong> (Latest Release)</summary>
 
 #### Added
-* **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and WebRTC DataChannels (`useCollabSession`).
-* **End-to-End Room Encryption (E2EE)**: Client-side AES-GCM 256-bit encryption derived via PBKDF2-SHA256 (100,000 iterations) from room passwords.
-* **Segmented Room Identifiers**: Human-friendly Google Meet style 3-4-3 canonical format (`yfq-khjt-efn`) with smart alphanumeric normalization.
+* **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels (`useCollabSession`), using lightweight signaling relays for initial connection negotiation.
+* **Optional End-to-End Room Encryption (E2EE)**: Client-side AES-GCM 256-bit encryption derived via PBKDF2-SHA256 (100,000 iterations) from optional room passwords. Open rooms remain unencrypted for frictionless sharing.
+* **Segmented Room Identifiers**: Human-friendly 3-4-3 segmented room format (`yfq-khjt-efn`) with canonical hyphenated room codes and smart alphanumeric normalization.
 * **Live Peer Awareness & Follow Mode**: Deterministic 12-color avatar palette, peer initials badges, real-time active cell cursor markers, and one-click Follow Mode viewport synchronization.
+* **Figma-Style Live Multiplayer Cursors**: Fluid real-time peer pointer tracking (~33fps over WebRTC DataChannels) with colored SVG pointers, name badges, and native sticky header z-index layering.
+* **Project Name Metadata Synchronization**: Multi-user real-time synchronization of project names across all active peers via Yjs metadata.
 * **Multi-Stage Collab Dialog**: Redesigned `CollabPinDialog` with 3 dedicated modal screens (PIN Input, Connecting with spinner, and Authentication Failed with auto-focus "Try Again").
 * **Spreadsheet DOM Virtualization (`useVirtualRows`)**: Zero-dependency windowing hook rendering 5,000+ keys with sub-500 active DOM elements at 60fps.
 * **Bounded AI Translation Batching**: Added `chunkArray` (size 25) and bounded concurrency in OpenRouter translation engine to eliminate token limit overflows.
@@ -364,8 +368,8 @@ All notable changes to **JSON Link** are documented here. The project adheres to
 * **Accessibility Remediation**: Resolved 100+ a11y lint warnings across table divider handles, keyboard handlers, and modal form attributes.
 
 #### Changed
-* Test suite expanded to 60 test files and 455 passing tests (100% Vitest pass rate).
-* Complete zero-warning codebase compliance across 154 files with 128 oxlint rules.
+* Test suite expanded to 60 test files and 456 passing tests (100% Vitest pass rate).
+* Complete zero-warning codebase compliance across 155 files with 128 oxlint rules.
 
 </details>
 

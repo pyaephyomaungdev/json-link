@@ -426,11 +426,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl w-full max-w-full ${
-              isDragOver
+            className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl w-full max-w-full ${isDragOver
                 ? 'border-primary ring-4 ring-primary/20 scale-[1.005]'
                 : 'border-border/80 hover:border-primary/50'
-            }`}
+              }`}
           >
             {/* Click overlay for accessibility */}
             <button
@@ -559,11 +558,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Hover & Drag Drop Overlay */}
             <div
-              className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-2.5 transition-all duration-300 pointer-events-none ${
-                isDragOver
+              className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-2.5 transition-all duration-300 pointer-events-none ${isDragOver
                   ? 'opacity-100 backdrop-blur-md bg-background/85'
                   : 'opacity-0 group-hover:opacity-100 backdrop-blur-xs sm:backdrop-blur-sm bg-background/80'
-              }`}
+                }`}
             >
               <div className="size-12 sm:size-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-lg scale-95 group-hover:scale-100 transition-transform duration-300">
                 <UploadCloud className="size-6 sm:size-7" />
@@ -894,9 +892,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
-                      className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${
-                        isOpen ? 'rotate-180 text-primary' : ''
-                      }`}
+                      className={`size-4 text-muted-foreground transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-primary' : ''
+                        }`}
                     />
                   </button>
                   {isOpen && (
@@ -926,7 +923,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </span>
             </div>
 
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium">
+            <nav className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-5 gap-y-2 text-xs font-medium">
               <button
                 onClick={onOpenAbout}
                 className="hover:text-foreground transition-colors cursor-pointer"
@@ -990,23 +987,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Bottom Sub-footer Strip: Developer Credit & Green Hosting */}
-          <div className="pt-4 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
-            <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <div className="pt-4 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
               <span>Developed with</span>
               <Heart className="size-3 text-rose-500 fill-rose-500 inline" />
               <span>by</span>
-              <strong className="text-foreground font-semibold">Pyae Phyo Maung</strong>
+              <a href="https://pyaephyomaung.dev" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors hover:underline">Pyae Phyo Maung</a>
             </div>
 
             <a
               href="https://www.thegreenwebfoundation.org/green-web-check/?url=https%3A%2F%2Fjson-link.pages.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-emerald-500 transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-emerald-500 transition-colors text-center"
               title="Certified Green Hosting by The Green Web Foundation"
             >
               <Leaf className="size-3 text-emerald-500 shrink-0" />
-              <span>Green hosted on Cloudflare Pages · 100% Renewable Energy</span>
+              <span>Green hosted · 100% Renewable Energy</span>
             </a>
           </div>
         </div>

@@ -6,6 +6,8 @@ import {
   generateRandomPeerProfile,
   extractItemsFromYDoc,
   applyLocalChangeToYDoc,
+  applyProjectNameToYDoc,
+  extractProjectNameFromYDoc,
   getPeerInitials,
   getNextAvailablePeerColor,
   COLLAB_PALETTE,
@@ -156,6 +158,25 @@ describe('collaboration module', () => {
     const profile = generateRandomPeerProfile(taken);
     expect(taken).not.toContain(profile.color);
     expect(COLLAB_PALETTE).toContain(profile.color);
+  });
+
+  it('synchronizes project name metadata across YDocs', () => {
+    const docA = new Y.Doc();
+    const docB = new Y.Doc();
+
+    applyProjectNameToYDoc(docA, 'fintech-mobile-app');
+    expect(extractProjectNameFromYDoc(docA)).toBe('fintech-mobile-app');
+
+    // Sync Doc A to Doc B
+    const updateA = Y.encodeStateAsUpdate(docA);
+    Y.applyUpdate(docB, updateA);
+    expect(extractProjectNameFromYDoc(docB)).toBe('fintech-mobile-app');
+
+    // Peer B updates project name
+    applyProjectNameToYDoc(docB, 'fintech-v2');
+    const updateB = Y.encodeStateAsUpdate(docB);
+    Y.applyUpdate(docA, updateB);
+    expect(extractProjectNameFromYDoc(docA)).toBe('fintech-v2');
   });
 });
 
