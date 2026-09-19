@@ -914,7 +914,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="w-full py-8 px-4 sm:px-6 border-t border-border/60 bg-muted/20 text-xs text-muted-foreground mt-auto">
         <div className="max-w-6xl mx-auto space-y-5">
           {/* Top Row: Brand on Left, Navigation on Right */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <Logo size="sm" showText={true} />
               <span className="text-muted-foreground/40 hidden sm:inline">|</span>
@@ -923,7 +923,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </span>
             </div>
 
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium">
+            <nav className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-5 gap-y-2 text-xs font-medium">
               <button
                 onClick={onOpenAbout}
                 className="hover:text-foreground transition-colors cursor-pointer"
