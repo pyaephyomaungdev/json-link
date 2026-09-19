@@ -3,6 +3,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { GithubIcon } from '@/components/GithubIcon';
 import { SpreadsheetTable } from '@/components/SpreadsheetTable';
 import { Toolbar } from '@/components/Toolbar';
 import { TranslationItem, RowStatus } from '@/types';
@@ -335,7 +336,7 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
             asChild
             variant="outline"
             size="sm"
-            className="h-7 px-2 text-xs gap-1.5 cursor-pointer border-border hover:bg-amber-500/10 hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs group hidden sm:inline-flex"
+            className="h-7 px-2 sm:px-2.5 text-xs gap-1.5 cursor-pointer border-border hover:bg-accent/80 hover:border-amber-500/40 text-foreground transition-all shadow-2xs group hidden sm:inline-flex shrink-0"
           >
             <a
               href={GITHUB_URL}
@@ -344,8 +345,9 @@ export function DocsPage({ onBack, isDark, onToggleTheme }: DocsPageProps) {
               title="Star JSON Link on GitHub"
               aria-label="Star JSON Link on GitHub"
             >
-              <Star className="size-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform shrink-0" />
-              <span className="font-medium">Star</span>
+              <GithubIcon className="size-3.5 text-foreground shrink-0" />
+              <span className="font-medium text-xs">Star on GitHub</span>
+              <Star className="size-3 text-amber-500 fill-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
             </a>
           </Button>
 

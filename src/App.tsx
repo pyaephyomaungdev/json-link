@@ -10,6 +10,7 @@ import { CommandPalette, CommandItem } from '@/components/CommandPalette';
 import { ConfirmDialog, ConfirmDialogConfig } from '@/components/ConfirmDialog';
 import { LandingPage } from '@/components/LandingPage';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
+import { GithubIcon } from '@/components/GithubIcon';
 import { decodeSharePayload, isPayloadEncrypted, ShareProjectData } from '@/lib/shareUrl';
 import type { LegalTab } from '@/components/LegalPage';
 import type { DiffResult } from '@/components/DiffMergeModal';
@@ -2008,21 +2009,10 @@ export function App() {
           </div>
 
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={openDocs}
-            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            title="User Guide & Documentation"
-          >
-            <BookOpen className="size-3.5" />
-            <span className="hidden md:inline font-medium">Docs</span>
-          </Button>
-
-          <Button
             asChild
             variant="outline"
             size="sm"
-            className="h-7 px-2 text-xs gap-1.5 cursor-pointer border-border hover:bg-amber-500/10 hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs group"
+            className="h-7 px-2 sm:px-2.5 text-xs gap-1.5 cursor-pointer border-border hover:bg-accent/80 hover:border-amber-500/40 text-foreground transition-all shadow-2xs group shrink-0"
           >
             <a
               href={GITHUB_URL}
@@ -2031,9 +2021,22 @@ export function App() {
               title="Star JSON Link on GitHub"
               aria-label="Star JSON Link on GitHub"
             >
-              <Star className="size-3.5 text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform shrink-0" />
-              <span className="hidden xs:inline font-medium">Star</span>
+              <GithubIcon className="size-3.5 text-foreground shrink-0" />
+              <span className="hidden sm:inline font-medium text-xs">Star on GitHub</span>
+              <span className="sm:hidden font-medium text-xs">Star</span>
+              <Star className="size-3 text-amber-500 fill-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
             </a>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openDocs}
+            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
+            title="User Guide & Documentation"
+          >
+            <BookOpen className="size-3.5" />
+            <span className="hidden md:inline font-medium">Docs</span>
           </Button>
 
           <Button
