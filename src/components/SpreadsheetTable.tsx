@@ -59,7 +59,7 @@ import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/li
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
-import { CollabPeerUser } from '@/lib/collaboration';
+import { CollabPeerUser, getPeerInitials } from '@/lib/collaboration';
 import { useVirtualRows } from '@/hooks/useVirtualRows';
 
 interface SpreadsheetTableProps {
@@ -592,6 +592,27 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       }
     };
   }, []);
+
+  // Follow Mode: Press Escape key anywhere in window to exit follow mode
+  useEffect(() => {
+    if (!followingPeerName) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onStopFollowing?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [followingPeerName, onStopFollowing]);
+
+  // Follow Mode: Gracefully auto-exit if followed peer disconnects or leaves the room
+  useEffect(() => {
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    const isPeerStillPresent = collabPeers.some(p => p.name === followingPeerName);
+    if (!isPeerStillPresent) {
+      onStopFollowing?.();
+    }
+  }, [followingPeerName, collabPeers, onStopFollowing]);
 
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
@@ -1245,6 +1266,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             isProgrammaticScrollRef.current = false;
             return;
           }
+          // If user manually scrolls with mouse wheel/trackpad/touch while following, effortlessly exit follow mode
+          if (followingPeerName) {
+            onStopFollowing?.();
+          }
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
             setHasScrolledX(true);
           }
@@ -1254,8 +1279,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         {/* Floating Follow Mode Indicator Banner */}
         {followingPeerName && (
           <div className="sticky top-11 z-55 flex justify-center pointer-events-none pb-2">
-            <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/95 dark:bg-amber-600/95 text-white shadow-md text-xs font-medium backdrop-blur-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div
+              className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full text-white shadow-lg text-xs font-medium backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 border border-white/20 bg-amber-600/95 dark:bg-amber-700/95 bg-[var(--peer-color)]"
+              style={
+                followedPeer?.color
+                  ? ({ '--peer-color': followedPeer.color } as React.CSSProperties)
+                  : undefined
+              }
+            >
               <span className="size-2 rounded-full bg-white animate-ping" />
+              {followedPeer && (
+                <span className="size-4 rounded-full bg-white/25 flex items-center justify-center text-[9px] font-bold">
+                  {getPeerInitials(followedPeer.name)}
+                </span>
+              )}
               <Eye className="size-3.5 stroke-[2.5]" />
               <span>
                 Following <strong>{followingPeerName}</strong>'s screen
@@ -1264,9 +1301,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 <button
                   type="button"
                   onClick={onStopFollowing}
-                  className="ml-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                  className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                  title="Stop Following (Esc)"
                 >
-                  Stop Following
+                  <span>Stop</span>
+                  <kbd className="hidden sm:inline-block px-1 py-0.2 rounded bg-black/25 text-[9px] font-mono leading-tight">Esc</kbd>
                 </button>
               )}
             </div>

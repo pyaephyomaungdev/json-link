@@ -302,4 +302,64 @@ describe('SpreadsheetTable', () => {
       expect(scrollContainer.scrollTop).toBeGreaterThan(0);
     });
   });
+
+  it('stops following when user presses Escape key', () => {
+    const onStopFollowing = vi.fn();
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onStopFollowing={onStopFollowing}
+        collabPeers={[{ clientID: 1, name: 'Alice', color: '#10b981' }]}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onStopFollowing).toHaveBeenCalledTimes(1);
+  });
+
+  it('effortlessly exits follow mode when user manually scrolls container', () => {
+    const onStopFollowing = vi.fn();
+    const { container } = render(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onStopFollowing={onStopFollowing}
+        collabPeers={[{ clientID: 1, name: 'Alice', color: '#10b981' }]}
+      />
+    );
+
+    const scrollContainer = container.querySelector('.overflow-auto') as HTMLDivElement;
+    expect(scrollContainer).not.toBeNull();
+
+    fireEvent.scroll(scrollContainer, {
+      target: { scrollLeft: 80, scrollTop: 100 },
+    });
+
+    expect(onStopFollowing).toHaveBeenCalledTimes(1);
+  });
+
+  it('gracefully exits follow mode when followed peer leaves the room', () => {
+    const onStopFollowing = vi.fn();
+    const { rerender } = render(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onStopFollowing={onStopFollowing}
+        collabPeers={[{ clientID: 1, name: 'Alice', color: '#10b981' }]}
+      />
+    );
+
+    // Alice left, only Bob remains
+    rerender(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onStopFollowing={onStopFollowing}
+        collabPeers={[{ clientID: 2, name: 'Bob', color: '#3b82f6' }]}
+      />
+    );
+
+    expect(onStopFollowing).toHaveBeenCalledTimes(1);
+  });
 });
