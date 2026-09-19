@@ -141,6 +141,45 @@ describe('openrouter.ts', () => {
       });
       expect(res).toEqual({});
     });
+
+    it('chunks translation requests when items exceed BATCH_CHUNK_SIZE', async () => {
+      let callCount = 0;
+      vi.stubGlobal('fetch', vi.fn(async (_url, opts) => {
+        callCount++;
+        const parsedBody = JSON.parse(opts.body);
+        const userContent = JSON.parse(parsedBody.messages[1].content);
+        const returnedStrings: Record<string, string> = {};
+        for (const k of Object.keys(userContent.strings)) {
+          returnedStrings[k] = `translated_${k}`;
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: JSON.stringify(returnedStrings) } }],
+          }),
+        };
+      }));
+
+      // Generate 35 items (> BATCH_CHUNK_SIZE of 25)
+      const items = Array.from({ length: 35 }, (_, i) => ({
+        key: `key_${i}`,
+        sourceText: `Source ${i}`,
+      }));
+
+      const res = await translateBatchWithOpenRouter({
+        apiKey: 'sk-or-valid-key',
+        model: 'google/gemini-2.5-flash',
+        sourceLang: 'en',
+        targetLang: 'my',
+        items,
+      });
+
+      // 35 items with chunk size 25 should require 2 fetch calls
+      expect(callCount).toBe(2);
+      expect(Object.keys(res).length).toBe(35);
+      expect(res['key_0']).toBe('translated_key_0');
+      expect(res['key_34']).toBe('translated_key_34');
+    });
   });
 
   describe('parseAiJsonResponse resilience & recovery', () => {

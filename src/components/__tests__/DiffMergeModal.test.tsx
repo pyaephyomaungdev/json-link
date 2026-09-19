@@ -52,7 +52,7 @@ describe('DiffMergeModal', () => {
     expect(screen.getByText('+ auth.forgot_password')).not.toBeNull();
 
     // Click on modified tab card
-    const modifiedCard = screen.getByText('Altered translations').closest('div')!;
+    const modifiedCard = screen.getByText('Altered translations').closest('button')!;
     fireEvent.click(modifiedCard);
 
     expect(screen.getByText('~ auth.login')).not.toBeNull();

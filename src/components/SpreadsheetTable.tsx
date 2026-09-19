@@ -44,6 +44,7 @@ import {
   ClipboardPaste,
   ClipboardCopy,
   Globe,
+  Eye,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -58,6 +59,8 @@ import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/li
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
+import { CollabPeerUser } from '@/lib/collaboration';
+import { useVirtualRows } from '@/hooks/useVirtualRows';
 
 interface SpreadsheetTableProps {
   items: TranslationItem[];
@@ -82,6 +85,10 @@ interface SpreadsheetTableProps {
   onClearFilters?: () => void;
   activeFilter?: 'all' | 'missing';
   searchQuery?: string;
+  collabPeers?: CollabPeerUser[];
+  onActiveCellChange?: (key: string | null, field: string | null) => void;
+  followingPeerName?: string | null;
+  onStopFollowing?: () => void;
 }
 
 interface EditingCell {
@@ -144,6 +151,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onClearFilters,
   activeFilter,
   searchQuery,
+  collabPeers,
+  onActiveCellChange,
+  followingPeerName,
+  onStopFollowing,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(() => {
@@ -153,6 +164,32 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     return null;
   });
   const [hasScrolledX, setHasScrolledX] = useState(false);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Virtualization windowing for large catalogs
+  const {
+    startIndex: virtualStartIndex,
+    endIndex: virtualEndIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+  } = useVirtualRows({
+    containerRef: tableContainerRef,
+    totalItems: items.length,
+    rowHeight: 38,
+    overscan: 12,
+  });
+
+  // Sync active cell to collaboration awareness
+  useEffect(() => {
+    if (editingCell) {
+      onActiveCellChange?.(editingCell.key, editingCell.field);
+    } else if (selectedCell) {
+      onActiveCellChange?.(selectedCell.key, selectedCell.field);
+    } else {
+      onActiveCellChange?.(null, null);
+    }
+  }, [editingCell, selectedCell, onActiveCellChange]);
+
 
   // Keep selectedCell synchronized with visible items (handles filter, delete, reorder)
   useEffect(() => {
@@ -360,6 +397,53 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       return prev;
     });
   }, [showDescription, languages]);
+
+  // Follow Mode: smooth auto-scroll to the followed peer's active cell whenever it moves
+  useEffect(() => {
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    const targetPeer = collabPeers.find(p => p.name === followingPeerName);
+    if (!targetPeer?.activeCell?.key) return;
+
+    const targetKey = targetPeer.activeCell.key;
+    const targetField = targetPeer.activeCell.field || 'key';
+
+    // Find row index
+    const rowIdx = items.findIndex(i => i.key === targetKey);
+    if (rowIdx !== -1) {
+      const langIdx = languages.indexOf(targetField);
+      const targetCol = targetField === 'key' ? 0 : (showDescription && targetField === 'description') ? 1 : (langIdx >= 0 ? langIdx + (showDescription ? 2 : 1) : 0);
+
+      setSelectedCell(prev => {
+        if (prev?.key === targetKey && prev?.field === targetField) return prev;
+        return {
+          key: targetKey,
+          field: targetField,
+          colIndex: targetCol,
+          rowIndex: rowIdx,
+        };
+      });
+
+      // If followed peer is on description column and it's hidden, auto-open description
+      if (targetField === 'description' && !showDescription) {
+        setShowDescription(true);
+      }
+
+      // Find cell element using data attributes and smooth scroll
+      requestAnimationFrame(() => {
+        const cellEl = tableContainerRef.current?.querySelector(
+          `[data-cell-key="${CSS.escape(targetKey)}"][data-cell-field="${CSS.escape(targetField)}"]`
+        ) as HTMLElement | null;
+
+        if (cellEl) {
+          cellEl.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest',
+          });
+        }
+      });
+    }
+  }, [followingPeerName, collabPeers, items, languages, showDescription]);
 
   // Track resizing divider drag
   const resizingColRef = useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
@@ -617,6 +701,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const langIdx = showDescription ? colIdx - 2 : colIdx - 1;
       return languages[langIdx] || 'key';
     };
+
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+      if (followingPeerName) {
+        onStopFollowing?.();
+      }
+    }
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -880,6 +970,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
   return (
     <div
+      role="grid"
+      aria-label="Localization spreadsheet"
       className="flex-1 flex flex-col w-full h-full min-h-0 select-none bg-background outline-none"
       onPaste={handlePaste}
       onKeyDown={handleTableKeyDown}
@@ -998,6 +1090,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
       {/* True Excel Spreadsheet Table: Edge-to-edge, Horizontal Scroll on Overflow, Dynamic Freeze Panes */}
       <div
+        ref={tableContainerRef}
         className="flex-1 overflow-auto relative w-full h-full bg-background"
         onScroll={(e) => {
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
@@ -1005,6 +1098,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           }
         }}
       >
+        {/* Floating Follow Mode Indicator Banner */}
+        {followingPeerName && (
+          <div className="sticky top-11 z-55 flex justify-center pointer-events-none pb-2">
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/95 dark:bg-amber-600/95 text-white shadow-md text-xs font-medium backdrop-blur-xs animate-in fade-in slide-in-from-top-2 duration-200">
+              <span className="size-2 rounded-full bg-white animate-ping" />
+              <Eye className="size-3.5 stroke-[2.5]" />
+              <span>
+                Following <strong>{followingPeerName}</strong>'s screen
+              </span>
+              {onStopFollowing && (
+                <button
+                  type="button"
+                  onClick={onStopFollowing}
+                  className="ml-1 px-2 py-0.5 rounded-full bg-black/20 hover:bg-black/35 text-[11px] font-semibold transition-colors cursor-pointer"
+                >
+                  Stop Following
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {!hasScrolledX && languages.length > 1 && (
           <div className="sm:hidden pointer-events-none sticky bottom-3 float-right mr-3 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-muted-foreground border border-border shadow-md text-[10px] font-medium backdrop-blur-xs transition-opacity animate-pulse">
             <span>Swipe columns</span>
@@ -1030,18 +1145,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             <tr className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {/* Row Number & Multi-Select Header */}
               <th
+                scope="col"
+                aria-label="Row selection header"
                 style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
                 className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
                 <div className="flex items-center justify-between px-0.5">
-                  <div
+                  <button
+                    type="button"
+                    aria-label="Toggle all rows selection"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleToggleSelectAll();
+                      }
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (e.target === e.currentTarget) {
                         handleToggleSelectAll();
                       }
                     }}
-                    className="p-1 -m-1 flex items-center justify-center cursor-pointer"
+                    className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
                     title={selectedRowKeys.size === items.length ? 'Deselect all rows' : 'Select all rows'}
                   >
                     <Checkbox
@@ -1055,10 +1180,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               : false
                       }
                       onCheckedChange={handleToggleSelectAll}
-                      className="size-4 rounded-[3px] border-2 border-muted-foreground/60 shadow-xs cursor-pointer"
-                      aria-label="Select all rows"
+                      className="size-4 rounded-[3px] border-2 cursor-pointer transition-opacity"
+                      aria-label="Select all rows checkbox"
                     />
-                  </div>
+                  </button>
                   <span className="text-[11px] text-muted-foreground font-mono font-semibold">#</span>
                   <span className="w-2.5" />
                 </div>
@@ -1139,12 +1264,16 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => setSelectedRowKeys(new Set(items.map(i => i.key)))}
+                        onClick={() => {
+                          const newFreeze = safeFrozenCount === 1 ? 0 : 1;
+                          setFrozenCount(newFreeze);
+                        }}
                         className="gap-2 cursor-pointer text-xs"
                       >
-                        <CheckCircle2 className="size-3.5 text-primary" />
-                        <span>Select All Rows</span>
+                        <Pin className="size-3.5" />
+                        <span>{safeFrozenCount >= 1 ? 'Unfreeze Key Column' : 'Freeze Key Column'}</span>
                       </DropdownMenuItem>
+
                       {selectedRowKeys.size > 0 && (
                         <DropdownMenuItem
                           onClick={() => {
@@ -1162,9 +1291,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </div>
 
                 {/* Resizable Divider Handle */}
-                <div
+                <button
+                  type="button"
+                  aria-label="Resize key column"
                   onMouseDown={(e) => handleStartResize('key', KEY_COL_WIDTH, e)}
-                  className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                  className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                   title="Drag to resize column"
                 />
               </th>
@@ -1197,9 +1328,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   </div>
 
                   {/* Resizable Divider Handle */}
-                  <div
+                  <button
+                    type="button"
+                    aria-label="Resize description column"
                     onMouseDown={(e) => handleStartResize('description', DESC_COL_WIDTH, e)}
-                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                     title="Drag to resize column"
                   />
                 </th>
@@ -1419,9 +1552,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </div>
 
                     {/* Resizable Divider Handle */}
-                    <div
+                    <button
+                      type="button"
+                      aria-label={`Resize ${lang} column`}
                       onMouseDown={(e) => handleStartResize(lang, currentWidth, e)}
-                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors"
+                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-50 transition-colors bg-transparent border-0 p-0"
                       title="Drag to resize column"
                     />
                   </th>
@@ -1430,6 +1565,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
               {/* Action Column Header (Frozen on Right) */}
               <th
+                scope="col"
+                aria-label="Row actions"
                 style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
                 className="py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 right-0 z-50 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
@@ -1443,6 +1580,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             {items.length === 0 ? (
               <tr>
                 <td
+                  aria-label="Empty translation grid"
                   colSpan={3 + (showDescription ? 1 : 0) + languages.length}
                   className="p-6 sm:p-14 text-center select-none bg-background/50 border-b border-border"
                 >
@@ -1497,8 +1635,19 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </td>
               </tr>
             ) : (
-              items.map((item, rowIdx) => {
-                const rowNumber = rowIdx + 1;
+              <>
+                {topSpacerHeight > 0 && (
+                  <tr style={{ height: topSpacerHeight }} aria-hidden="true">
+                    <td
+                      colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                      className="p-0 border-0 pointer-events-none"
+                      aria-label="Spacer row"
+                    />
+                  </tr>
+                )}
+                {items.slice(virtualStartIndex, virtualEndIndex).map((item, sliceIdx) => {
+                  const rowIdx = virtualStartIndex + sliceIdx;
+                  const rowNumber = rowIdx + 1;
                 const isKeySelected =
                   selectedCell?.key === item.key && selectedCell.field === 'key';
                 const rowStatus: RowStatus = item.status || 'draft';
@@ -1527,7 +1676,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                     >
                       <div className="flex items-center justify-between px-0.5">
-                        <div
+                        <button
+                          type="button"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              isShiftHeldRef.current = e.shiftKey;
+                              handleToggleRowSelect(item.key);
+                            }
+                          }}
                           onClick={(e) => {
                             e.stopPropagation();
                             isShiftHeldRef.current = e.shiftKey;
@@ -1535,8 +1692,9 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               handleToggleRowSelect(item.key);
                             }
                           }}
-                          className="p-1 -m-1 flex items-center justify-center cursor-pointer"
+                          className="p-1 -m-1 flex items-center justify-center cursor-pointer bg-transparent border-0"
                           title={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
+                          aria-label={isRowSelected ? `Deselect row ${rowNumber}` : `Select row ${rowNumber}`}
                         >
                           <Checkbox
                             checked={isRowSelected}
@@ -1548,7 +1706,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             }`}
                             aria-label={`Select row ${rowNumber}`}
                           />
-                        </div>
+                        </button>
                         <span className="text-[11px] font-mono select-none">{rowNumber}</span>
 
                         {/* Row Review Status Dropdown Indicator */}
@@ -1598,109 +1756,148 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </td>
 
                     {/* Translation Key Column */}
-                    <td
-                      style={{
-                        width: KEY_COL_WIDTH,
-                        minWidth: KEY_COL_WIDTH,
-                        left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
-                      }}
-                      onClick={() =>
-                        setSelectedCell({
-                          key: item.key,
-                          field: 'key',
-                          colIndex: 0,
-                          rowIndex: rowIdx,
-                        })
-                      }
-                      onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
-                      className={`py-1.5 px-3 font-mono text-xs ${
-                        isRowSelected
-                          ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                          : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                      } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
-                          ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
-                          : ''
-                        }`}
-                    >
-                      {editingCell?.key === item.key && editingCell.field === 'key' ? (
-                        <input
-                          ref={inputRef as React.RefObject<HTMLInputElement>}
-                          type="text"
-                          value={editingCell.value}
-                          onChange={e =>
-                            setEditingCell({ ...editingCell, value: e.target.value })
-                          }
-                          onBlur={handleSaveEdit}
-                          onKeyDown={handleKeyDown}
-                          className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
-                        />
-                      ) : (
-                        <div
-                          className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
-                          onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
-                          title="Double-click to edit key name"
+                    {(() => {
+                      const keyPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'key');
+
+                      return (
+                        <td
+                          key="key"
+                          data-cell-key={item.key}
+                          data-cell-field="key"
+                          style={{
+                            width: KEY_COL_WIDTH,
+                            minWidth: KEY_COL_WIDTH,
+                            left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
+                          }}
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
+                            setSelectedCell({
+                              key: item.key,
+                              field: 'key',
+                              colIndex: 0,
+                              rowIndex: rowIdx,
+                            });
+                          }}
+                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
+                          className={`py-1.5 px-3 font-mono text-xs ${
+                            isRowSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                          } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
+                              ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
+                              : ''
+                            }`}
                         >
-                          <span className="font-semibold truncate text-foreground">
-                            {item.key}
-                          </span>
-                          <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
-                        </div>
-                      )}
-                    </td>
+                          {keyPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': keyPeer.color } as React.CSSProperties}
+                            >
+                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                {keyPeer.name}
+                              </span>
+                            </div>
+                          )}
+                          {editingCell?.key === item.key && editingCell.field === 'key' ? (
+                            <input
+                              ref={inputRef as React.RefObject<HTMLInputElement>}
+                              type="text"
+                              value={editingCell.value}
+                              onChange={e =>
+                                setEditingCell({ ...editingCell, value: e.target.value })
+                              }
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyDown}
+                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs font-mono outline-none shadow-2xs"
+                            />
+                          ) : (
+                            <div
+                              className="group/keycell flex items-center justify-between gap-1.5 cursor-pointer"
+                              onDoubleClick={() => handleStartEdit(item.key, 'key', item.key)}
+                              title="Double-click to edit key name"
+                            >
+                              <span className="font-semibold truncate text-foreground">
+                                {item.key}
+                              </span>
+                              <Pencil className="size-3 text-muted-foreground/40 opacity-0 group-hover/keycell:opacity-100 transition-opacity shrink-0" />
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Context / Description Cell */}
-                    {showDescription && (
-                      <td
-                        style={{ width: DESC_COL_WIDTH, minWidth: DESC_COL_WIDTH }}
-                        onClick={() =>
-                          setSelectedCell({
-                            key: item.key,
-                            field: 'description',
-                            colIndex: 1,
-                            rowIndex: rowIdx,
-                          })
-                        }
-                        onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
-                        className={`py-1.5 px-3 text-xs ${
-                          isRowSelected
-                            ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                            : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
-                        } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
-                            ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
-                            : ''
-                          }`}
-                      >
-                        {editingCell?.key === item.key && editingCell.field === 'description' ? (
-                          <input
-                            ref={inputRef as React.RefObject<HTMLInputElement>}
-                            type="text"
-                            value={editingCell.value}
-                            onChange={e =>
-                              setEditingCell({ ...editingCell, value: e.target.value })
-                            }
-                            onBlur={handleSaveEdit}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Context for translators..."
-                            className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
-                          />
-                        ) : (
-                          <div
-                            className="min-h-[24px] flex items-center cursor-pointer"
-                            onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
-                            title="Double-click to edit context"
-                          >
-                            <span
-                              className={`truncate text-xs ${item.description
-                                  ? 'text-muted-foreground'
-                                  : 'text-muted-foreground/40 italic'
-                                }`}
+                    {showDescription && (() => {
+                      const descPeer = collabPeers?.find(p => p.activeCell?.key === item.key && p.activeCell?.field === 'description');
+                      return (
+                        <td
+                          data-cell-key={item.key}
+                          data-cell-field="description"
+                          style={{
+                            width: DESC_COL_WIDTH,
+                            minWidth: DESC_COL_WIDTH,
+                          }}
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
+                            setSelectedCell({
+                              key: item.key,
+                              field: 'description',
+                              colIndex: 1,
+                              rowIndex: rowIdx,
+                            });
+                          }}
+                          onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
+                          className={`py-1.5 px-3 text-xs relative ${
+                            isRowSelected
+                              ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
+                              : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                          } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
+                              ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
+                              : ''
+                            }`}
+                        >
+                          {descPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': descPeer.color } as React.CSSProperties}
                             >
-                              {item.description || 'Add context...'}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                    )}
+                              <span className="absolute top-0 right-0 z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white rounded-bl shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]">
+                                {descPeer.name}
+                              </span>
+                            </div>
+                          )}
+                          {editingCell?.key === item.key && editingCell.field === 'description' ? (
+                            <input
+                              ref={inputRef as React.RefObject<HTMLInputElement>}
+                              type="text"
+                              value={editingCell.value}
+                              onChange={e =>
+                                setEditingCell({ ...editingCell, value: e.target.value })
+                              }
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Context for translators..."
+                              className="w-full px-2 py-0.5 bg-background border border-primary rounded text-xs outline-none shadow-2xs text-foreground"
+                            />
+                          ) : (
+                            <div
+                              className="min-h-[24px] flex items-center cursor-pointer"
+                              onDoubleClick={() => handleStartEdit(item.key, 'description', item.description || '')}
+                              title="Double-click to edit context"
+                            >
+                              <span
+                                className={`truncate text-xs ${item.description
+                                    ? 'text-muted-foreground'
+                                    : 'text-muted-foreground/40 italic'
+                                  }`}
+                              >
+                                {item.description || 'Add context...'}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })()}
 
                     {/* Language Translation Cells */}
                     {languages.map((lang, colIdx) => {
@@ -1732,23 +1929,30 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         previousValues[item.key]?.[lang] !== undefined &&
                         previousValues[item.key][lang] !== val;
 
+                      const cellPeer = collabPeers?.find(
+                        p => p.activeCell?.key === item.key && p.activeCell?.field === lang
+                      );
+
                       return (
                         <td
                           key={lang}
+                          data-cell-key={item.key}
+                          data-cell-field={lang}
                           dir={isRtl ? 'rtl' : 'ltr'}
                           style={{
                             width: getLangColWidth(lang),
                             minWidth: getLangColWidth(lang),
                             left: langLeft,
                           }}
-                          onClick={() =>
+                          onClick={() => {
+                            if (followingPeerName) onStopFollowing?.();
                             setSelectedCell({
                               key: item.key,
                               field: lang,
                               colIndex: colIdx + (showDescription ? 2 : 1),
                               rowIndex: rowIdx,
-                            })
-                          }
+                            });
+                          }}
                           onContextMenu={(e) =>
                             handleCellContextMenu(
                               e,
@@ -1769,6 +1973,20 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               : ''
                             }`}
                         >
+                          {cellPeer && (
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20 border-2 border-[var(--peer-color)]"
+                              style={{ '--peer-color': cellPeer.color } as React.CSSProperties}
+                            >
+                              <span
+                                className={`absolute top-0 ${
+                                  isRtl ? 'left-0 rounded-br' : 'right-0 rounded-bl'
+                                } z-30 px-1.5 py-0.5 text-[9px] leading-none font-medium text-white shadow-xs tracking-tight font-sans whitespace-nowrap bg-[var(--peer-color)]`}
+                              >
+                                {cellPeer.name}
+                              </span>
+                            </div>
+                          )}
                           {/* Excel-style Corner Flag for Zawgyi warning */}
                           {isZawgyiCell && (
                             <div
@@ -1903,6 +2121,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
                     {/* Custom Row Actions Dropdown Menu (Frozen on Right) */}
                     <td
+                      aria-label={`Row actions for row ${rowNumber}`}
                       style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
                       className={`py-1 px-1 text-center border-b border-l border-border ${
                         isRowSelected
@@ -2035,7 +2254,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     </td>
                   </tr>
                 );
-              }))}
+              })}
+              {bottomSpacerHeight > 0 && (
+                <tr style={{ height: bottomSpacerHeight }} aria-hidden="true">
+                  <td
+                    colSpan={3 + (showDescription ? 1 : 0) + languages.length}
+                    className="p-0 border-0 pointer-events-none"
+                    aria-label="Spacer row"
+                  />
+                </tr>
+              )}
+            </>
+          )}
           </tbody>
         </table>
       </div>
@@ -2362,15 +2592,15 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           >
             <DialogBody className="space-y-3 text-xs">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-foreground">
+                <label htmlFor="rename-lang-code-input" className="text-xs font-semibold text-foreground">
                   Language Code:
                 </label>
                 <Input
+                  id="rename-lang-code-input"
                   value={renameLangValue}
                   onChange={e => setRenameLangValue(e.target.value)}
                   placeholder="e.g. es, fr, ja, th"
                   className="h-8 text-xs font-mono"
-                  autoFocus
                 />
               </div>
             </DialogBody>

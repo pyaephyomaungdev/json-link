@@ -270,7 +270,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           {/* Find input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <label htmlFor="find-query-input" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <Search className="size-3.5 text-primary" />
                 Find
               </label>
@@ -303,6 +303,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
             </div>
             <div className="relative">
               <Input
+                id="find-query-input"
                 ref={queryInputRef}
                 type="text"
                 value={query}
@@ -327,11 +328,12 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
           {/* Replace input - shown only in Replace tab */}
           {tab === 'replace' && (
             <div className="flex flex-col gap-1.5 animate-in fade-in duration-150">
-              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <label htmlFor="find-replace-input" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <Replace className="size-3.5 text-primary" />
                 Replace With
               </label>
               <Input
+                id="find-replace-input"
                 type="text"
                 value={replacement}
                 onChange={(e) => setReplacement(e.target.value)}
@@ -343,7 +345,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
 
           {/* Scope selection */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-foreground">Search In / Scope</label>
+            <span className="text-xs font-semibold text-foreground">Search In / Scope</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -402,24 +404,27 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
 
           {/* Options row */}
           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
+            <label htmlFor="find-match-case" className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <Checkbox
+                id="find-match-case"
                 checked={matchCase}
                 onCheckedChange={(checked) => setMatchCase(!!checked)}
               />
               <span>Match case (Aa)</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
+            <label htmlFor="find-whole-word" className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <Checkbox
+                id="find-whole-word"
                 checked={wholeWord}
                 onCheckedChange={(checked) => setWholeWord(!!checked)}
               />
               <span>Whole word</span>
             </label>
 
-            <label className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
+            <label htmlFor="find-regex" className="flex items-center gap-2 cursor-pointer select-none hover:text-foreground">
               <Checkbox
+                id="find-regex"
                 checked={isRegex}
                 onCheckedChange={(checked) => setIsRegex(!!checked)}
               />
@@ -459,23 +464,26 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                   return (
                     <div
                       key={`${occ.key}-${occ.field}-${occ.rowIndex}-${idx}`}
-                      onClick={() => setActiveMatchIndex(idx)}
                       className={cn(
-                        'p-2 rounded-md border text-xs cursor-pointer transition-all flex flex-col gap-1',
+                        'p-2 rounded-md border text-xs transition-all flex flex-col gap-1',
                         isActive
                           ? 'bg-primary/10 border-primary/50 ring-1 ring-primary/30 shadow-2xs'
                           : 'bg-background border-border/60 hover:border-border hover:bg-muted/30'
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMatchIndex(idx)}
+                          className="flex items-center gap-1.5 min-w-0 text-left cursor-pointer flex-1"
+                        >
                           <code className="font-mono text-[11px] font-semibold text-primary truncate">
                             {occ.key}
                           </code>
                           <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold uppercase bg-muted text-muted-foreground border border-border shrink-0">
                             {occ.field}
                           </span>
-                        </div>
+                        </button>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-[10px] text-muted-foreground font-mono">
                             Row #{occ.rowIndex + 1}
@@ -483,10 +491,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                           {onJumpToKey && (
                             <button
                               type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleJumpToOccurrence(occ.key);
-                              }}
+                              onClick={() => handleJumpToOccurrence(occ.key)}
                               title="Jump to row in table"
                               className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary hover:underline cursor-pointer"
                             >
@@ -497,7 +502,11 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="text-[11px] text-muted-foreground font-myanmar break-words leading-relaxed pl-1.5 border-l-2 border-primary/30">
+                      <button
+                        type="button"
+                        onClick={() => setActiveMatchIndex(idx)}
+                        className="text-[11px] text-muted-foreground font-myanmar break-words leading-relaxed pl-1.5 border-l-2 border-primary/30 text-left w-full cursor-pointer"
+                      >
                         <HighlightedText
                           text={occ.value}
                           query={query}
@@ -505,7 +514,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                           isRegex={isRegex}
                           wholeWord={wholeWord}
                         />
-                      </div>
+                      </button>
                     </div>
                   );
                 })}

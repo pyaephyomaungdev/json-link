@@ -222,8 +222,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               {/* Password Protection for File Handoff */}
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+                  <label htmlFor="share-file-password-checkbox" className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
                     <Checkbox
+                      id="share-file-password-checkbox"
                       checked={enablePassword}
                       onCheckedChange={(checked) => {
                         hasAutoSwitchedRef.current = true;
@@ -260,7 +261,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           setPassword(e.target.value);
                         }}
                         className={`text-xs h-8 pr-8 bg-muted/20 ${!password.trim() ? 'border-amber-500/50' : ''}`}
-                        autoFocus
                       />
                       <button
                         type="button"
@@ -420,8 +420,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 {/* Password Protection Section for Instant URL */}
                 <div className="pt-2.5 mt-2.5 border-t border-border/70 space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
+                    <label htmlFor="share-url-password-checkbox" className="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-foreground">
                       <Checkbox
+                        id="share-url-password-checkbox"
                         checked={enablePassword}
                         onCheckedChange={(checked) => {
                           hasAutoSwitchedRef.current = true;
@@ -458,7 +459,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             setPassword(e.target.value);
                           }}
                           className={`text-xs h-8 pr-8 bg-muted/20 ${!password.trim() ? 'border-amber-500/50' : ''}`}
-                          autoFocus
                         />
                         <button
                           type="button"
@@ -555,7 +555,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <span>Large Project ({Math.round(urlLength / 1024 * 10) / 10} KB / {items.length} keys)</span>
                   </div>
                   <p className="leading-relaxed">
-                    This link exceeds the safe chat limit (2.5 KB) and may get truncated in chat apps. For large projects, please use the <strong className="underline cursor-pointer" onClick={() => switchTab('file')}>Team Handoff (.jsonlink)</strong> file instead.
+                    This link exceeds the safe chat limit (2.5 KB) and may get truncated in chat apps. For large projects, please use the <button type="button" className="underline cursor-pointer font-bold inline p-0 bg-transparent border-0 text-inherit" onClick={() => switchTab('file')}>Team Handoff (.jsonlink)</button> file instead.
                   </p>
                 </div>
               )}

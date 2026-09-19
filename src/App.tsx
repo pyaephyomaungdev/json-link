@@ -37,6 +37,13 @@ const DuplicateFinderModal = lazy(() => import('@/components/DuplicateFinderModa
 const IcuTesterModal = lazy(() => import('@/components/IcuTesterModal').then(m => ({ default: m.IcuTesterModal })));
 const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ default: m.ShareModal })));
 const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
+const LiveCollabModal = lazy(() => import('@/components/LiveCollabModal').then(m => ({ default: m.LiveCollabModal })));
+const CollabPinDialog = lazy(() => import('@/components/CollabPinDialog').then(m => ({ default: m.CollabPinDialog })));
+import { useCollabSession } from '@/hooks/useCollabSession';
+import {
+  CollabPeerUser,
+  generateRandomPeerProfile,
+} from '@/lib/collaboration';
 import {
   storeDirectoryHandle,
   getStoredDirectoryHandle,
@@ -47,6 +54,7 @@ import {
 } from '@/lib/fileSystem';
 import { upsertMemoryEntry } from '@/lib/translationMemory';
 import { Logo } from '@/components/Logo';
+import { CollabHeaderControl } from '@/components/CollabHeaderControl';
 import { runLocalizationLinter } from '@/lib/linter';
 import { isEffectivelyMissing } from '@/lib/variables';
 import {
@@ -338,6 +346,11 @@ export function App() {
   const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
   const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
 
+  // Live WebRTC Collaboration state
+  const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
+  const [localPeerProfile, setLocalPeerProfile] = useState<CollabPeerUser>(() => generateRandomPeerProfile());
+  const [followingPeerName, setFollowingPeerName] = useState<string | null>(null);
+
   // Local Folder Direct Sync state
   const [linkedDirHandle, setLinkedDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [linkedFolderName, setLinkedFolderName] = useState<string | null>(null);
@@ -416,6 +429,51 @@ export function App() {
       }
     }
   };
+
+  // WebRTC Live Collaboration Session Hook
+  const {
+    collabSession,
+    collabPeers,
+    collabPassword,
+    pendingCollabRoomId,
+    collabAuthError,
+    isCollabConnecting,
+    clearCollabAuthError,
+    startCollabSession: handleStartCollabSession,
+    endCollabSession: handleEndCollabSession,
+    joinCollabWithPin,
+    cancelCollabPin,
+    handleActiveCellChange,
+  } = useCollabSession({
+    items,
+    languages,
+    localPeerProfile,
+    setLocalPeerProfile,
+    onRemoteItemsChange: setItemsWithoutHistory,
+    onRemoteLanguagesChange: setLanguages,
+    onActivateWorkspace: () => setIsWorkspaceActive(true),
+    onDeactivateWorkspace: () => setIsWorkspaceActive(false),
+  });
+
+  const handleJumpToPeerCell = useCallback((key: string, field: string) => {
+    const rowIdx = items.findIndex(i => i.key === key);
+    if (rowIdx !== -1) {
+      requestAnimationFrame(() => {
+        const cellEl = document.querySelector(
+          `[data-cell-key="${CSS.escape(key)}"][data-cell-field="${CSS.escape(field)}"]`
+        ) as HTMLElement | null;
+
+        if (cellEl) {
+          cellEl.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'center',
+          });
+          cellEl.click();
+        }
+      });
+    }
+  }, [items]);
 
   // Re-verify stored directory handle on load
   useEffect(() => {
@@ -814,6 +872,8 @@ export function App() {
     setIsAddKeyOpen(false);
     setIsAddLanguageOpen(false);
     setIsUnlockDialogOpen(false);
+    setIsCollabModalOpen(false);
+    handleEndCollabSession();
     setPendingShareHash(null);
     setPendingEncryptedFile(null);
     shareDecodeSeqRef.current += 1;
@@ -1827,11 +1887,13 @@ export function App() {
                     }
                   }}
                   className="h-6 px-1.5 sm:px-2 text-xs font-semibold bg-background border border-primary rounded outline-none w-20 xs:w-28 sm:w-36 md:w-44 text-foreground shadow-sm shrink-0"
-                  autoFocus
                 />
               ) : (
                 <button
-                  onClick={() => setIsEditingProjectName(true)}
+                  onClick={() => {
+                    setIsEditingProjectName(true);
+                    setTimeout(() => projectNameInputRef.current?.focus(), 0);
+                  }}
                   className="group flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted/80 text-xs font-semibold text-foreground transition-colors cursor-pointer min-w-0"
                   title="Click to rename project"
                 >
@@ -1894,6 +1956,19 @@ export function App() {
         </div>
 
         <nav aria-label="Header Actions" className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {(items.length > 0 || isWorkspaceActive) && (
+            <CollabHeaderControl
+              isCollabConnected={Boolean(collabSession)}
+              collabPeerCount={collabPeers.length + 1}
+              onOpenCollab={() => setIsCollabModalOpen(true)}
+              localPeerProfile={localPeerProfile}
+              collabPeers={collabPeers}
+              followingPeerName={followingPeerName}
+              onFollowPeer={setFollowingPeerName}
+              onJumpToPeerCell={handleJumpToPeerCell}
+            />
+          )}
+
           {items.length > 0 && (
             <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
               <Button
@@ -1994,6 +2069,9 @@ export function App() {
             onOpenExport={() => setIsExportOpen(true)}
             onOpenSaveProject={() => setIsSaveProjectOpen(true)}
             onOpenShare={() => setIsShareModalOpen(true)}
+            onOpenCollab={() => setIsCollabModalOpen(true)}
+            isCollabConnected={Boolean(collabSession)}
+            collabPeerCount={collabPeers.length + 1}
             onResetToSample={handleResetToSample}
             onClearAll={handleClearAll}
             hasItems={items.length > 0}
@@ -2073,6 +2151,10 @@ export function App() {
             searchQuery={searchQuery}
             totalItemCount={items.length}
             onClearFilters={handleClearFilters}
+            collabPeers={collabPeers}
+            onActiveCellChange={handleActiveCellChange}
+            followingPeerName={followingPeerName}
+            onStopFollowing={() => setFollowingPeerName(null)}
             onToggleFilterMissingLang={(lang) => {
               setFilterMissingLang(prev => (prev === lang ? null : lang));
             }}
@@ -2177,6 +2259,19 @@ export function App() {
               window.history.replaceState(null, '', window.location.pathname);
             }
           }}
+        />
+
+        <CollabPinDialog
+          open={Boolean(pendingCollabRoomId)}
+          onOpenChange={open => {
+            if (!open) cancelCollabPin();
+          }}
+          roomId={pendingCollabRoomId || ''}
+          onJoin={joinCollabWithPin}
+          onCancel={cancelCollabPin}
+          errorMessage={collabAuthError}
+          onClearError={clearCollabAuthError}
+          isConnecting={isCollabConnecting}
         />
 
         {/* AI Auto-Translation Modal */}
@@ -2318,6 +2413,21 @@ export function App() {
           onClose={() => setIsIcuTesterOpen(false)}
           items={items}
           languages={languages}
+        />
+
+        {/* Real-time WebRTC Collaboration Modal */}
+        <LiveCollabModal
+          isOpen={isCollabModalOpen}
+          onClose={() => setIsCollabModalOpen(false)}
+          isConnected={Boolean(collabSession)}
+          currentRoomId={collabSession?.roomId || null}
+          currentRoomPassword={collabPassword}
+          peers={collabPeers}
+          localUser={localPeerProfile}
+          onStartSession={(roomId, password, userName) =>
+            handleStartCollabSession(roomId, password, userName, true)
+          }
+          onEndSession={handleEndCollabSession}
         />
       </Suspense>
     </div>

@@ -30,7 +30,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -153,7 +153,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               const isSelected = idx === selectedIndex;
 
               return (
-                <div
+                <button
+                  type="button"
                   key={cmd.id}
                   ref={el => {
                     itemRefs.current[idx] = el;
@@ -163,7 +164,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onClose();
                   }}
                   onMouseMove={e => handleItemMouseMove(idx, e)}
-                  className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs select-none ${
+                  className={`group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all text-xs select-none w-full text-left ${
                     isSelected
                       ? 'bg-primary/10 dark:bg-primary/15 text-foreground font-medium ring-1 ring-primary/25'
                       : 'text-foreground/90 hover:bg-muted/60'
@@ -215,7 +216,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       </kbd>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })
           )}

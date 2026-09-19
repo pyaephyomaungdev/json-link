@@ -290,12 +290,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </div>
             </div>
 
-            {/* 3-Column Recovery Cards — identical grid pattern to NotFoundPage */}
+            {/* 3-Column Recovery Cards — semantic buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
               {/* Card 1: Reload / Retry */}
-              <div
+              <button
+                type="button"
                 onClick={this.handleReset}
-                className="p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+                className="p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2 text-left w-full"
               >
                 <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <RotateCcw className="size-4" />
@@ -308,12 +309,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                     Reset application state and restore the translation grid.
                   </p>
                 </div>
-              </div>
+              </button>
 
               {/* Card 2: Return Home */}
-              <div
+              <button
+                type="button"
                 onClick={this.handleGoHome}
-                className="p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+                className="p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2 text-left w-full"
               >
                 <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <Home className="size-4" />
@@ -326,12 +328,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                     Navigate back to root URL and reload the workspace cleanly.
                   </p>
                 </div>
-              </div>
+              </button>
 
               {/* Card 3: Copy Diagnostics */}
-              <div
+              <button
+                type="button"
                 onClick={this.handleCopyDetails}
-                className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+                className="p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2 text-left w-full"
               >
                 <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
                   {copied ? (
@@ -350,7 +353,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                       : 'Copy error stack and environment info for debugging.'}
                   </p>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Primary Action Buttons & Emergency Backup */}

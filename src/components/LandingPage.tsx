@@ -426,13 +426,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
             className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl w-full max-w-full ${
               isDragOver
                 ? 'border-primary ring-4 ring-primary/20 scale-[1.005]'
                 : 'border-border/80 hover:border-primary/50'
             }`}
           >
+            {/* Click overlay for accessibility */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Click or drop files anywhere to load into workspace"
+              className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
+            />
             {/* Window Header */}
             <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/60 bg-muted/40 text-xs w-full max-w-full min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">

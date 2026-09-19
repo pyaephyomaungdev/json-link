@@ -28,6 +28,7 @@ import {
   Copy,
   Sliders,
   Share2,
+  Radio,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -56,6 +57,9 @@ interface ToolbarProps {
   onOpenExport: () => void;
   onOpenSaveProject?: () => void;
   onOpenShare?: () => void;
+  onOpenCollab?: () => void;
+  isCollabConnected?: boolean;
+  collabPeerCount?: number;
   onResetToSample: () => void;
   onClearAll: () => void;
   hasItems: boolean;
@@ -100,6 +104,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenExport,
   onOpenSaveProject,
   onOpenShare,
+  onOpenCollab,
+  isCollabConnected,
+  collabPeerCount,
   onResetToSample,
   onClearAll,
   hasItems,
@@ -692,6 +699,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <span>Share &amp; Handoff</span>
               </DropdownMenuItem>
             )}
+            {onOpenCollab && (
+              <DropdownMenuItem
+                onClick={onOpenCollab}
+                className="gap-2 cursor-pointer text-xs"
+              >
+                <Radio className={`size-3.5 ${isCollabConnected ? 'text-emerald-500 animate-pulse' : 'text-primary'}`} />
+                <span className="flex items-center justify-between w-full">
+                  <span>P2P Live Collaboration</span>
+                  {isCollabConnected && (
+                    <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold px-1.5 py-0.2 rounded">
+                      {collabPeerCount || 1} online
+                    </span>
+                  )}
+                </span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onOpenAddLanguage} className="gap-2 cursor-pointer text-xs sm:hidden">
               <Globe className="size-3.5 text-emerald-600" />
               <span>Add Language Column</span>
@@ -761,6 +784,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+
 
         {/* Share Button (Desktop & Tablet) */}
         {onOpenShare && (

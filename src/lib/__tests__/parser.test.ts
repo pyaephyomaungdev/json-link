@@ -168,7 +168,7 @@ describe('parser.ts', () => {
     });
 
     it('throws error for invalid JSON string or non-object root', () => {
-      expect(() => parseJsonFile('invalid json', 'test.json')).toThrow();
+      expect(() => parseJsonFile('invalid json', 'test.json')).toThrow(/JSON/i);
       expect(() => parseJsonFile('123', 'test.json')).toThrow(
         'Invalid JSON structure: Root must be an object.'
       );
@@ -424,7 +424,7 @@ en:
     });
 
     it('throws error for invalid JSON or non-object root', () => {
-      expect(() => parseArbFile('invalid json', 'app.arb')).toThrow();
+      expect(() => parseArbFile('invalid json', 'app.arb')).toThrow(/JSON/i);
       expect(() => parseArbFile('["not", "an", "object"]', 'app.arb')).toThrow(
         'Invalid ARB structure: Root must be a JSON object.'
       );

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +59,8 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customCode, setCustomCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -70,6 +72,18 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
       setIsDropdownOpen(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (isCustomMode) {
+      setTimeout(() => customInputRef.current?.focus(), 50);
+    }
+  }, [isCustomMode]);
+
+  useEffect(() => {
+    if (isDropdownOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [isDropdownOpen]);
 
   // Filter languages by English name, native name, or ISO code
   const filteredLanguages = useMemo(() => {
@@ -129,10 +143,10 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
           {/* Main Language Picker: Searchable Dropdown or Custom Input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-foreground flex items-center gap-1.5">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
                 <Globe className="size-3.5 text-primary" />
                 Select Language
-              </label>
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -149,6 +163,7 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
             {isCustomMode ? (
               <div className="flex gap-2">
                 <Input
+                  ref={customInputRef}
                   value={customCode}
                   onChange={e => {
                     setCustomCode(e.target.value);
@@ -162,7 +177,6 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
                   }}
                   placeholder="e.g. th, ja, ko, fr, de, my..."
                   className="h-8 text-xs font-mono uppercase"
-                  autoFocus
                 />
                 <Button
                   type="button"
@@ -214,18 +228,18 @@ export const AddLanguageDialog: React.FC<AddLanguageDialogProps> = ({
                       {/* Search Header inside Dropdown Menu */}
                       <div
                         className="p-2 border-b border-border bg-popover sticky top-0 z-10 shrink-0"
-                        onClick={e => e.stopPropagation()}
+                        onPointerDown={e => e.stopPropagation()}
                       >
                         <div className="relative flex items-center">
                           <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                           <input
+                            ref={searchInputRef}
                             type="text"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             onKeyDown={e => e.stopPropagation()}
                             placeholder="Type language name, native script or code..."
                             className="w-full h-7 pl-8 pr-7 bg-background border border-border rounded text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                            autoFocus
                           />
                           {searchQuery && (
                             <button

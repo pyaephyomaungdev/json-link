@@ -402,8 +402,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Options & Filename */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 border-t border-border pt-3 text-xs">
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-foreground">File Name:</label>
+              <label htmlFor="export-filename" className="font-semibold text-foreground">File Name:</label>
               <Input
+                id="export-filename"
                 value={filename}
                 onChange={e => setFilename(e.target.value)}
                 placeholder="translations"
@@ -413,7 +414,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
             {(activeTab === 'json-zip' || activeTab === 'json-combined' || activeTab === 'yaml-zip' || activeTab === 'arb-zip') && (
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-foreground">Structure & Indent:</label>
+                <span className="font-semibold text-foreground">Structure & Indent:</span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
