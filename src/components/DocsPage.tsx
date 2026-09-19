@@ -50,7 +50,7 @@ interface DocsPageProps {
   onToggleTheme: () => void;
 }
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 
 type DocSectionId =
@@ -595,6 +595,20 @@ function GettingStartedSection() {
             Download your localized project as a multi-platform bundle ZIP, individual Flutter ARB files, iOS .strings, Android strings.xml, Excel workbooks, or CSV.
           </p>
         </div>
+      </div>
+
+      {/* MCP Server Callout */}
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">AI IDE Integration</span>
+          <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">@jsonlink/mcp</span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Expose JSON Link tools (Zawgyi converter, linter, parsers, exporters) to Claude Desktop, Cursor, or any MCP-compatible AI IDE via <code className="font-mono text-primary text-[10px]">stdio JSON-RPC 2.0</code>.
+        </p>
+        <code className="block rounded-lg bg-muted px-3 py-2 text-[11px] font-mono text-foreground select-all">
+          npx -y @jsonlink/mcp
+        </code>
       </div>
     </div>
   );

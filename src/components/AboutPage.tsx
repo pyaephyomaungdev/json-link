@@ -38,7 +38,7 @@ interface AboutPageProps {
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'cookies') => void;
 }
 
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 const LIVE_URL = 'https://json-link.pages.dev';
 
@@ -119,7 +119,7 @@ const developerFeatures = [
   {
     icon: <Terminal className="size-4 text-primary" />,
     title: 'MCP Server for AI IDEs',
-    description: 'Connect Zawgyi converter, linter, parsers, and exporters to Claude Desktop or Cursor via stdio JSON-RPC 2.0.',
+    description: 'Run `npx -y @jsonlink/mcp` to expose Zawgyi converter, linter, parsers, and exporters to Claude Desktop or Cursor via stdio JSON-RPC 2.0.',
   },
   {
     icon: <Zap className="size-4 text-primary" />,

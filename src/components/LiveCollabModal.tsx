@@ -110,7 +110,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
             )}
           </DialogTitle>
           <DialogDescription>
-            Zero-backend, peer-to-peer WebRTC spreadsheet synchronization.
+            Peer-to-peer WebRTC synchronization powered by Yjs CRDT. A signaling relay is used to connect peers. Optional AES-GCM E2EE when a room PIN is set.
           </DialogDescription>
         </DialogHeader>
 
@@ -332,7 +332,7 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
               <div className="p-3 rounded-lg bg-muted/40 border border-border flex items-start gap-2.5 text-[11px] text-muted-foreground leading-relaxed">
                 <ShieldCheck className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-foreground font-medium">100% Private P2P:</strong> Your translation edits stream directly between browser tabs through encrypted WebRTC DataChannels. Zero server storage, no database.
+                  <strong className="text-foreground font-medium">P2P Data Transfer:</strong> Your translation edits stream peer-to-peer over WebRTC DataChannels. When a room PIN is set, data is encrypted with AES-GCM before transmitting. Zero server storage, no database.
                 </span>
               </div>
             </DialogBody>
