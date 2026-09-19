@@ -405,14 +405,28 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     });
   }, [showDescription, languages]);
 
-  // Follow Mode: smooth auto-scroll to the followed peer's active cell whenever it moves
+  // Follow Mode: sync selected cell to followed peer's active cell without competing scroll
+  const lastFollowedCellRef = useRef<{ key: string; field: string } | null>(null);
+
   useEffect(() => {
-    if (!followingPeerName || !collabPeers || collabPeers.length === 0) return;
+    if (!followingPeerName || !collabPeers || collabPeers.length === 0) {
+      lastFollowedCellRef.current = null;
+      return;
+    }
     const targetPeer = collabPeers.find(p => p.name === followingPeerName);
     if (!targetPeer?.activeCell?.key) return;
 
     const targetKey = targetPeer.activeCell.key;
     const targetField = targetPeer.activeCell.field || 'key';
+
+    if (
+      targetKey === lastFollowedCellRef.current?.key &&
+      targetField === lastFollowedCellRef.current?.field
+    ) {
+      return;
+    }
+
+    lastFollowedCellRef.current = { key: targetKey, field: targetField };
 
     // Find row index
     const rowIdx = items.findIndex(i => i.key === targetKey);
@@ -434,27 +448,13 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (targetField === 'description' && !showDescription) {
         setShowDescription(true);
       }
-
-      // Find cell element using data attributes and smooth scroll
-      requestAnimationFrame(() => {
-        const cellEl = tableContainerRef.current?.querySelector(
-          `[data-cell-key="${CSS.escape(targetKey)}"][data-cell-field="${CSS.escape(targetField)}"]`
-        ) as HTMLElement | null;
-
-        if (cellEl) {
-          cellEl.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'nearest',
-          });
-        }
-      });
     }
   }, [followingPeerName, collabPeers, items, languages, showDescription]);
 
   // Follow Mode: Silky-smooth rAF camera tracking for peer's scroll and cursor (Figma-style)
   const targetScrollPosRef = useRef<{ left: number; top: number } | null>(null);
   const scrollAnimFrameRef = useRef<number | null>(null);
+  const isProgrammaticScrollRef = useRef(false);
 
   const followedPeer = collabPeers?.find(p => p.name === followingPeerName);
   const followedPointerX = followedPeer?.pointer?.x;
@@ -481,15 +481,18 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
     let desiredLeft = container.scrollLeft;
     let desiredTop = container.scrollTop;
 
-    // 1. If followed peer has reported their scroll position, track it as baseline
-    if (typeof followedScrollLeft === 'number' && !isNaN(followedScrollLeft)) {
+    const hasReportedScrollX = typeof followedScrollLeft === 'number' && !isNaN(followedScrollLeft);
+    const hasReportedScrollY = typeof followedScrollTop === 'number' && !isNaN(followedScrollTop);
+
+    // 1. Align to followedScrollLeft and followedScrollTop as primary baseline targets
+    if (hasReportedScrollX) {
       desiredLeft = followedScrollLeft;
     }
-    if (typeof followedScrollTop === 'number' && !isNaN(followedScrollTop)) {
+    if (hasReportedScrollY) {
       desiredTop = followedScrollTop;
     }
 
-    // 2. If followed peer has cursor, ensure cursor is comfortably visible within safe margins
+    // 2. Clamping and safe margin logic
     if (
       typeof followedPointerX === 'number' &&
       typeof followedPointerY === 'number' &&
@@ -501,18 +504,31 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const SAFE_TOP = 95; // table header (~40px) + follow banner (~44px) + margin
       const SAFE_BOTTOM = 80;
 
-      // Adjust X if cursor is outside safe zone of desired viewport
-      if (followedPointerX < desiredLeft + SAFE_LEFT) {
-        desiredLeft = Math.max(0, followedPointerX - SAFE_LEFT);
-      } else if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
-        desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+      if (hasReportedScrollX) {
+        // Only nudge desiredLeft when cursor is going off-screen to the right (follower has narrower screen)
+        // Do NOT pull desiredLeft backwards when followedPointerX < desiredLeft + SAFE_LEFT if leader set followedScrollLeft!
+        if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
+          desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+        }
+      } else {
+        // Fallback mode when followedScrollLeft is not reported: ensure cursor is comfortably visible
+        if (followedPointerX < desiredLeft + SAFE_LEFT) {
+          desiredLeft = Math.max(0, followedPointerX - SAFE_LEFT);
+        } else if (followedPointerX > desiredLeft + clientWidth - SAFE_RIGHT) {
+          desiredLeft = Math.max(0, followedPointerX - (clientWidth - SAFE_RIGHT));
+        }
       }
 
-      // Adjust Y if cursor is outside safe zone of desired viewport
-      if (followedPointerY < desiredTop + SAFE_TOP) {
-        desiredTop = Math.max(0, followedPointerY - SAFE_TOP);
-      } else if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
-        desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+      if (hasReportedScrollY) {
+        if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
+          desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+        }
+      } else {
+        if (followedPointerY < desiredTop + SAFE_TOP) {
+          desiredTop = Math.max(0, followedPointerY - SAFE_TOP);
+        } else if (followedPointerY > desiredTop + clientHeight - SAFE_BOTTOM) {
+          desiredTop = Math.max(0, followedPointerY - (clientHeight - SAFE_BOTTOM));
+        }
       }
     }
 
@@ -532,18 +548,19 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       const diffX = target.left - c.scrollLeft;
       const diffY = target.top - c.scrollTop;
 
-      // If already within sub-pixel threshold, snap to target and finish
-      if (Math.abs(diffX) <= 1 && Math.abs(diffY) <= 1) {
+      // If already within sub-pixel threshold, snap to target and finish (1.5px deadzone)
+      if (Math.abs(diffX) < 1.5 && Math.abs(diffY) < 1.5) {
+        isProgrammaticScrollRef.current = true;
         c.scrollLeft = target.left;
         c.scrollTop = target.top;
         scrollAnimFrameRef.current = null;
         return;
       }
 
-      // 60fps exponential ease-out dampening (0.18 gives snappy yet buttery response)
-      const factor = 0.18;
-      c.scrollLeft += Math.round(diffX * factor) || (diffX > 0 ? 1 : -1);
-      c.scrollTop += Math.round(diffY * factor) || (diffY > 0 ? 1 : -1);
+      // Smooth lerping with factor 0.18
+      isProgrammaticScrollRef.current = true;
+      c.scrollLeft += Math.round(diffX * 0.18) || (diffX > 0 ? 1 : -1);
+      c.scrollTop += Math.round(diffY * 0.18) || (diffY > 0 ? 1 : -1);
 
       scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
     };
@@ -552,6 +569,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       if (typeof requestAnimationFrame === 'function') {
         scrollAnimFrameRef.current = requestAnimationFrame(runScrollLoop);
       } else {
+        isProgrammaticScrollRef.current = true;
         container.scrollLeft = targetScrollPosRef.current.left;
         container.scrollTop = targetScrollPosRef.current.top;
       }
@@ -1223,6 +1241,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         ref={tableContainerRef}
         className="flex-1 overflow-auto relative w-full h-full bg-background"
         onScroll={(e) => {
+          if (isProgrammaticScrollRef.current) {
+            isProgrammaticScrollRef.current = false;
+            return;
+          }
           if (e.currentTarget.scrollLeft > 20 && !hasScrolledX) {
             setHasScrolledX(true);
           }
@@ -2394,7 +2416,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             return (
               <div
                 key={`${peer.name}-${peer.clientID ?? peer.color}`}
-                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-[transform,opacity] duration-75 ease-out"
+                className="absolute top-0 left-0 pointer-events-none z-30 select-none will-change-transform [transform:translate3d(var(--pointer-x),var(--pointer-y),0)] transition-opacity duration-150 ease-out"
                 style={
                   {
                     '--pointer-x': `${peer.pointer.x}px`,

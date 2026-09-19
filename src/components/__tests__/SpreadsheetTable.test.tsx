@@ -254,4 +254,52 @@ describe('SpreadsheetTable', () => {
 
     expect(onScrollPositionChange).toHaveBeenCalledWith(120, 250);
   });
+
+  it('smoothly aligns to followed peer reported scroll position', async () => {
+    const onScrollPositionChange = vi.fn();
+    const { container, rerender } = render(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onScrollPositionChange={onScrollPositionChange}
+        collabPeers={[
+          {
+            clientID: 1,
+            name: 'Alice',
+            color: '#10b981',
+            scroll: { left: 0, top: 0 },
+          },
+        ]}
+      />
+    );
+
+    const scrollContainer = container.querySelector('.overflow-auto') as HTMLDivElement;
+    expect(scrollContainer).not.toBeNull();
+
+    Object.defineProperty(scrollContainer, 'clientWidth', { value: 400, configurable: true });
+    Object.defineProperty(scrollContainer, 'clientHeight', { value: 400, configurable: true });
+    Object.defineProperty(scrollContainer, 'scrollLeft', { value: 0, writable: true, configurable: true });
+    Object.defineProperty(scrollContainer, 'scrollTop', { value: 0, writable: true, configurable: true });
+
+    rerender(
+      <SpreadsheetTable
+        {...defaultProps}
+        followingPeerName="Alice"
+        onScrollPositionChange={onScrollPositionChange}
+        collabPeers={[
+          {
+            clientID: 1,
+            name: 'Alice',
+            color: '#10b981',
+            scroll: { left: 250, top: 300 },
+          },
+        ]}
+      />
+    );
+
+    await vi.waitFor(() => {
+      expect(scrollContainer.scrollLeft).toBeGreaterThan(0);
+      expect(scrollContainer.scrollTop).toBeGreaterThan(0);
+    });
+  });
 });
