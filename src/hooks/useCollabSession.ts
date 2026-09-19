@@ -51,6 +51,7 @@ export function useCollabSession({
 
   const collabSessionRef = useRef<CollabSession | null>(null);
   const currentRoomIdRef = useRef<string | null>(null);
+  const currentPasswordRef = useRef<string | null>(null);
   const connectTimeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemsRef = useRef<TranslationItem[]>(items);
   const languagesRef = useRef<string[]>(languages);
@@ -123,16 +124,18 @@ export function useCollabSession({
         connectTimeoutTimerRef.current = null;
       }
 
+      const cleanPassword = password ? password.trim() : null;
+
       if (collabSessionRef.current) {
-        if (
-          normalizeCollabRoomId(collabSessionRef.current.roomId) === cleanRoomId &&
-          !collabSessionRef.current.ydoc.isDestroyed
-        ) {
+        const sameRoom = normalizeCollabRoomId(collabSessionRef.current.roomId) === cleanRoomId;
+        const samePassword = currentPasswordRef.current === cleanPassword;
+        if (sameRoom && samePassword && !collabSessionRef.current.ydoc.isDestroyed) {
           return;
         }
         collabSessionRef.current.destroy();
         collabSessionRef.current = null;
       }
+      currentPasswordRef.current = cleanPassword;
 
       const cleanUserName = userName.trim() || localPeerProfile.name;
       setLocalPeerProfile(prev => ({ ...prev, name: cleanUserName }));
@@ -226,6 +229,10 @@ export function useCollabSession({
           }
           return peers;
         });
+
+        if (peers.length > 0) {
+          onConnectionEstablished();
+        }
       };
 
       awareness.on('change', handleAwarenessChange);
@@ -357,6 +364,8 @@ export function useCollabSession({
     }
     setCollabPeers([]);
     setCollabPassword(null);
+    currentPasswordRef.current = null;
+    currentRoomIdRef.current = null;
     if (typeof window !== 'undefined' && window.location.hash.includes('collab=')) {
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -542,17 +551,11 @@ export function useCollabSession({
             return;
           }
 
-          if (key) {
-            setPendingCollabRoomId(roomId);
-            setCollabAuthError(null);
-            setIsCollabConnecting(true);
-            startCollabSessionRef.current(roomId, key, localPeerNameRef.current, false);
-          } else {
-            // No key in hash -> prompt for PIN code with clean error state
-            setPendingCollabRoomId(roomId);
-            setCollabAuthError(null);
-            setIsCollabConnecting(false);
-          }
+          // Auto-connect directly: with key if provided, or as open public room (null)
+          setPendingCollabRoomId(roomId);
+          setCollabAuthError(null);
+          setIsCollabConnecting(true);
+          startCollabSessionRef.current(roomId, key, localPeerNameRef.current, false);
         }
       } else {
         setPendingCollabRoomId(null);

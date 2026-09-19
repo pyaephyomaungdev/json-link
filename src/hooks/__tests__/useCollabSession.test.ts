@@ -76,7 +76,7 @@ describe('useCollabSession', () => {
     expect(result.current.pendingCollabRoomId).toBeNull();
   });
 
-  it('sets pendingCollabRoomId when URL hash has room without key', () => {
+  it('auto-connects directly to room as public room when URL hash has room without key', () => {
     window.location.hash = '#collab=8swaabm6';
 
     const { result } = renderHook(() =>
@@ -91,7 +91,12 @@ describe('useCollabSession', () => {
     );
 
     expect(result.current.pendingCollabRoomId).toBe('8swaabm6');
-    expect(result.current.collabSession).toBeNull();
+    expect(result.current.isCollabConnecting).toBe(true);
+    expect(result.current.collabSession).not.toBeNull();
+    expect(collabLib.initCollabSession).toHaveBeenCalledWith(
+      '8swaabm6',
+      expect.objectContaining({ password: null, isInitiator: false })
+    );
   });
 
   it('auto-connects and enters connecting state when URL hash includes both room and key', () => {

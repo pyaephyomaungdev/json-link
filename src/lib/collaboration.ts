@@ -262,7 +262,11 @@ export function initCollabSession(
         });
       } else {
         // Guest attempting to join who cannot decrypt room data
-        triggerAuthError('Incorrect room PIN or password. Please verify and try again.');
+        triggerAuthError(
+          cleanPassword
+            ? 'Incorrect room PIN or password. Please verify and try again.'
+            : 'This room is password-protected. Please enter the room PIN code.'
+        );
       }
     }
   };
