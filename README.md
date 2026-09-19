@@ -15,7 +15,7 @@
   </p>
 
   <p>
-    <iframe src="https://github.com/sponsors/pyaephyomaungdev/button" title="Sponsor pyaephyomaungdev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+    <a href="https://github.com/sponsors/pyaephyomaungdev"><img src="https://img.shields.io/badge/Sponsor-pyaephyomaungdev-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor pyaephyomaungdev" /></a>
     <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
     <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
   </p>
@@ -414,13 +414,11 @@ RFC 9116 Vulnerability Disclosure metadata is published at `https://json-link.pa
 JSON Link is free and open-source, built entirely in my spare time as a passion project for developers and localization teams worldwide. If this tool has saved you hours of copy-pasting spreadsheets, cloud SaaS fees, or debugging broken interpolation tokens, consider supporting the project:
 
 <p align="center">
-  <iframe src="https://github.com/sponsors/pyaephyomaungdev/button" title="Sponsor pyaephyomaungdev" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
-</p>
-
-<p align="center">
+  <a href="https://github.com/sponsors/pyaephyomaungdev" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Sponsor_on_GitHub-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="GitHub Sponsors" />
+  </a>
+  &nbsp;&nbsp;
   <a href="https://www.buymeacoffee.com/pyaephyomaa" target="_blank" rel="noopener noreferrer">
-    <img src="public/buy-me-a-coffee-icon.svg" width="48" height="48" align="absmiddle" alt="BMC Logo" />
-    <br /><br />
     <img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_JSON_Link-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" />
   </a>
 </p>
