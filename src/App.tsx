@@ -2038,16 +2038,18 @@ export function App() {
 
         <nav aria-label="Header Actions" className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {(items.length > 0 || isWorkspaceActive) && (
-            <CollabHeaderControl
-              isCollabConnected={Boolean(collabSession)}
-              collabPeerCount={collabPeers.length + 1}
-              onOpenCollab={() => setIsCollabModalOpen(true)}
-              localPeerProfile={localPeerProfile}
-              collabPeers={collabPeers}
-              followingPeerName={followingPeerName}
-              onFollowPeer={setFollowingPeerName}
-              onJumpToPeerCell={handleJumpToPeerCell}
-            />
+            <div className="flex items-center border-r border-border pr-1 sm:pr-1.5 mr-0.5">
+              <CollabHeaderControl
+                isCollabConnected={Boolean(collabSession)}
+                collabPeerCount={collabPeers.length + 1}
+                onOpenCollab={() => setIsCollabModalOpen(true)}
+                localPeerProfile={localPeerProfile}
+                collabPeers={collabPeers}
+                followingPeerName={followingPeerName}
+                onFollowPeer={setFollowingPeerName}
+                onJumpToPeerCell={handleJumpToPeerCell}
+              />
+            </div>
           )}
 
           {/* Install App: Only shown on landing page, hidden in spreadsheet view */}
