@@ -72,6 +72,7 @@ interface ToolbarProps {
   onOpenFindReplace?: () => void;
   onOpenScorecard?: () => void;
   onOpenLinter?: () => void;
+  lintIssueCount?: number;
   onOpenGlossary?: () => void;
   linkedFolderName?: string | null;
   onOpenFolderSync?: () => void;
@@ -119,6 +120,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenFindReplace,
   onOpenScorecard,
   onOpenLinter,
+  lintIssueCount,
   onOpenGlossary,
   linkedFolderName,
   onOpenFolderSync,
@@ -533,11 +535,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="hidden xl:inline-flex gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer"
+              className="hidden xl:inline-flex gap-1.5 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer relative"
               title="Tools &amp; Utilities"
             >
               <MoreVertical className="size-3 text-muted-foreground" />
               <span className="hidden md:inline">Tools</span>
+              {Boolean(lintIssueCount && lintIssueCount > 0) && (
+                <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight">
+                  {lintIssueCount}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -549,9 +556,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </DropdownMenuItem>
             )}
             {onOpenLinter && (
-              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs">
-                <AlertCircle className="size-3.5 text-amber-500" />
-                <span>QA &amp; Consistency Linter</span>
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-3.5 text-amber-500" />
+                  <span>QA &amp; Consistency Linter</span>
+                </div>
+                {Boolean(lintIssueCount && lintIssueCount > 0) && (
+                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto">
+                    {lintIssueCount}
+                  </span>
+                )}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -607,11 +621,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer inline-flex xl:hidden"
+              className="gap-1 text-[11px] h-7 px-2 font-medium shrink-0 shadow-2xs cursor-pointer inline-flex xl:hidden relative"
               title="More tools and actions"
             >
               <Sliders className="size-3 text-muted-foreground" />
               <span>More</span>
+              {Boolean(lintIssueCount && lintIssueCount > 0) && (
+                <span className="size-1.5 rounded-full bg-amber-500 shrink-0" />
+              )}
               <ChevronDown className="size-2.5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -726,9 +743,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               </DropdownMenuItem>
             )}
             {onOpenLinter && (
-              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs">
-                <AlertCircle className="size-3.5 text-amber-500" />
-                <span>QA &amp; Consistency Linter</span>
+              <DropdownMenuItem onClick={onOpenLinter} className="gap-2 cursor-pointer text-xs justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="size-3.5 text-amber-500" />
+                  <span>QA &amp; Consistency Linter</span>
+                </div>
+                {Boolean(lintIssueCount && lintIssueCount > 0) && (
+                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto">
+                    {lintIssueCount}
+                  </span>
+                )}
               </DropdownMenuItem>
             )}
             {onOpenFindReplace && (

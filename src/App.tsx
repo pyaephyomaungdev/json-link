@@ -2050,37 +2050,6 @@ export function App() {
             />
           )}
 
-          {items.length > 0 && (
-            <div className="flex items-center gap-1 border-r border-border pr-1 sm:pr-1.5 mr-0.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsScorecardOpen(true)}
-                className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer shadow-2xs"
-                title="Localization Health & Scorecard"
-              >
-                <Activity className="size-3.5 text-emerald-500" />
-                <span className="hidden md:inline font-medium">Scorecard</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsLinterOpen(true)}
-                className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer shadow-2xs"
-                title="Localization QA & Consistency Linter"
-              >
-                <Sparkles className="size-3.5 text-amber-500" />
-                <span className="hidden md:inline font-medium">Linter</span>
-                {lintIssueCount > 0 && (
-                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight">
-                    {lintIssueCount}
-                  </span>
-                )}
-              </Button>
-            </div>
-          )}
-
           {/* Install App: Only shown on landing page, hidden in spreadsheet view */}
           {items.length === 0 && !isWorkspaceActive && (
             <div className="hidden md:block">
@@ -2215,6 +2184,7 @@ export function App() {
             onOpenFindReplace={() => setIsFindReplaceOpen(true)}
             onOpenScorecard={() => setIsScorecardOpen(true)}
             onOpenLinter={() => setIsLinterOpen(true)}
+            lintIssueCount={lintIssueCount}
             onOpenGlossary={() => setIsGlossaryOpen(true)}
             linkedFolderName={linkedFolderName}
             onOpenFolderSync={() => setIsFolderSyncOpen(true)}
