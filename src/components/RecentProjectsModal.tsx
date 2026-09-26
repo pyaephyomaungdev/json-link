@@ -146,8 +146,8 @@ export const RecentProjectsModal: React.FC<RecentProjectsModalProps> = ({
                     {proj.projectData && (
                       <Button
                         size="sm"
-                        variant="secondary"
-                        className="h-7 text-xs gap-1 group-hover:bg-primary group-hover:text-primary-foreground transition-colors cursor-pointer"
+                        variant="default"
+                        className="h-7 px-2.5 text-xs font-semibold gap-1 shadow-xs cursor-pointer"
                         onClick={e => {
                           e.stopPropagation();
                           if (proj.projectData) {
