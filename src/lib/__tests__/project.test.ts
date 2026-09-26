@@ -3,12 +3,17 @@ import {
   parseProjectFile,
   saveLocalDraft,
   loadLocalDraft,
+  loadLocalDraftAsync,
   clearLocalDraft,
   buildProjectFileContent,
   isProjectFileEncrypted,
   decryptProjectFile,
+  recordRecentProject,
+  listRecentProjects,
+  deleteRecentProject,
+  clearRecentProjects,
 } from '../project';
-import { TranslationItem } from '@/types';
+import { TranslationItem, JsonLinkProject } from '@/types';
 
 describe('project.ts', () => {
   describe('parseProjectFile', () => {
@@ -161,9 +166,80 @@ describe('project.ts', () => {
     it('rejects decryption when ciphertext is corrupted/tampered', async () => {
       const encryptedContent = await buildProjectFileContent('my-app', sampleItems, sampleLangs, 'secret123');
       const parsed = JSON.parse(encryptedContent);
-      // Flip the last characters of ciphertext
       parsed.ciphertext = parsed.ciphertext.slice(0, -4) + 'AAAA';
       await expect(decryptProjectFile(JSON.stringify(parsed), 'secret123')).rejects.toThrow('INCORRECT_PASSWORD');
+    });
+  });
+
+  describe('Recent projects and async draft persistence', () => {
+    const mockStorage: Record<string, string> = {};
+
+    beforeEach(() => {
+      for (const key in mockStorage) {
+        delete mockStorage[key];
+      }
+
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key: string) => mockStorage[key] || null),
+        setItem: vi.fn((key: string, val: string) => {
+          mockStorage[key] = val;
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete mockStorage[key];
+        }),
+      });
+    });
+
+    it('records recent projects and lists them', async () => {
+      const proj: JsonLinkProject = {
+        format: 'jsonlink',
+        version: '1.0.0',
+        name: 'test-app',
+        updatedAt: '2026-09-20T10:00:00.000Z',
+        languages: ['en', 'my'],
+        items: [{ key: 'app.name', en: 'App', my: 'အက်ပ်' }],
+      };
+
+      await recordRecentProject(proj);
+      const list = await listRecentProjects();
+      expect(list.length).toBeGreaterThan(0);
+      expect(list[0].name).toBe('test-app');
+      expect(list[0].languages).toEqual(['en', 'my']);
+      expect(list[0].itemCount).toBe(1);
+    });
+
+    it('deletes a recent project and clears all', async () => {
+      const proj: JsonLinkProject = {
+        format: 'jsonlink',
+        version: '1.0.0',
+        name: 'test-app-2',
+        updatedAt: '2026-09-20T10:00:00.000Z',
+        languages: ['en'],
+        items: [{ key: 'title', en: 'Hello' }],
+      };
+
+      await recordRecentProject(proj);
+      const list = await listRecentProjects();
+      expect(list.some(p => p.name === 'test-app-2')).toBe(true);
+
+      const targetId = list.find(p => p.name === 'test-app-2')?.id;
+      if (targetId) {
+        await deleteRecentProject(targetId);
+        const afterDelete = await listRecentProjects();
+        expect(afterDelete.some(p => p.id === targetId)).toBe(false);
+      }
+
+      await clearRecentProjects();
+      const afterClear = await listRecentProjects();
+      expect(afterClear).toHaveLength(0);
+    });
+
+    it('loads draft asynchronously with loadLocalDraftAsync', async () => {
+      saveLocalDraft('async-draft', [{ key: 'hi', en: 'Hi' }], ['en']);
+      const loaded = await loadLocalDraftAsync();
+      expect(loaded).not.toBeNull();
+      expect(loaded?.name).toBe('async-draft');
+      expect(loaded?.items[0].key).toBe('hi');
     });
   });
 });

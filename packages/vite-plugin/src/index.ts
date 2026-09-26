@@ -6,3 +6,4 @@ export default jsonLink;
 export * from './types.js';
 export * from './fsUtils.js';
 export * from './init.js';
+export * from './lint.js';

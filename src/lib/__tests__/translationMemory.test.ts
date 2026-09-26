@@ -58,4 +58,13 @@ describe('translationMemory.ts', () => {
     const match = findExactMemoryMatch('OK', 'en', 'my');
     expect(match).toBe('ကောင်းပြီ');
   });
+
+  it('hydrates and clears translation memory cleanly', async () => {
+    upsertMemoryEntry('Welcome', 'en', 'my', 'ကြိုဆိုပါတယ်');
+    expect(findExactMemoryMatch('Welcome', 'en', 'my')).toBe('ကြိုဆိုပါတယ်');
+
+    clearTranslationMemory();
+    expect(findExactMemoryMatch('Welcome', 'en', 'my')).toBeNull();
+  });
 });
+

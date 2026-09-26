@@ -45,6 +45,7 @@ import {
   ClipboardCopy,
   Globe,
   Eye,
+  Code2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -59,6 +60,7 @@ import { tokenizeVariables, validateVariables, isEffectivelyMissing } from '@/li
 import { detectZawgyiInItems, zawgyiToUnicode, unicodeToZawgyi, isZawgyi } from '@/lib/myanmarFont';
 import { isRtlLanguage } from '@/data/languages';
 import { ZawgyiConvertModal, ZawgyiCandidateRow } from './ZawgyiConvertModal';
+import { IcuBuilderModal } from './IcuBuilderModal';
 import { CollabPeerUser, getPeerInitials } from '@/lib/collaboration';
 import { useVirtualRows } from '@/hooks/useVirtualRows';
 
@@ -224,6 +226,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   const [renameLangTarget, setRenameLangTarget] = useState<string | null>(null);
   const [renameLangValue, setRenameLangValue] = useState<string>('');
   const [zawgyiModalLang, setZawgyiModalLang] = useState<string | null>(null);
+  const [icuBuilderTarget, setIcuBuilderTarget] = useState<{
+    key: string;
+    field: string;
+    initialValue: string;
+  } | null>(null);
 
   const handleStartRenameLanguage = (lang: string) => {
     setRenameLangTarget(lang);
@@ -2614,6 +2621,21 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         </DropdownMenuItem>
                       )}
 
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setIcuBuilderTarget({
+                            key: currentItem.key,
+                            field: contextMenu.field,
+                            initialValue: cellValue,
+                          });
+                          setContextMenu(null);
+                        }}
+                        className="gap-2 cursor-pointer text-xs"
+                      >
+                        <Code2 className="size-3.5 text-blue-500" />
+                        <span>Build ICU Message...</span>
+                      </DropdownMenuItem>
+
                       {(isMyanmar || isZawgyiValue) && (
                         <>
                           <DropdownMenuItem
@@ -2862,6 +2884,22 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         lang={zawgyiModalLang || ''}
         items={items}
         onConfirm={handleConfirmZawgyiConversion}
+      />
+
+      {/* Visual ICU Plural & Select Expression Builder */}
+      <IcuBuilderModal
+        isOpen={Boolean(icuBuilderTarget)}
+        onClose={() => setIcuBuilderTarget(null)}
+        initialValue={icuBuilderTarget?.initialValue || ''}
+        targetKey={icuBuilderTarget?.key}
+        targetField={icuBuilderTarget?.field}
+        onInsert={(icuString) => {
+          if (icuBuilderTarget) {
+            handleInternalUpdateCell(icuBuilderTarget.key, icuBuilderTarget.field, icuString);
+            setCopiedNotification('Updated cell with ICU expression');
+            setTimeout(() => setCopiedNotification(null), 1500);
+          }
+        }}
       />
 
       {/* Floating Bulk Actions Bar when rows are selected */}

@@ -11,6 +11,8 @@ import {
   parseYamlFile,
   parseSpreadsheet,
   parseArbFile,
+  parseXliffFile,
+  parsePoFile,
 } from '../parser';
 import { TranslationItem } from '@/types';
 
@@ -428,6 +430,74 @@ en:
       expect(() => parseArbFile('["not", "an", "object"]', 'app.arb')).toThrow(
         'Invalid ARB structure: Root must be a JSON object.'
       );
+    });
+  });
+
+  describe('parseXliffFile', () => {
+    it('parses XLIFF 1.2 files correctly with source and target', () => {
+      const xliffContent = `<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" target-language="my" datatype="plaintext" original="messages">
+    <body>
+      <trans-unit id="app.greeting">
+        <source>Hello World</source>
+        <target>မင်္ဂလာပါကမ္ဘာလောက</target>
+      </trans-unit>
+      <trans-unit id="app.save">
+        <source>Save &amp; Exit</source>
+        <target>သိမ်းဆည်းပြီး ထွက်မည်</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>`;
+
+      const result = parseXliffFile(xliffContent, 'messages_my.xlf');
+      expect(result).toHaveProperty('my');
+      expect(result.my['app.greeting']).toBe('မင်္ဂလာပါကမ္ဘာလောက');
+      expect(result.my['app.save']).toBe('သိမ်းဆည်းပြီး ထွက်မည်');
+    });
+
+    it('parses XLIFF 2.0 unit format', () => {
+      const xliff2 = `<xliff version="2.0" xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en" trgLang="es">
+  <file id="f1">
+    <unit id="btn.ok">
+      <segment>
+        <source>OK</source>
+        <target>Aceptar</target>
+      </segment>
+    </unit>
+  </file>
+</xliff>`;
+
+      const result = parseXliffFile(xliff2, 'strings.xliff');
+      expect(result).toHaveProperty('es');
+      expect(result.es['btn.ok']).toBe('Aceptar');
+    });
+  });
+
+  describe('parsePoFile', () => {
+    it('parses GNU gettext .po files with comments and multi-line strings', () => {
+      const poContent = `msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Language: ja\\n"
+
+#. Greeting message
+#: app.welcome
+msgid "Welcome to our application"
+msgstr "ようこそ"
+
+#: app.multiline
+msgid "Line 1\\n"
+"Line 2"
+msgstr "1行目\\n"
+"2行目"
+`;
+
+      const result = parsePoFile(poContent, 'ja.po');
+      expect(result).toHaveProperty('ja');
+      expect(result.ja['Welcome to our application']).toBe('ようこそ');
+      expect(result.ja['Line 1\nLine 2']).toBe('1行目\n2行目');
     });
   });
 });

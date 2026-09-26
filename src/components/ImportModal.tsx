@@ -17,6 +17,8 @@ import {
   parseIosStrings,
   parseYamlFile,
   parseArbFile,
+  parseXliffFile,
+  parsePoFile,
   mergeTranslations,
 } from '@/lib/parser';
 import { isProjectFileEncrypted } from '@/lib/project';
@@ -33,7 +35,7 @@ interface ImportModalProps {
 interface LoadedFile {
   name: string;
   size: number;
-  type: 'json' | 'excel' | 'csv' | 'yaml' | 'xml' | 'strings' | 'arb';
+  type: 'json' | 'excel' | 'csv' | 'yaml' | 'xml' | 'strings' | 'arb' | 'xliff' | 'po';
   data: { [lang: string]: Record<string, string> } | { items: TranslationItem[]; languages: string[] };
 }
 
@@ -133,8 +135,26 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             type: 'arb',
             data: parsed,
           });
+        } else if (ext === 'xlf' || ext === 'xliff') {
+          const text = await file.text();
+          const parsed = parseXliffFile(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'xliff',
+            data: parsed,
+          });
+        } else if (ext === 'po' || ext === 'pot') {
+          const text = await file.text();
+          const parsed = parsePoFile(text, file.name);
+          newLoadedFiles.push({
+            name: file.name,
+            size: file.size,
+            type: 'po',
+            data: parsed,
+          });
         } else {
-          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, .csv, .yaml, .xml, .strings, or .arb`);
+          setError(`File format not supported: ${file.name}. Please upload .json, .jsonlink, .xlsx, .csv, .yaml, .xml, .strings, .arb, .xlf/.xliff, or .po/.pot`);
         }
       }
 
@@ -175,7 +195,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         file.type === 'json' ||
         file.type === 'yaml' ||
         file.type === 'xml' ||
-        file.type === 'strings'
+        file.type === 'strings' ||
+        file.type === 'arb' ||
+        file.type === 'xliff' ||
+        file.type === 'po'
       ) {
         const jsonData = file.data as { [lang: string]: Record<string, string> };
         const res = mergeTranslations(baseItems, baseLanguages, jsonData);
@@ -230,7 +253,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             ref={fileInputRef}
             onChange={handleFileSelect}
             multiple
-            accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb"
+            accept=".json,.jsonlink,.xlsx,.xls,.csv,.yaml,.yml,.xml,.strings,.arb,.xlf,.xliff,.po,.pot"
             className="hidden"
           />
           <button
@@ -256,7 +279,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Click to browse or drop your translation files here
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">Flutter ARB</span>, Excel, CSV, YAML, Android XML, or iOS Strings
+                Supports <span className="font-mono text-emerald-600 font-semibold">.jsonlink</span>, <span className="font-mono text-primary font-semibold">JSON</span>, <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">Flutter ARB</span>, XLIFF (.xlf), GNU gettext (.po), Excel, CSV, YAML, Android XML, or iOS Strings
               </p>
             </div>
           </button>

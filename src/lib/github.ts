@@ -122,6 +122,10 @@ const ALLOWED_EXTENSIONS = new Set([
   '.strings',
   '.xlsx',
   '.csv',
+  '.xlf',
+  '.xliff',
+  '.po',
+  '.pot',
 ]);
 
 const LOCALES_DIR_PATTERNS = [

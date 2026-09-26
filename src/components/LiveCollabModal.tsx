@@ -19,12 +19,17 @@ import {
   Sparkles,
   Lock,
   Wifi,
+  Server,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   generateCollabRoomId,
   generateRandomPeerProfile,
   normalizeCollabRoomId,
   CollabPeerUser,
+  getStoredTurnServers,
+  saveStoredTurnServers,
 } from '@/lib/collaboration';
 
 interface LiveCollabModalProps {
@@ -55,6 +60,21 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
   const [userName, setUserName] = useState(localUser.name);
   const [copied, setCopied] = useState(false);
   const [includeKeyInLink, setIncludeKeyInLink] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [turnUrl, setTurnUrl] = useState('');
+  const [turnUsername, setTurnUsername] = useState('');
+  const [turnCredential, setTurnCredential] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const servers = getStoredTurnServers();
+      if (servers.length > 0) {
+        setTurnUrl(servers[0].url || '');
+        setTurnUsername(servers[0].username || '');
+        setTurnCredential(servers[0].credential || '');
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && !isConnected && !roomId) {
@@ -90,6 +110,17 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();
     if (!roomId.trim()) return;
+
+    if (turnUrl.trim()) {
+      saveStoredTurnServers([{
+        url: turnUrl.trim(),
+        username: turnUsername.trim() || undefined,
+        credential: turnCredential.trim() || undefined,
+      }]);
+    } else {
+      saveStoredTurnServers([]);
+    }
+
     onStartSession(
       normalizeCollabRoomId(roomId),
       password.trim() || null,
@@ -327,6 +358,63 @@ export const LiveCollabModal: React.FC<LiveCollabModalProps> = ({
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   If set, data is end-to-end encrypted with AES-GCM before transmitting over WebRTC.
                 </p>
+              </div>
+
+              {/* Advanced Network (TURN Relay) */}
+              <div className="border border-border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-muted/30 hover:bg-muted/50 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Server className="size-3 text-muted-foreground" />
+                    <span>Advanced Network (TURN Relay Server)</span>
+                  </span>
+                  {showAdvanced ? (
+                    <ChevronUp className="size-3 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="size-3 text-muted-foreground" />
+                  )}
+                </button>
+
+                {showAdvanced && (
+                  <div className="p-3 bg-background space-y-2 border-t border-border/60 text-xs">
+                    <p className="text-[10px] text-muted-foreground leading-normal">
+                      Use a custom TURN relay when connecting behind corporate firewalls or symmetric NATs where standard STUN fails.
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium text-muted-foreground">TURN Server URL</label>
+                      <Input
+                        value={turnUrl}
+                        onChange={e => setTurnUrl(e.target.value)}
+                        placeholder="e.g. turn:relay.mycompany.com:3478"
+                        className="h-7 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-muted-foreground">Username</label>
+                        <Input
+                          value={turnUsername}
+                          onChange={e => setTurnUsername(e.target.value)}
+                          placeholder="Optional"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-muted-foreground">Credential</label>
+                        <Input
+                          type="password"
+                          value={turnCredential}
+                          onChange={e => setTurnCredential(e.target.value)}
+                          placeholder="Optional"
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="p-3 rounded-lg bg-muted/40 border border-border flex items-start gap-2.5 text-[11px] text-muted-foreground leading-relaxed">

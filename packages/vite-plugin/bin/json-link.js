@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { runInit, detectPackageManager } from '../dist/init.js';
+import { runLint } from '../dist/lint.js';
 
 const args = process.argv.slice(2);
 const command = args[0] || 'init';
@@ -30,6 +31,38 @@ if (command === 'init') {
   console.log('Open your translation workspace:');
   console.log('  👉 \x1b[36mhttp://localhost:5173/__jsonlink\x1b[0m\n');
   console.log('All changes write directly to disk with instant Vite HMR.\n');
+} else if (command === 'lint') {
+  console.log('\n\x1b[36m🔍 JSON Link — Scanning Localization Files...\x1b[0m\n');
+  const targetDir = process.cwd();
+  
+  let explicitDir = undefined;
+  const dirIndex = args.indexOf('--dir');
+  if (dirIndex !== -1 && args[dirIndex + 1]) {
+    explicitDir = args[dirIndex + 1];
+  }
+
+  const result = runLint(targetDir, explicitDir);
+
+  if (result.issues.length > 0) {
+    for (const issue of result.issues) {
+      const color = issue.severity === 'error' ? '\x1b[31m✖\x1b[0m' : '\x1b[33m⚠\x1b[0m';
+      console.log(`  ${color} [${issue.language}] \x1b[1m${issue.key}\x1b[0m: ${issue.message}`);
+      if (issue.sourceValue && issue.targetValue) {
+        console.log(`     Source: "${issue.sourceValue}" -> Target: "${issue.targetValue}"`);
+      }
+    }
+    console.log('');
+  }
+
+  if (result.success) {
+    console.log(`\x1b[32m✔ Checked ${result.totalKeys} keys across ${result.languages.length} languages (${result.languages.join(', ')}). No errors found!\x1b[0m\n`);
+    process.exit(0);
+  } else {
+    console.error(`\x1b[31m✖ Lint failed: ${result.errorCount} error(s), ${result.warningCount} warning(s)\x1b[0m\n`);
+    process.exit(1);
+  }
 } else {
-  console.log('Usage: npx @jsonlink/vite-plugin init');
+  console.log('Usage:');
+  console.log('  npx @jsonlink/vite-plugin init');
+  console.log('  npx @jsonlink/vite-plugin lint [--dir <path>]');
 }

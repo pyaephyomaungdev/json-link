@@ -40,6 +40,8 @@ const ShareModal = lazy(() => import('@/components/ShareModal').then(m => ({ def
 const UnlockShareDialog = lazy(() => import('@/components/UnlockShareDialog').then(m => ({ default: m.UnlockShareDialog })));
 const LiveCollabModal = lazy(() => import('@/components/LiveCollabModal').then(m => ({ default: m.LiveCollabModal })));
 const CollabPinDialog = lazy(() => import('@/components/CollabPinDialog').then(m => ({ default: m.CollabPinDialog })));
+const RecentProjectsModal = lazy(() => import('@/components/RecentProjectsModal').then(m => ({ default: m.RecentProjectsModal })));
+const ShortcutsModal = lazy(() => import('@/components/ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
 import { useCollabSession } from '@/hooks/useCollabSession';
 import {
   CollabPeerUser,
@@ -68,7 +70,15 @@ import {
   mergeTranslations,
 } from '@/lib/parser';
 import { generatePseudoLocaleRecords } from '@/lib/pseudoloc';
-import { loadLocalDraft, saveLocalDraft, clearLocalDraft, parseProjectFile, isProjectFileEncrypted } from '@/lib/project';
+import {
+  loadLocalDraft,
+  loadLocalDraftAsync,
+  saveLocalDraft,
+  clearLocalDraft,
+  parseProjectFile,
+  isProjectFileEncrypted,
+  recordRecentProject,
+} from '@/lib/project';
 import { useHistory } from '@/hooks/useHistory';
 import {
   Moon,
@@ -99,6 +109,8 @@ import {
   X,
   Lightbulb,
   Star,
+  Clock,
+  Keyboard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -146,6 +158,23 @@ export function App() {
   );
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const projectNameInputRef = useRef<HTMLInputElement>(null);
+
+  // If localStorage had no draft (or exceeded quota), check IndexedDB on initial mount
+  useEffect(() => {
+    if (!initialDraft) {
+      loadLocalDraftAsync().then(draft => {
+        if (draft && Array.isArray(draft.items) && draft.items.length > 0) {
+          setItemsWithoutHistory(draft.items);
+          if (Array.isArray(draft.languages) && draft.languages.length > 0) {
+            setLanguages(draft.languages);
+          }
+          if (draft.name) {
+            setProjectName(draft.name);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [initialDraft, setItemsWithoutHistory]);
 
   const isDevMode = typeof window !== 'undefined' && Boolean(
     (window as any).__JSONLINK_DEV_MODE__ ||
@@ -283,7 +312,7 @@ export function App() {
   // Timestamp until which all sample auto-restore or bleed-through clicks are blocked
   const exitCooldownUntilRef = useRef<number>(0);
 
-  // Auto-save draft to localStorage whenever spreadsheet data changes
+  // Auto-save draft to localStorage & IndexedDB whenever spreadsheet data changes
   useEffect(() => {
     if (isExitingRef.current) {
       clearLocalDraft();
@@ -291,6 +320,14 @@ export function App() {
     }
     if (items.length > 0) {
       saveLocalDraft(projectName, items, languages);
+      recordRecentProject({
+        format: 'jsonlink',
+        version: '1.0.0',
+        name: projectName || 'translations',
+        updatedAt: new Date().toISOString(),
+        languages,
+        items,
+      }).catch(() => {});
     } else {
       clearLocalDraft();
     }
@@ -349,6 +386,8 @@ export function App() {
   const [isTranslationMemoryOpen, setIsTranslationMemoryOpen] = useState(false);
   const [isDuplicateFinderOpen, setIsDuplicateFinderOpen] = useState(false);
   const [isIcuTesterOpen, setIsIcuTesterOpen] = useState(false);
+  const [isRecentProjectsOpen, setIsRecentProjectsOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   // Live WebRTC Collaboration state
   const [isCollabModalOpen, setIsCollabModalOpen] = useState(false);
@@ -776,13 +815,29 @@ export function App() {
     isGitHubSyncOpen ||
     isTranslationMemoryOpen ||
     isDuplicateFinderOpen ||
-    isIcuTesterOpen;
+    isIcuTesterOpen ||
+    isRecentProjectsOpen ||
+    isShortcutsOpen;
 
-  // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace
+  // Keyboard shortcuts: Cmd+K / Ctrl+K for Command Palette, Ctrl+Z / Ctrl+Y for Undo / Redo, Cmd+H for Find & Replace, ? for Shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // If any modal or dialog is open, do not execute global grid shortcuts
       if (isAnyModalOpen) return;
+
+      // Keyboard Shortcuts Cheat Sheet: '?' or Cmd+/ or Ctrl+/
+      if (
+        (e.key === '?' && !e.metaKey && !e.ctrlKey) ||
+        ((e.metaKey || e.ctrlKey) && e.key === '/')
+      ) {
+        const tag = (document.activeElement?.tagName || '').toLowerCase();
+        const isTyping = tag === 'input' || tag === 'textarea';
+        if (!isTyping) {
+          e.preventDefault();
+          setIsShortcutsOpen(prev => !prev);
+          return;
+        }
+      }
 
       // Command Palette: Ctrl+K or Cmd+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -1754,10 +1809,27 @@ export function App() {
       {
         id: 'export-dialog',
         category: 'Export',
-        title: 'Export Translations (Excel, CSV, JSON, Flutter ARB, YAML, Android, iOS, TypeScript)',
+        title: 'Export Translations (Excel, CSV, JSON, Flutter ARB, XLIFF, PO, YAML, Android, iOS, TypeScript)',
         description: 'Choose export format and download',
         icon: <FileSpreadsheet className="size-3.5" />,
         action: () => setIsExportOpen(true),
+      },
+      {
+        id: 'recent-projects',
+        category: 'History',
+        title: 'Recent Projects & History',
+        description: 'Browse and restore past localization projects from IndexedDB',
+        icon: <Clock className="size-3.5" />,
+        action: () => setIsRecentProjectsOpen(true),
+      },
+      {
+        id: 'keyboard-shortcuts',
+        category: 'Help',
+        title: 'Keyboard Shortcuts Cheat Sheet',
+        description: 'View all keyboard shortcuts and navigation hotkeys',
+        shortcut: '?',
+        icon: <Keyboard className="size-3.5" />,
+        action: () => setIsShortcutsOpen(true),
       },
       {
         id: 'user-guide',
@@ -2049,6 +2121,30 @@ export function App() {
               <span className="hidden md:inline font-medium">Docs</span>
             </Button>
           )}
+
+          {/* Recent Projects History button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsRecentProjectsOpen(true)}
+            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
+            title="Recent Projects History"
+          >
+            <Clock className="size-3.5" />
+            <span className="hidden xl:inline font-medium">Recent</span>
+          </Button>
+
+          {/* Keyboard Shortcuts button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsShortcutsOpen(true)}
+            className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
+            title="Keyboard Shortcuts (?)"
+          >
+            <Keyboard className="size-3.5" />
+            <span className="hidden xl:inline font-medium">Shortcuts</span>
+          </Button>
 
           <Button
             variant="ghost"
@@ -2466,6 +2562,23 @@ export function App() {
             handleStartCollabSession(roomId, password, userName, true)
           }
           onEndSession={handleEndCollabSession}
+        />
+
+        {/* Recent Projects & History Modal */}
+        <RecentProjectsModal
+          isOpen={isRecentProjectsOpen}
+          onClose={() => setIsRecentProjectsOpen(false)}
+          onOpenProject={(proj) => {
+            setItemsWithoutHistory(proj.items || []);
+            setLanguages(proj.languages && proj.languages.length > 0 ? proj.languages : ['en']);
+            setProjectName(proj.name || 'translations');
+          }}
+        />
+
+        {/* Keyboard Shortcuts Cheat Sheet Modal */}
+        <ShortcutsModal
+          isOpen={isShortcutsOpen}
+          onClose={() => setIsShortcutsOpen(false)}
         />
       </Suspense>
     </div>

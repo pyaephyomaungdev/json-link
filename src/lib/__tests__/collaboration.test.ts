@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import * as Y from 'yjs';
 import {
@@ -178,5 +179,25 @@ describe('collaboration module', () => {
     Y.applyUpdate(docA, updateB);
     expect(extractProjectNameFromYDoc(docA)).toBe('fintech-v2');
   });
+
+  it('builds effective ICE servers with custom TURN relays', async () => {
+    const { buildEffectiveIceServers, saveStoredTurnServers, getStoredTurnServers } = await import('../collaboration');
+    
+    saveStoredTurnServers([
+      { url: 'turn:turn.mycompany.com:3478', username: 'dev', credential: 'secret-pass' },
+    ]);
+
+    const stored = getStoredTurnServers();
+    expect(stored).toHaveLength(1);
+    expect(stored[0].url).toBe('turn:turn.mycompany.com:3478');
+
+    const effective = buildEffectiveIceServers();
+    expect(effective.some(s => s.urls === 'turn:turn.mycompany.com:3478')).toBe(true);
+
+    // Clean up
+    saveStoredTurnServers([]);
+    expect(getStoredTurnServers()).toHaveLength(0);
+  });
 });
+
 

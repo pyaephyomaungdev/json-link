@@ -6,6 +6,10 @@ export interface OpenRouterModel {
   id: string;
   name: string;
   description: string;
+  pricing?: {
+    prompt: string;
+    completion: string;
+  };
 }
 
 export const POPULAR_MODELS: OpenRouterModel[] = [
@@ -209,6 +213,12 @@ export async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
         id: m.id,
         name: m.name || m.id,
         description: m.description || '',
+        pricing: m.pricing
+          ? {
+              prompt: String(m.pricing.prompt || '0'),
+              completion: String(m.pricing.completion || '0'),
+            }
+          : undefined,
       }));
 
       // Sort alphabetically by name
@@ -244,7 +254,7 @@ export function getCachedOpenRouterModels(): OpenRouterModel[] {
   return POPULAR_MODELS;
 }
 
-import { GlossaryEntry, formatGlossaryForPrompt, getStoredGlossary } from './glossary';
+import { GlossaryEntry } from './glossary';
 
 export interface TranslationRequestItem {
   key: string;
@@ -319,41 +329,102 @@ export function getLanguageDisplayName(code: string): string {
 
 export const BATCH_CHUNK_SIZE = 25;
 
-async function executeSingleChunkTranslate({
-  apiKey,
-  model,
-  sourceLang,
-  targetLang,
-  items,
-  glossary,
-}: TranslateBatchOptions): Promise<Record<string, string>> {
-  if (items.length === 0) {
-    return {};
+/**
+ * Exponential backoff fetcher for handling transient HTTP 429 rate limits and 503 gateway errors
+ */
+async function fetchWithBackoff(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    const response = await fetch(url, options);
+    if (response.ok) return response;
+
+    // Retry only on 429 (rate limit) or 502/503/504 (transient gateway errors)
+    if ((response.status === 429 || response.status >= 502) && attempt < maxRetries) {
+      attempt++;
+      const baseDelay = Math.pow(2, attempt - 1) * 1000;
+      const jitter = Math.floor(Math.random() * 400);
+      await new Promise(resolve => setTimeout(resolve, baseDelay + jitter));
+      continue;
+    }
+
+    return response;
+  }
+  throw new Error('Network request failed after maximum retries');
+}
+
+export interface TokenCostEstimate {
+  estimatedPromptTokens: number;
+  estimatedCompletionTokens: number;
+  estimatedTotalTokens: number;
+  estimatedCostUsd: number;
+}
+
+/**
+ * Estimates prompt/completion token count and total USD cost for a given batch translation
+ */
+export function estimateBatchTokenCost(
+  items: TranslationRequestItem[],
+  modelInfo?: OpenRouterModel | null
+): TokenCostEstimate {
+  let totalChars = 0;
+  for (const item of items) {
+    totalChars += (item.sourceText || '').length;
+    if (item.description) totalChars += item.description.length;
   }
 
-  const srcName = getLanguageDisplayName(sourceLang);
-  const tgtName = getLanguageDisplayName(targetLang);
+  // System prompt + formatting overhead ~300 tokens
+  const estimatedPromptTokens = Math.max(50, Math.ceil(totalChars / 3.5) + 300);
+  const estimatedCompletionTokens = Math.max(50, Math.ceil(totalChars / 3.5));
+  const estimatedTotalTokens = estimatedPromptTokens + estimatedCompletionTokens;
 
-  const activeGlossary = glossary !== undefined ? glossary : getStoredGlossary();
-  const glossaryInstructions = formatGlossaryForPrompt(activeGlossary);
+  let estimatedCostUsd = 0;
+  if (modelInfo?.pricing) {
+    const promptRate = parseFloat(modelInfo.pricing.prompt || '0');
+    const compRate = parseFloat(modelInfo.pricing.completion || '0');
+    if (!isNaN(promptRate) && !isNaN(compRate)) {
+      estimatedCostUsd =
+        estimatedPromptTokens * promptRate + estimatedCompletionTokens * compRate;
+    }
+  }
 
-  const systemPrompt = `You are an expert localization and internationalization (i18n) translator specializing in software UI strings.
-Your mission is to translate software UI strings from ${srcName} (${sourceLang}) to natural, professional ${tgtName} (${targetLang}).
+  return {
+    estimatedPromptTokens,
+    estimatedCompletionTokens,
+    estimatedTotalTokens,
+    estimatedCostUsd,
+  };
+}
 
-CRITICAL RULES:
-1. PRESERVE VARIABLES EXACTLY:
-   - Interpolation placeholders like {name}, {count}, {{username}}, %s, %d, %1$s, {0}, $1 MUST NEVER be translated, modified, or omitted.
-   - Example in Myanmar: "Welcome, {name}!" -> "ကြိုဆိုပါသည်၊ {name}!" (DO NOT write {နာမည်} or remove {name}).
-2. MAINTAIN TONE & CONTEXT:
-   - UI strings should sound modern, concise, polite, and natural for software applications.
-   - For Myanmar (my), use modern standard Unicode typography (Pyidaungsu / Noto Sans Myanmar).
-   - If a description or context is provided for a string, use it to disambiguate the translation accurately.
-3. RETURN STRICT JSON:
-   - You must output ONLY a valid JSON object where keys are the translation keys provided and values are the translated strings.
-   - Do NOT wrap in markdown code fences (\`\`\`json). Output pure raw JSON only.${glossaryInstructions}`;
+async function executeSingleChunkTranslate(
+  options: TranslateBatchOptions
+): Promise<Record<string, string>> {
+  const { apiKey, items, targetLang, sourceLang = 'en', glossary, model } = options;
 
-  const userPayload: any = {
-    task: `Translate the following ${items.length} strings from ${srcName} to ${tgtName}:`,
+  const targetLangName = getLanguageDisplayName(targetLang);
+  const sourceLangName = getLanguageDisplayName(sourceLang);
+
+  let systemPrompt = `You are an expert native localization specialist translating UI copy and system messages from ${sourceLangName} to ${targetLangName}.
+Strict Rules:
+1. Translate accurately into natural, idiomatic ${targetLangName} appropriate for modern digital software UI.
+2. PRESERVE ALL ICU placeholders, format strings, and interpolation variables EXACTLY AS WRITTEN:
+   - ICU tokens like {name}, {count}, {amount, number, currency}, {gender, select, ...} MUST NOT be altered, translated, or removed.
+   - Positional tokens like %s, %d, %1$s, $variable MUST NOT be modified.
+   - HTML/XML tags like <b>, </b>, <a href="..."> MUST NOT be altered.
+3. If an input text is a brand name, URL, technical identifier, or punctuation only, preserve it appropriately.
+4. Output MUST be a valid JSON object where the keys match the exact input keys, and the values are the translated strings. Do NOT wrap output in markdown codeblocks. Do not include commentary.`;
+
+  if (glossary && Object.keys(glossary).length > 0) {
+    const glossaryEntries = Object.entries(glossary)
+      .map(([src, trg]) => `  "${src}": "${trg}"`)
+      .join('\n');
+    systemPrompt += `\n\nMandatory Terminology Glossary (You MUST translate these exact terms with these exact targets):\n{\n${glossaryEntries}\n}`;
+  }
+
+  const userPayload: Record<string, any> = {
     sourceLanguage: sourceLang,
     targetLanguage: targetLang,
     strings: items.reduce((acc, item) => {
@@ -362,18 +433,17 @@ CRITICAL RULES:
     }, {} as Record<string, string>),
   };
 
-  // Attach context descriptions if any items have them
-  const hasDescriptions = items.some(it => !!it.description?.trim());
+  const hasDescriptions = items.some(it => it.description && it.description.trim());
   if (hasDescriptions) {
-    userPayload.contexts = items.reduce((acc, item) => {
-      if (item.description?.trim()) {
+    userPayload.contextNotes = items.reduce((acc, item) => {
+      if (item.description && item.description.trim()) {
         acc[item.key] = item.description.trim();
       }
       return acc;
     }, {} as Record<string, string>);
   }
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const response = await fetchWithBackoff('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

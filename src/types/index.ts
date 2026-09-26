@@ -26,7 +26,9 @@ export type ExportFormat =
   | 'arb-zip'
   | 'typescript-dts'
   | 'project-bundle'
-  | 'vite-starter';
+  | 'vite-starter'
+  | 'xliff-zip'
+  | 'gettext-po';
 
 export interface ExportOptions {
   format: ExportFormat;

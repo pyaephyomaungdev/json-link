@@ -13,8 +13,12 @@ import {
   generateAndroidXml,
   generateIosStrings,
   generateArbData,
+  generateXliff,
+  generatePo,
   exportAllAsProjectBundle,
   exportToViteStarterZip,
+  exportToXliffZip,
+  exportToPoZip,
 } from '../exporter';
 import { TranslationItem } from '@/types';
 
@@ -324,4 +328,76 @@ describe('exporter.ts', () => {
       }
     }, 15000);
   });
+
+  describe('generateXliff', () => {
+    it('generates valid XLIFF 1.2 XML with trans-unit, source, and target', () => {
+      const items: TranslationItem[] = [
+        { key: 'btn.save', description: 'Save button', en: 'Save', my: 'သိမ်းပါ' },
+      ];
+      const xml = generateXliff(items, 'my', 'en');
+      expect(xml).toContain('<xliff version="1.2"');
+      expect(xml).toContain('source-language="en"');
+      expect(xml).toContain('target-language="my"');
+      expect(xml).toContain('<trans-unit id="btn.save"');
+      expect(xml).toContain('<source>Save</source>');
+      expect(xml).toContain('<target>သိမ်းပါ</target>');
+      expect(xml).toContain('<note>Save button</note>');
+    });
+  });
+
+  describe('generatePo', () => {
+    it('generates valid GNU gettext .po file with headers and msgid/msgstr', () => {
+      const items: TranslationItem[] = [
+        { key: 'auth.title', description: 'Login prompt', en: 'Sign in to account', ja: 'ログイン' },
+      ];
+      const po = generatePo(items, 'ja', 'en');
+      expect(po).toContain('Language: ja');
+      expect(po).toContain('#: auth.title');
+      expect(po).toContain('msgid "Sign in to account"');
+      expect(po).toContain('msgstr "ログイン"');
+    });
+  });
+
+  describe('exportToXliffZip and exportToPoZip', () => {
+    it('generates XLIFF ZIP archive containing messages files', async () => {
+      let createdBlob: Blob | null = null;
+      vi.stubGlobal('URL', {
+        createObjectURL: vi.fn((blob: Blob) => {
+          createdBlob = blob;
+          return 'blob:mock-url';
+        }),
+        revokeObjectURL: vi.fn(),
+      });
+
+      await exportToXliffZip(sampleItems, ['en', 'my'], 'en', 'test.zip');
+      expect(createdBlob).not.toBeNull();
+
+      const zip = await JSZip.loadAsync(createdBlob!);
+      expect(zip.file('messages_my.xlf')).not.toBeNull();
+      const content = await zip.file('messages_my.xlf')!.async('string');
+      expect(content).toContain('<xliff version="1.2"');
+      expect(content).toContain('auth.login.title');
+    });
+
+    it('generates gettext PO ZIP archive containing .po files', async () => {
+      let createdBlob: Blob | null = null;
+      vi.stubGlobal('URL', {
+        createObjectURL: vi.fn((blob: Blob) => {
+          createdBlob = blob;
+          return 'blob:mock-url';
+        }),
+        revokeObjectURL: vi.fn(),
+      });
+
+      await exportToPoZip(sampleItems, ['en', 'my'], 'en', 'test.zip');
+      expect(createdBlob).not.toBeNull();
+
+      const zip = await JSZip.loadAsync(createdBlob!);
+      expect(zip.file('my.po')).not.toBeNull();
+      const content = await zip.file('my.po')!.async('string');
+      expect(content).toContain('Language: my');
+      expect(content).toContain('auth.login.title');
+    });
+  });
 });
+

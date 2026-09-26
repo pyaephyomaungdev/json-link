@@ -495,3 +495,143 @@ export function parseArbFile(
   return { items, languages: [lang] };
 }
 
+/**
+ * Parses XLIFF (XML Localization Interchange File Format, 1.2 and 2.0) content.
+ * Extracts translation units with key, source, and target.
+ */
+export function parseXliffFile(
+  content: string,
+  filename: string
+): { [langCode: string]: Record<string, string> } {
+  const result: Record<string, string> = {};
+
+  // Infer target language from file attributes or filename
+  let targetLang = '';
+  const langMatch =
+    content.match(/target-language=["']([^"']+)["']/i) ||
+    content.match(/trgLang=["']([^"']+)["']/i);
+  if (langMatch) {
+    targetLang = langMatch[1].toLowerCase().replace('_', '-');
+  } else {
+    targetLang = inferLanguageFromFilename(filename);
+  }
+
+  const entityMap: Record<string, string> = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&',
+    '&quot;': '"',
+    '&apos;': "'",
+  };
+  const decodeXml = (s: string) =>
+    s.replace(/&(?:lt|gt|amp|quot|apos);/g, m => entityMap[m] || m);
+
+  // 1. Support XLIFF 1.2: <trans-unit id="key"> ... <target>text</target> ... </trans-unit>
+  const transUnitRegex = /<trans-unit\s+[^>]*?id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/trans-unit>/gi;
+  let match;
+  let foundUnits = false;
+
+  while ((match = transUnitRegex.exec(content)) !== null) {
+    foundUnits = true;
+    const key = match[1].trim();
+    const unitBody = match[2];
+
+    const targetMatch = unitBody.match(/<target[^>]*>([\s\S]*?)<\/target>/i);
+    const sourceMatch = unitBody.match(/<source[^>]*>([\s\S]*?)<\/source>/i);
+
+    const val = targetMatch ? targetMatch[1] : sourceMatch ? sourceMatch[1] : '';
+    result[key] = decodeXml(val.trim());
+  }
+
+  // 2. Support XLIFF 2.0: <unit id="key"> ... <segment> ... <target>text</target> </segment> </unit>
+  if (!foundUnits) {
+    const unit2Regex = /<unit\s+[^>]*?id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/unit>/gi;
+    while ((match = unit2Regex.exec(content)) !== null) {
+      const key = match[1].trim();
+      const unitBody = match[2];
+
+      const targetMatch = unitBody.match(/<target[^>]*>([\s\S]*?)<\/target>/i);
+      const sourceMatch = unitBody.match(/<source[^>]*>([\s\S]*?)<\/source>/i);
+
+      const val = targetMatch ? targetMatch[1] : sourceMatch ? sourceMatch[1] : '';
+      result[key] = decodeXml(val.trim());
+    }
+  }
+
+  return { [targetLang]: result };
+}
+
+/**
+ * Parses GNU gettext (.po / .pot) translation file content into { [langCode]: { key: value } }.
+ * Robustly parses multi-line strings, escaped quotes, and msgid / msgstr pairs.
+ */
+export function parsePoFile(
+  content: string,
+  filename: string
+): { [langCode: string]: Record<string, string> } {
+  const result: Record<string, string> = {};
+
+  // Infer target language from header or filename
+  let targetLang = '';
+  const langHeaderMatch = content.match(/"Language:\s*([a-zA-Z0-9_-]+)/i);
+  if (langHeaderMatch) {
+    targetLang = langHeaderMatch[1].toLowerCase().replace('_', '-');
+  } else {
+    targetLang = inferLanguageFromFilename(filename);
+  }
+
+  const lines = content.split(/\r?\n/);
+  let currentKey = '';
+  let currentVal = '';
+  let mode: 'none' | 'msgid' | 'msgstr' = 'none';
+
+  const unescapePo = (s: string) =>
+    s
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\\\/g, '\\');
+
+  const flush = () => {
+    if (currentKey && currentKey.trim()) {
+      result[currentKey] = currentVal;
+    }
+    currentKey = '';
+    currentVal = '';
+    mode = 'none';
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    if (trimmed.startsWith('msgid ')) {
+      flush();
+      mode = 'msgid';
+      const m = trimmed.match(/^msgid\s+"(.*)"$/);
+      if (m) {
+        currentKey = unescapePo(m[1]);
+      }
+    } else if (trimmed.startsWith('msgstr ')) {
+      mode = 'msgstr';
+      const m = trimmed.match(/^msgstr\s+"(.*)"$/);
+      if (m) {
+        currentVal = unescapePo(m[1]);
+      }
+    } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      const valStr = unescapePo(trimmed.slice(1, -1));
+      if (mode === 'msgid') {
+        currentKey += valStr;
+      } else if (mode === 'msgstr') {
+        currentVal += valStr;
+      }
+    }
+  }
+  flush();
+
+  return { [targetLang]: result };
+}
+
+

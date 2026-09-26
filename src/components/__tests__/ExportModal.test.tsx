@@ -16,6 +16,10 @@ vi.mock('@/lib/exporter', () => ({
   exportToTypeScriptDts: vi.fn().mockResolvedValue(undefined),
   exportAllAsProjectBundle: vi.fn().mockResolvedValue(undefined),
   exportToViteStarterZip: vi.fn().mockResolvedValue(undefined),
+  exportToXliffZip: vi.fn().mockResolvedValue(undefined),
+  exportToPoZip: vi.fn().mockResolvedValue(undefined),
+  generateXliff: vi.fn(() => '<?xml version="1.0"?><xliff></xliff>'),
+  generatePo: vi.fn(() => 'msgid ""\nmsgstr ""\n'),
   generateLanguageJsonData: vi.fn(() => ({ hello: 'Hello' })),
   generateArbData: vi.fn(() => ({ hello: 'Hello' })),
   objectToYaml: vi.fn(() => 'hello: Hello'),
@@ -128,5 +132,43 @@ describe('ExportModal', () => {
 
     expect(screen.getByText(/Flutter ARB/i)).not.toBeNull();
     expect(screen.queryByText(/Excel \(\.xlsx\)/i)).toBeNull();
+  });
+
+  it('switches to XLIFF 1.2 tab and triggers exportToXliffZip', async () => {
+    render(<ExportModal {...defaultProps} />);
+    const xliffTab = screen.getByRole('button', { name: /XLIFF 1\.2/i });
+    fireEvent.click(xliffTab);
+
+    const downloadBtn = screen.getByRole('button', { name: /Download XLIFF/i });
+    fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(exporterLib.exportToXliffZip).toHaveBeenCalledWith(
+        defaultProps.items,
+        defaultProps.languages,
+        'en',
+        'test_translations_xliff.zip'
+      );
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('switches to GNU gettext (.po) tab and triggers exportToPoZip', async () => {
+    render(<ExportModal {...defaultProps} />);
+    const poTab = screen.getByRole('button', { name: /GNU gettext/i });
+    fireEvent.click(poTab);
+
+    const downloadBtn = screen.getByRole('button', { name: /Download GETTEXT/i });
+    fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(exporterLib.exportToPoZip).toHaveBeenCalledWith(
+        defaultProps.items,
+        defaultProps.languages,
+        'en',
+        'test_translations_po.zip'
+      );
+      expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 });

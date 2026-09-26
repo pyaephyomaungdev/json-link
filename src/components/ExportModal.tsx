@@ -42,6 +42,10 @@ import {
   exportToTypeScriptDts,
   exportAllAsProjectBundle,
   exportToViteStarterZip,
+  exportToXliffZip,
+  exportToPoZip,
+  generateXliff,
+  generatePo,
   generateLanguageJsonData,
   generateArbData,
   objectToYaml,
@@ -66,7 +70,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const saved = localStorage.getItem('jsonlink_last_export_format') as ExportFormat;
     const validFormats: ExportFormat[] = [
       'excel', 'csv', 'json-zip', 'json-combined', 'yaml-zip',
-      'android-xml', 'ios-strings', 'arb-zip', 'typescript-dts', 'project-bundle', 'vite-starter'
+      'android-xml', 'ios-strings', 'arb-zip', 'typescript-dts', 'project-bundle', 'vite-starter',
+      'xliff-zip', 'gettext-po'
     ];
     return validFormats.includes(saved) ? saved : 'excel';
   });
@@ -159,6 +164,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       return `export type TranslationKey =\n${keysUnion}\n  | ...;\n\nexport type SupportedLanguage = ${languages.map(l => JSON.stringify(l)).join(' | ')};`;
     }
 
+    if (activeTab === 'xliff-zip') {
+      return generateXliff(sampleItems, previewLang, languages[0] || 'en');
+    }
+
+    if (activeTab === 'gettext-po') {
+      return generatePo(sampleItems, previewLang, languages[0] || 'en');
+    }
+
     if (activeTab === 'project-bundle') {
       return `Complete Multi-Framework Bundle:\n\n` +
         `├── web-locales/ (${languages.map(l => `${l}.json`).join(', ')})\n` +
@@ -202,6 +215,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       await exportToArbZip(items, languages, `${filename}_flutter_arb.zip`);
     } else if (activeTab === 'typescript-dts') {
       exportToTypeScriptDts(items, languages, `${filename}.d.ts`);
+    } else if (activeTab === 'xliff-zip') {
+      await exportToXliffZip(items, languages, languages[0] || 'en', `${filename}_xliff.zip`);
+    } else if (activeTab === 'gettext-po') {
+      await exportToPoZip(items, languages, languages[0] || 'en', `${filename}_po.zip`);
     }
 
     onOpenChange(false);
@@ -226,6 +243,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       { id: 'json-zip', label: 'JSON (ZIP)', shortLabel: 'JSON (ZIP)', category: 'bundles', icon: <Archive className="size-3.5 text-amber-500 shrink-0" /> },
       { id: 'json-combined', label: 'Single JSON', shortLabel: 'Single JSON', category: 'bundles', icon: <FileText className="size-3.5 text-purple-500 shrink-0" /> },
       { id: 'arb-zip', label: 'Flutter ARB (.arb)', shortLabel: 'Flutter ARB', category: 'platform', isRecommended: true, icon: <Code2 className="size-3.5 text-cyan-500 shrink-0" /> },
+      { id: 'xliff-zip', label: 'XLIFF 1.2 (.xlf)', shortLabel: 'XLIFF', category: 'platform', icon: <FileText className="size-3.5 text-orange-500 shrink-0" /> },
+      { id: 'gettext-po', label: 'GNU gettext (.po)', shortLabel: 'GNU gettext', category: 'platform', icon: <FileText className="size-3.5 text-teal-500 shrink-0" /> },
       { id: 'android-xml', label: 'Android (strings.xml)', shortLabel: 'Android XML', category: 'platform', icon: <Smartphone className="size-3.5 text-emerald-500 shrink-0" /> },
       { id: 'ios-strings', label: 'iOS (.strings)', shortLabel: 'iOS Strings', category: 'platform', icon: <Smartphone className="size-3.5 text-sky-500 shrink-0" /> },
       { id: 'typescript-dts', label: 'TypeScript (.d.ts)', shortLabel: 'TypeScript', category: 'platform', icon: <Code2 className="size-3.5 text-blue-600 shrink-0" /> },

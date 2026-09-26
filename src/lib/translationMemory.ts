@@ -11,6 +11,110 @@ export interface TranslationMemoryEntry {
 }
 
 const TM_STORAGE_KEY = 'jsonlink_translation_memory';
+const DB_NAME = 'jsonlink_storage';
+const STORE_NAME = 'translation_memory';
+const DB_VERSION = 2;
+
+// In-memory synchronous cache for O(1) reads and zero-latency UI interactions
+let inMemoryTM: TranslationMemoryEntry[] | null = null;
+let isHydrating = false;
+
+/** Open or create the IndexedDB database */
+function openTmDb(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || typeof indexedDB === 'undefined') {
+    return Promise.resolve(null);
+  }
+
+  return new Promise(resolve => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onupgradeneeded = event => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('recent_projects')) {
+          db.createObjectStore('recent_projects', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('project_draft')) {
+          db.createObjectStore('project_draft', { keyPath: 'id' });
+        }
+      };
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => {
+        console.warn('IndexedDB open error, falling back to in-memory/localStorage');
+        resolve(null);
+      };
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/** Load all entries from IndexedDB */
+export async function loadFromIndexedDb(): Promise<TranslationMemoryEntry[] | null> {
+  const db = await openTmDb();
+  if (!db) return null;
+
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        resolve(Array.isArray(req.result) ? (req.result as TranslationMemoryEntry[]) : []);
+      };
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/** Persist all entries to IndexedDB asynchronously */
+export async function persistToIndexedDb(entries: TranslationMemoryEntry[]): Promise<boolean> {
+  const db = await openTmDb();
+  if (!db) return false;
+
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.clear();
+
+      for (const entry of entries) {
+        store.put(entry);
+      }
+
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/** Clear all entries from IndexedDB */
+export async function clearIndexedDb(): Promise<boolean> {
+  const db = await openTmDb();
+  if (!db) return false;
+
+  return new Promise(resolve => {
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.clear();
+
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
 
 /** Calculate Levenshtein similarity ratio between 0 and 1 */
 export function calculateSimilarity(s1: string, s2: string): number {
@@ -42,34 +146,99 @@ export function calculateSimilarity(s1: string, s2: string): number {
   return Math.max(0, 1 - distance / maxLen);
 }
 
-/** Load translation memory from browser storage */
-export function loadTranslationMemory(): TranslationMemoryEntry[] {
-  if (typeof window === 'undefined') return [];
+/** Hydrate memory from IndexedDB asynchronously with localStorage migration fallback */
+export async function hydrateTranslationMemoryAsync(): Promise<TranslationMemoryEntry[]> {
+  if (inMemoryTM && inMemoryTM.length > 0) return inMemoryTM;
+
   try {
-    const raw = localStorage.getItem(TM_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const idbEntries = await loadFromIndexedDb();
+    if (idbEntries && idbEntries.length > 0) {
+      inMemoryTM = idbEntries;
+      return inMemoryTM;
+    }
+
+    // If IDB is empty, check localStorage and migrate
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(TM_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          inMemoryTM = parsed;
+          persistToIndexedDb(parsed).catch(() => {});
+          return inMemoryTM;
+        }
+      }
+    }
   } catch (err) {
-    console.warn('Failed to load translation memory:', err);
-    return [];
+    console.warn('Hydration error:', err);
   }
+
+  inMemoryTM = inMemoryTM || [];
+  return inMemoryTM;
 }
 
-/** Save translation memory to browser storage */
-export function saveTranslationMemory(entries: TranslationMemoryEntry[]): void {
-  if (typeof window === 'undefined') return;
+/** Load translation memory from in-memory cache or browser storage */
+export function loadTranslationMemory(): TranslationMemoryEntry[] {
+  if (inMemoryTM !== null) {
+    return inMemoryTM;
+  }
+
+  if (typeof window === 'undefined') return [];
+
+  // Synchronous read from localStorage for immediate availability
   try {
-    localStorage.setItem(TM_STORAGE_KEY, JSON.stringify(entries));
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(TM_STORAGE_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        inMemoryTM = parsed;
+      }
+    }
   } catch (err) {
-    console.warn('Failed to save translation memory:', err);
+    console.warn('Failed to load from localStorage:', err);
+  }
+
+  if (inMemoryTM === null) {
+    inMemoryTM = [];
+  }
+
+  // Trigger non-blocking async hydration from IndexedDB if not already running
+  if (!isHydrating && typeof indexedDB !== 'undefined') {
+    isHydrating = true;
+    hydrateTranslationMemoryAsync().finally(() => {
+      isHydrating = false;
+    });
+  }
+
+  return inMemoryTM;
+}
+
+/** Save translation memory to cache, IndexedDB, and localStorage */
+export function saveTranslationMemory(entries: TranslationMemoryEntry[]): void {
+  inMemoryTM = entries;
+
+  if (typeof window === 'undefined') return;
+
+  // 1. Asynchronously persist to IndexedDB (no 5MB storage quota restriction)
+  persistToIndexedDb(entries).catch(() => {});
+
+  // 2. Synchronous mirror to localStorage if within safe quota limits
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TM_STORAGE_KEY, JSON.stringify(entries));
+    }
+  } catch {
+    // If quota exceeded or disabled in private mode, safely ignore since IndexedDB handles persistence
   }
 }
 
 function generateTmId(): string {
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  return `tm_${Date.now()}_${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    return `tm_${Date.now()}_${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+  }
+  return `tm_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 /** Record or update a single translation entry in memory */
@@ -83,7 +252,7 @@ export function upsertMemoryEntry(
   const cleanTarget = targetText.trim();
   if (!cleanSource || !cleanTarget || sourceLang === targetLang) return;
 
-  const memory = loadTranslationMemory();
+  const memory = [...loadTranslationMemory()];
   const existing = memory.find(
     e => e.sourceLang === sourceLang && e.sourceText.toLowerCase() === cleanSource.toLowerCase()
   );
@@ -91,7 +260,7 @@ export function upsertMemoryEntry(
   const now = new Date().toISOString();
 
   if (existing) {
-    existing.translations[targetLang] = cleanTarget;
+    existing.translations = { ...existing.translations, [targetLang]: cleanTarget };
     existing.usageCount = (existing.usageCount || 1) + 1;
     existing.updatedAt = now;
   } else {
@@ -115,7 +284,7 @@ export function seedMemoryFromItems(
   sourceLang = 'en',
   targetLangs?: string[]
 ): number {
-  const memory = loadTranslationMemory();
+  const memory = [...loadTranslationMemory()];
   const memoryMap = new Map<string, TranslationMemoryEntry>();
 
   for (const entry of memory) {
@@ -230,9 +399,13 @@ export function findFuzzyMemoryMatches(
     .slice(0, limit);
 }
 
-/** Clear all translation memory */
+/** Clear all translation memory across memory, IndexedDB, and localStorage */
 export function clearTranslationMemory(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(TM_STORAGE_KEY);
+  inMemoryTM = [];
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.removeItem(TM_STORAGE_KEY);
+    } catch {}
   }
+  clearIndexedDb().catch(() => {});
 }

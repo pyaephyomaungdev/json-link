@@ -81,4 +81,44 @@ describe('ImportModal', () => {
 
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
   });
+
+  it('handles uploading XLIFF (.xlf) and GNU gettext (.po) files', async () => {
+    render(<ImportModal {...defaultProps} />);
+
+    const xlfContent = `<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en" target-language="es" datatype="plaintext" original="messages">
+    <body>
+      <trans-unit id="greeting">
+        <source>Hello</source>
+        <target>Hola</target>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>`;
+    const xlfFile = new File([xlfContent], 'messages_es.xlf', { type: 'application/x-xliff+xml' });
+
+    const poContent = `msgid ""
+msgstr ""
+"Language: fr\\n"
+
+msgid "greeting"
+msgstr "Bonjour"
+`;
+    const poFile = new File([poContent], 'fr.po', { type: 'text/x-gettext' });
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [xlfFile, poFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('messages_es.xlf')).not.toBeNull();
+      expect(screen.getByText('fr.po')).not.toBeNull();
+    });
+
+    const applyBtn = screen.getByRole('button', { name: /Apply Import/i });
+    fireEvent.click(applyBtn);
+
+    expect(defaultProps.onImportComplete).toHaveBeenCalled();
+    expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+  });
 });

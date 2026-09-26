@@ -372,6 +372,153 @@ export function generateArbData(
 }
 
 /**
+ * Generates an XLIFF 1.2 XML document for professional CAT tools
+ */
+export function generateXliff(
+  items: TranslationItem[],
+  targetLang: string,
+  sourceLang = 'en'
+): string {
+  const escapeXml = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+  const units = items
+    .filter(item => item.key && item.key.trim())
+    .map(item => {
+      const srcText = item[sourceLang] || '';
+      const trgText = item[targetLang] || '';
+      const note = item.description
+        ? `\n        <note>${escapeXml(item.description)}</note>`
+        : '';
+      return `      <trans-unit id="${escapeXml(item.key)}">${note}
+        <source>${escapeXml(srcText)}</source>
+        <target>${escapeXml(trgText)}</target>
+      </trans-unit>`;
+    })
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="${sourceLang}" target-language="${targetLang}" datatype="plaintext" original="messages">
+    <body>
+${units}
+    </body>
+  </file>
+</xliff>
+`;
+}
+
+/**
+ * Export a single language XLIFF file directly
+ */
+export function exportSingleLanguageXliff(
+  items: TranslationItem[],
+  targetLang: string,
+  sourceLang = 'en'
+) {
+  const content = generateXliff(items, targetLang, sourceLang);
+  const blob = new Blob([content], { type: 'application/x-xliff+xml;charset=utf-8;' });
+  downloadBlob(blob, `messages_${targetLang}.xlf`);
+}
+
+/**
+ * Export all target languages as an XLIFF 1.2 ZIP archive
+ */
+export async function exportToXliffZip(
+  items: TranslationItem[],
+  languages: string[],
+  sourceLang = 'en',
+  zipFilename = 'xliff_translations.zip'
+): Promise<void> {
+  const zip = await createZip();
+  const targetLangs = languages.filter(l => l !== sourceLang);
+  const langsToExport = targetLangs.length > 0 ? targetLangs : languages;
+
+  for (const lang of langsToExport) {
+    const content = generateXliff(items, lang, sourceLang);
+    zip.file(`messages_${lang}.xlf`, content);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(blob, zipFilename.endsWith('.zip') ? zipFilename : `${zipFilename}.zip`);
+}
+
+/**
+ * Generates a standard GNU gettext (.po) file
+ */
+export function generatePo(
+  items: TranslationItem[],
+  targetLang: string,
+  sourceLang = 'en'
+): string {
+  const escapePo = (s: string) =>
+    s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+  const header = `msgid ""
+msgstr ""
+"Project-Id-Version: JSON Link Localization\\n"
+"MIME-Version: 1.0\\n"
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Content-Transfer-Encoding: 8bit\\n"
+"Language: ${targetLang}\\n"
+
+`;
+
+  const body = items
+    .filter(item => item.key && item.key.trim())
+    .map(item => {
+      const comment = item.description ? `#. ${item.description}\n` : '';
+      const keyRef = `#: ${item.key}\n`;
+      const srcText = item[sourceLang] || item.key;
+      const trgText = item[targetLang] || '';
+      return `${comment}${keyRef}msgid "${escapePo(srcText)}"\nmsgstr "${escapePo(trgText)}"\n`;
+    })
+    .join('\n');
+
+  return header + body;
+}
+
+/**
+ * Export a single language GNU gettext (.po) file directly
+ */
+export function exportSingleLanguagePo(
+  items: TranslationItem[],
+  targetLang: string,
+  sourceLang = 'en'
+) {
+  const content = generatePo(items, targetLang, sourceLang);
+  const blob = new Blob([content], { type: 'text/x-gettext-translation;charset=utf-8;' });
+  downloadBlob(blob, `${targetLang}.po`);
+}
+
+/**
+ * Export all target languages as a GNU gettext (.po) ZIP archive
+ */
+export async function exportToPoZip(
+  items: TranslationItem[],
+  languages: string[],
+  sourceLang = 'en',
+  zipFilename = 'gettext_po.zip'
+): Promise<void> {
+  const zip = await createZip();
+  const targetLangs = languages.filter(l => l !== sourceLang);
+  const langsToExport = targetLangs.length > 0 ? targetLangs : languages;
+
+  for (const lang of langsToExport) {
+    const content = generatePo(items, lang, sourceLang);
+    zip.file(`${lang}.po`, content);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(blob, zipFilename.endsWith('.zip') ? zipFilename : `${zipFilename}.zip`);
+}
+
+/**
  * Export Flutter ARB files bundled in a ZIP archive
  */
 export async function exportToArbZip(

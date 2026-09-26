@@ -74,6 +74,55 @@ export const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:global.stun.twilio.com:3478' },
 ];
 
+export interface TurnServerConfig {
+  url: string;
+  username?: string;
+  credential?: string;
+}
+
+const STORAGE_KEY_TURN_SERVERS = 'jsonlink_turn_servers';
+
+/** Retrieve user-configured TURN/STUN relay servers from local storage */
+export function getStoredTurnServers(): TurnServerConfig[] {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_TURN_SERVERS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save custom TURN/STUN relay servers to local storage */
+export function saveStoredTurnServers(servers: TurnServerConfig[]): void {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_TURN_SERVERS, JSON.stringify(servers));
+  } catch {}
+}
+
+/** Builds the full RTCIceServer array including default STUN and custom TURN relays */
+export function buildEffectiveIceServers(customTurn?: TurnServerConfig[]): RTCIceServer[] {
+  const custom = customTurn || getStoredTurnServers();
+  const list: RTCIceServer[] = [...DEFAULT_ICE_SERVERS];
+  for (const s of custom) {
+    if (s.url && s.url.trim()) {
+      list.push({
+        urls: s.url.trim(),
+        username: s.username?.trim() || undefined,
+        credential: s.credential?.trim() || undefined,
+      });
+    }
+  }
+  return list;
+}
+
+/** Compacts a collaborative Yjs document state and triggers GC cleanup */
+export function compactCollabSession(session: CollabSession): Uint8Array {
+  session.ydoc.gc = true;
+  return Y.encodeStateAsUpdate(session.ydoc);
+}
+
 export const COLLAB_PALETTE = [
   '#3b82f6', // 1. Blue
   '#10b981', // 2. Emerald
@@ -181,6 +230,8 @@ export function initCollabSession(
   options?: {
     password?: string | null;
     signalingServers?: string[];
+    iceServers?: RTCIceServer[];
+    turnServers?: TurnServerConfig[];
     initialItems?: TranslationItem[];
     initialLanguages?: string[];
     initialProjectName?: string;
@@ -208,13 +259,14 @@ export function initCollabSession(
   const ydoc = new Y.Doc();
   const signaling = getEffectiveSignalingServers(options?.signalingServers);
   const cleanPassword = options?.password ? options.password.trim() : null;
+  const effectiveIceServers = options?.iceServers || buildEffectiveIceServers(options?.turnServers);
 
   const provider = new WebrtcProvider(roomName, ydoc, {
     signaling,
     password: cleanPassword || undefined,
     peerOpts: {
       config: {
-        iceServers: DEFAULT_ICE_SERVERS,
+        iceServers: effectiveIceServers,
       },
     },
   });

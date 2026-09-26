@@ -56,6 +56,7 @@ import {
   setStoredModel,
   testOpenRouterKey,
   translateBatchWithOpenRouter,
+  estimateBatchTokenCost,
   getLanguageDisplayName,
 } from '@/lib/openrouter';
 import { GlossaryModal } from './GlossaryModal';
@@ -246,6 +247,17 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
       return true;
     });
   }, [items, activeTargetKey, singleTargetItem, sourceLang, targetLangsList, scope, activeTargetKeys]);
+
+  const tokenCostEstimate = useMemo(() => {
+    if (eligibleItems.length === 0) return null;
+    const requestItems = eligibleItems.map(item => ({
+      key: item.key,
+      sourceText: item[sourceLang] || '',
+      description: item.description,
+    }));
+    const currentModelObj = allModels.find(m => m.id === selectedModel);
+    return estimateBatchTokenCost(requestItems, currentModelObj);
+  }, [eligibleItems, sourceLang, allModels, selectedModel]);
 
   const handleSaveKey = (newKey: string) => {
     setApiKey(newKey);
@@ -914,23 +926,23 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                     : `${allWithSourceCount} total row${allWithSourceCount !== 1 ? 's' : ''} to translate`}
                 </span>
               </div>
-              <div className="grid grid-cols-2 p-1 bg-muted/40 border border-border rounded-lg gap-1">
+              <div className="grid grid-cols-2 p-1 bg-muted/80 border border-border/80 rounded-lg gap-1.5">
                 <button
                   type="button"
                   onClick={() => setScope('missing')}
                   disabled={isTranslating}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer border ${
                     scope === 'missing'
-                      ? 'bg-background text-foreground shadow-2xs font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                      ? 'bg-background text-foreground border-emerald-500/50 shadow-xs font-semibold ring-1 ring-emerald-500/25 dark:bg-emerald-950/20'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/40'
                   }`}
                 >
                   <span>Missing Keys Only</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors ${
                       scope === 'missing'
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold'
-                        : 'bg-muted text-muted-foreground'
+                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30'
+                        : 'bg-muted-foreground/15 text-muted-foreground'
                     }`}
                   >
                     {missingCount}
@@ -940,18 +952,18 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
                   type="button"
                   onClick={() => setScope('all')}
                   disabled={isTranslating}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all cursor-pointer border ${
                     scope === 'all'
-                      ? 'bg-background text-foreground shadow-2xs font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                      ? 'bg-background text-foreground border-amber-500/50 shadow-xs font-semibold ring-1 ring-amber-500/25 dark:bg-amber-950/20'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/40'
                   }`}
                 >
                   <span>All Rows (Overwrite)</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono transition-colors ${
                       scope === 'all'
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold'
-                        : 'bg-muted text-muted-foreground'
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-500/30'
+                        : 'bg-muted-foreground/15 text-muted-foreground'
                     }`}
                   >
                     {allWithSourceCount}
@@ -1023,28 +1035,43 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
           )}
         </DialogBody>
 
-        <DialogFooter>
-          {isTranslating ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              className="flex-1 sm:flex-none text-xs h-8"
-            >
-              Cancel Translation
-            </Button>
+        <DialogFooter className="flex items-center justify-between sm:justify-between w-full">
+          {tokenCostEstimate && tokenCostEstimate.estimatedTotalTokens > 0 && !isTranslating ? (
+            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1">
+              <Cpu className="size-3 text-muted-foreground shrink-0" />
+              <span>~{tokenCostEstimate.estimatedTotalTokens.toLocaleString()} tokens</span>
+              {tokenCostEstimate.estimatedCostUsd > 0 && (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  (~${tokenCostEstimate.estimatedCostUsd.toFixed(4)})
+                </span>
+              )}
+            </div>
           ) : (
-            <>
+            <div />
+          )}
+
+          <div className="flex items-center gap-2">
+            {isTranslating ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={onClose}
+                onClick={handleCancel}
                 className="flex-1 sm:flex-none text-xs h-8"
               >
-                Close
+                Cancel Translation
               </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onClose}
+                  className="flex-1 sm:flex-none text-xs h-8"
+                >
+                  Close
+                </Button>
               <Button
                 type="button"
                 size="sm"
@@ -1078,6 +1105,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
               </Button>
             </>
           )}
+          </div>
         </DialogFooter>
       </DialogContent>
 
