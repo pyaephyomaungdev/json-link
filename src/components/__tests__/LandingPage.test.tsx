@@ -19,42 +19,56 @@ describe('LandingPage', () => {
     onToggleTheme: vi.fn(),
   };
 
-  it('renders headline, product hunt badge, and core action buttons', () => {
+  it('renders the pain-first headline, locked placeholders, and primary actions', () => {
     render(<LandingPage {...baseProps} />);
 
-    expect(screen.getByText(/The Local-First Translation Spreadsheet/i)).not.toBeNull();
-    expect(screen.getByAltText(/JSON Link - Local-first open-source i18n spreadsheet & MCP server/i)).not.toBeNull();
-    expect(screen.getAllByRole('button', { name: /Start Empty Sheet/i }).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole('button', { name: /Browse Files/i }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { level: 1, name: /Translate your app without breaking it/i })).not.toBeNull();
+    expect(screen.getByText(/Placeholders stay locked/i)).not.toBeNull();
+    expect(screen.getAllByText('%1$s').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByAltText(/Product Hunt/i)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Product Hunt' }).getAttribute('href')).toContain('producthunt.com');
+    expect(screen.getByRole('button', { name: /Try with sample data/i })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Open my locale files/i })).not.toBeNull();
+    expect(screen.getByRole('button', { name: /Start an empty sheet/i })).not.toBeNull();
   });
 
-  it('calls onStartEmptySheet when Start Empty Sheet is clicked', () => {
+  it('calls onStartEmptySheet when the empty sheet link is clicked', () => {
     render(<LandingPage {...baseProps} />);
 
-    const startBtns = screen.getAllByRole('button', { name: /Start Empty Sheet/i });
-    fireEvent.click(startBtns[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Start an empty sheet/i }));
 
     expect(baseProps.onStartEmptySheet).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onResetToSample when sample data link is clicked', () => {
+  it('calls onResetToSample when Try with sample data is clicked', () => {
     render(<LandingPage {...baseProps} />);
 
-    const sampleBtn = screen.getByRole('button', { name: /sample data/i });
-    fireEvent.click(sampleBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Try with sample data/i }));
 
     expect(baseProps.onResetToSample).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onOpenAbout and onOpenDocs from footer links', () => {
+  it('opens locale files from the secondary call to action', () => {
+    render(<LandingPage {...baseProps} />);
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const click = vi.spyOn(input, 'click').mockImplementation(() => {});
+
+    fireEvent.click(screen.getByRole('button', { name: /Open my locale files/i }));
+
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses real About and Docs links in the footer', () => {
     render(<LandingPage {...baseProps} />);
 
-    const docsLinks = screen.getAllByRole('button', { name: /Documentation/i });
-    fireEvent.click(docsLinks[0]);
+    const docsLink = screen.getByRole('link', { name: /Documentation/i });
+    expect(docsLink.getAttribute('href')).toBe('/docs');
+    fireEvent.click(docsLink);
     expect(baseProps.onOpenDocs).toHaveBeenCalledTimes(1);
 
-    const aboutLinks = screen.getAllByRole('button', { name: /About/i });
-    fireEvent.click(aboutLinks[0]);
+    const aboutLink = screen.getByRole('link', { name: /About JSON Link/i });
+    expect(aboutLink.getAttribute('href')).toBe('/about');
+    fireEvent.click(aboutLink);
     expect(baseProps.onOpenAbout).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'json-link-v1.1.0';
+const CACHE_NAME = 'json-link-v1.1.0-seo';
 
 const PRECACHE_URLS = [
   './',

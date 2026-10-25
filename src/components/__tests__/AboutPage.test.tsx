@@ -26,7 +26,7 @@ describe('AboutPage', () => {
     expect(screen.getByText('AI Auto-Translate')).not.toBeNull();
     expect(screen.getByText('Zawgyi ⇄ Unicode')).not.toBeNull();
     expect(screen.getByText('GitHub Sync & Automated PRs')).not.toBeNull();
-    expect(screen.getByText('370+ Automated Tests')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'User Guide & Docs' }).getAttribute('href')).toBe('/docs');
   });
 
   it('calls onOpenDocs when User Guide button is clicked', () => {

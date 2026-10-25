@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import fs from 'node:fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
+import { prerenderDist, renderRouteHtml, routeForUrl } from './scripts/prerender-html.mjs';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   base: './',
@@ -32,6 +37,60 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    {
+      name: 'jsonlink-seo-prerender',
+      transformIndexHtml: {
+        order: 'post',
+        handler(html, ctx) {
+          const route = routeForUrl(ctx.originalUrl || '/');
+          return renderRouteHtml(html, route);
+        },
+      },
+      closeBundle() {
+        const distDir = path.resolve(projectRoot, 'dist');
+        const indexPath = path.join(distDir, 'index.html');
+        if (!fs.existsSync(indexPath)) return;
+        prerenderDist(distDir, process.env);
+      },
+      // Vite preview's SPA fallback would serve index.html with HTTP 200 for
+      // unknown URLs. Cloudflare Pages uses public/_redirects plus 404.html,
+      // so preview mirrors that: known routes serve their HTML, everything
+      // else is a real 404.
+      configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const requestUrl = new URL(req.url || '/', 'http://localhost');
+          let pathname = decodeURIComponent(requestUrl.pathname);
+          const distDir = path.resolve(projectRoot, 'dist');
+          if (pathname.length > 1 && pathname.endsWith('/')) {
+            res.statusCode = 301;
+            res.setHeader('Location', pathname.slice(0, -1) + requestUrl.search);
+            res.end();
+            return;
+          }
+          const staticFile = path.resolve(distDir, `.${pathname}`);
+          const insideDist = staticFile === distDir || staticFile.startsWith(`${distDir}${path.sep}`);
+          if (insideDist && fs.existsSync(staticFile) && fs.statSync(staticFile).isFile()) {
+            next();
+            return;
+          }
+          const route = routeForUrl(pathname);
+          if (route.id !== 'not-found' && route.path === pathname) {
+            req.url = `/${route.output}${requestUrl.search}`;
+            next();
+            return;
+          }
+          const missingPage = path.join(distDir, '404.html');
+          res.statusCode = 404;
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-store');
+          if (req.method === 'HEAD' || !fs.existsSync(missingPage)) {
+            res.end();
+            return;
+          }
+          res.end(fs.readFileSync(missingPage));
+        });
+      },
+    },
     {
       name: 'ensure-js-mime-type',
       configureServer(server) {

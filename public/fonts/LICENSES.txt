@@ -1,0 +1,15 @@
+Inter
+Copyright 2024 The Inter Project Authors
+https://github.com/rsms/inter
+Licensed under the SIL Open Font License, Version 1.1.
+
+JetBrains Mono
+Copyright 2020 The JetBrains Mono Project Authors
+https://github.com/JetBrains/JetBrainsMono
+Licensed under the SIL Open Font License, Version 1.1.
+
+Noto Sans Myanmar
+Copyright Google Inc.
+Licensed under the SIL Open Font License, Version 1.1.
+
+Latin subsets are self-hosted so the JSON Link site does not request fonts.googleapis.com.
