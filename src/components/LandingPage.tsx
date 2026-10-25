@@ -1,4 +1,6 @@
 import React, { useRef, useState } from 'react';
+import { HOME_ROUTE } from '@/seo/routes';
+import { onSameTabLinkClick } from '@/lib/sameTabLink';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -201,7 +203,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenAbout,
   onOpenDocs,
   onOpenLegal,
-  isDark,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -291,63 +292,60 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Center Column: Badge, Headline, Subtitle, Actions, Sample */}
           <div className="flex-1 flex flex-col items-center text-center max-w-2xl xl:max-w-3xl mx-auto w-full min-w-0 px-2 sm:px-0">
-            {/* Product Hunt Featured Badge */}
-            <div className="mb-5 flex items-center justify-center">
-              <a
-                href={PRODUCT_HUNT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:opacity-95 transition-transform hover:scale-[1.02] inline-block shadow-2xs rounded-lg"
-              >
-                <img
-                  alt="JSON Link - Local-first open-source i18n spreadsheet & MCP server | Product Hunt"
-                  width={240}
-                  height={52}
-                  src={`https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1248495&theme=${isDark ? 'dark' : 'light'}&t=1789232030595`}
-                />
-              </a>
-            </div>
-
-            {/* Hero Title with Gradient */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight max-w-3xl text-balance bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent pb-1">
-              The Local-First Translation Spreadsheet for Developer Teams
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight max-w-3xl text-balance text-foreground pb-1">
+              {HOME_ROUTE.h1}
             </h1>
 
-            {/* Hero Subtitle */}
             <p className="mt-4 text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl text-pretty leading-relaxed">
-              Link, edit, and batch translate JSON, Flutter ARB, Excel, CSV, YAML, Android XML and iOS Strings.
-              100% client-side privacy, zero databases, and zero vendor lock-in.
+              {HOME_ROUTE.lede}
             </p>
 
-            {/* Hero Actions */}
+            <div className="mt-5 w-full max-w-xl rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left shadow-2xs">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Lock className="size-4 text-primary shrink-0" />
+                Placeholders stay locked
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-md border border-primary/30 bg-background px-1.5 py-0.5 font-mono text-xs font-semibold text-primary">
+                  {'{count}'}
+                </span>
+                <span className="inline-flex items-center rounded-md border border-primary/30 bg-background px-1.5 py-0.5 font-mono text-xs font-semibold text-primary">
+                  %1$s
+                </span>
+                <span className="text-xs text-muted-foreground leading-relaxed">
+                  Shown as chips in the grid. The linter flags any translation, including AI, that drops one.
+                </span>
+              </div>
+            </div>
+
             <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
               <Button
                 size="lg"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={onResetToSample}
                 className="h-10 sm:h-11 px-6 font-semibold text-sm gap-2 w-full sm:w-auto cursor-pointer shadow-md"
               >
-                <UploadCloud className="size-4" />
-                Browse Files
+                <Sparkles className="size-4" />
+                Try with sample data
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                onClick={onStartEmptySheet}
+                onClick={() => fileInputRef.current?.click()}
                 className="h-10 sm:h-11 px-5 text-sm gap-2 w-full sm:w-auto cursor-pointer bg-background hover:bg-muted"
               >
-                <Plus className="size-4" />
-                Start Empty Sheet
+                <UploadCloud className="size-4" />
+                Open my locale files
               </Button>
             </div>
 
-            {/* Sample Data Trigger */}
             <div className="mt-3">
               <button
-                onClick={onResetToSample}
+                type="button"
+                onClick={onStartEmptySheet}
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
               >
-                <Sparkles className="size-3.5 text-primary" />
-                Or test with sample data (32 example keys)
+                <Plus className="size-3.5" />
+                Start an empty sheet
               </button>
             </div>
 
@@ -465,9 +463,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   &quot;Welcome back, {'{user}'}! You have {'{count, plural, one{# item} other{# items}}'}.&quot;
                 </span>
               </div>
-              <Badge variant="secondary" className="text-[9px] sm:text-[10px] font-mono shrink-0 ml-2">
-                ICU Safe
-              </Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] sm:text-[11px] font-semibold text-primary shrink-0 ml-2">
+                <Lock className="size-3" />
+                Placeholders locked
+                <span className="font-mono font-semibold">{'{count}'}</span>
+                <span className="font-mono font-semibold">%1$s</span>
+              </span>
             </div>
 
             {/* Mockup Spreadsheet Table */}
@@ -924,44 +925,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <nav className="flex flex-wrap items-center justify-center md:justify-end gap-x-4 sm:gap-x-5 gap-y-2 text-xs font-medium">
-              <button
-                onClick={onOpenAbout}
+              <a
+                href="/about"
+                onClick={(e) => onSameTabLinkClick(e, onOpenAbout)}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 About JSON Link
-              </button>
-              <button
-                onClick={onOpenDocs}
+              </a>
+              <a
+                href="/docs"
+                onClick={(e) => onSameTabLinkClick(e, onOpenDocs)}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 Documentation
-              </button>
+              </a>
               <a
                 href="/privacy"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenLegal?.('privacy');
-                }}
+                onClick={(e) => onSameTabLinkClick(e, () => onOpenLegal?.('privacy'))}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 Privacy
               </a>
               <a
                 href="/terms"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenLegal?.('terms');
-                }}
+                onClick={(e) => onSameTabLinkClick(e, () => onOpenLegal?.('terms'))}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 Terms
               </a>
               <a
                 href="/cookies"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenLegal?.('cookies');
-                }}
+                onClick={(e) => onSameTabLinkClick(e, () => onOpenLegal?.('cookies'))}
                 className="hover:text-foreground transition-colors cursor-pointer"
               >
                 Cookies

@@ -55,6 +55,8 @@ import {
 } from '@/lib/fileSystem';
 import { upsertMemoryEntry } from '@/lib/translationMemory';
 import { Logo } from '@/components/Logo';
+import { applyDocumentSeo } from '@/seo/applyDocumentSeo';
+import { onSameTabLinkClick } from '@/lib/sameTabLink';
 import { CollabHeaderControl } from '@/components/CollabHeaderControl';
 import { runLocalizationLinter } from '@/lib/linter';
 import { isEffectivelyMissing } from '@/lib/variables';
@@ -693,6 +695,11 @@ export function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  useEffect(() => {
+    const path = route === 'app' ? '/' : route === 'not-found' ? '/404' : `/${route}`;
+    applyDocumentSeo(path);
+  }, [route]);
 
   const openAbout = () => {
     const devBase = getDevBase();
@@ -1840,6 +1847,8 @@ export function App() {
           onToggleTheme={toggleTheme}
           onOpenDocs={openDocs}
           onOpenAbout={!isDevMode ? openAbout : undefined}
+          docsHref={`${getDevBase()}/docs`}
+          aboutHref={`${getDevBase()}/about`}
         />
       </Suspense>
     );
@@ -2036,17 +2045,22 @@ export function App() {
             </a>
           </Button>
 
-          {/* Docs button: Only shown on landing page, hidden in spreadsheet view */}
+          {/* Docs link: Only shown on landing page, hidden in spreadsheet view */}
           {items.length === 0 && !isWorkspaceActive && (
             <Button
+              asChild
               variant="ghost"
               size="sm"
-              onClick={openDocs}
               className="h-7 px-1.5 sm:px-2 text-xs gap-1 cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/60 shrink-0"
-              title="User Guide & Documentation"
             >
-              <BookOpen className="size-3.5" />
-              <span className="hidden md:inline font-medium">Docs</span>
+              <a
+                href={`${getDevBase()}/docs`}
+                onClick={(e) => onSameTabLinkClick(e, openDocs)}
+                title="User Guide & Documentation"
+              >
+                <BookOpen className="size-3.5" />
+                <span className="hidden md:inline font-medium">Docs</span>
+              </a>
             </Button>
           )}
 

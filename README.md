@@ -1,66 +1,56 @@
 <div align="center">
   <img src="public/icon-512.svg" width="84" height="84" alt="JSON Link Logo" />
   <h1>JSON Link</h1>
-  <p><strong>The Local-First Localization Workspace for Software Teams & AI Coding Assistants</strong></p>
-  <p>Zero-backend spreadsheet studio, two-way disk synchronization, lossless AST variable protection, and native Model Context Protocol (MCP) server.</p>
+  <p><strong>Translate your app without breaking it.</strong></p>
+  <p>An in-browser spreadsheet for JSON, Flutter ARB, Android XML, iOS .strings, Excel, and CSV. Placeholders like <code>{count}</code> and <code>%1$s</code> stay locked as chips.</p>
 
   <p>
-    <a href="https://github.com/pyaephyomaungdev/json-link/releases/tag/v1.1.0"><img src="https://img.shields.io/badge/Version-v1.1.0-blue?style=for-the-badge&logo=git&logoColor=white" alt="Version 1.1.0" /></a>
-    <a href="https://json-link.pages.dev"><img src="https://img.shields.io/badge/Live_Demo-json--link.pages.dev-blue?style=for-the-badge&logo=cloudflarepages&logoColor=white" alt="Live Demo" /></a>
+    <a href="https://json-link.pages.dev/">Live app</a>
+    ·
+    <a href="#quickstart">Quickstart</a>
+    ·
+    <a href="#why-json-link">Why JSON Link?</a>
+  </p>
+
+  <p>
+    <a href="https://github.com/pyaephyomaungdev/json-link/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/pyaephyomaungdev/json-link/ci.yml?style=for-the-badge&label=CI" alt="CI status" /></a>
     <a href="https://www.npmjs.com/package/create-jsonlink"><img src="https://img.shields.io/npm/v/create-jsonlink?style=for-the-badge&logo=npm&color=CB3837" alt="npm version" /></a>
-    <a href="https://github.com/pyaephyomaungdev/json-link/actions"><img src="https://img.shields.io/badge/Tests-455%20Passed-emerald?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" /></a>
-    <a href="SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy_&_Audit-brightgreen?style=for-the-badge&logo=shield&logoColor=white" alt="Security Policy" /></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-amber?style=for-the-badge" alt="License" /></a>
-    <a href="https://github.com/pyaephyomaungdev/json-link"><img src="https://img.shields.io/badge/Zero--Backend-100%25%20Private-purple?style=for-the-badge" alt="Privacy" /></a>
-  </p>
-
-  <p>
-    <a href="https://github.com/sponsors/pyaephyomaungdev"><img src="https://img.shields.io/badge/Sponsor-pyaephyomaungdev-ea4aaa?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor pyaephyomaungdev" /></a>
-    <a href="https://www.buymeacoffee.com/pyaephyomaa"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-Support_the_Creator-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=black" alt="Buy Me A Coffee" /></a>
-    <a href="https://stackscope.dev/launch/f9r3myum/json-link"><img src="https://stackscope.dev/badge/f9r3myum/current.svg" alt="StackScope score for JSON Link" height="24" /></a>
-  </p>
-
-  <p>
-    <a href="#quickstart">Quickstart</a> •
-    <a href="#why-json-link">Why JSON Link?</a> •
-    <a href="#core-ecosystem">Ecosystem Packages</a> •
-    <a href="#feature-tour">Feature Tour</a> •
-    <a href="#developer-integration-react--vite">Developer Guide</a> •
-    <a href="#community--contributing">Contributing</a> •
-    <a href="#security-policy">Security</a> •
-    <a href="#testing--verification">Tests & CI</a> •
-    <a href="#changelog">Changelog</a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/pyaephyomaungdev/json-link?style=for-the-badge" alt="License" /></a>
+    <a href="https://json-link.pages.dev/"><img src="https://img.shields.io/badge/live_demo-json--link.pages.dev-blue?style=for-the-badge" alt="Live demo" /></a>
   </p>
 </div>
 
----
+<!-- TODO: record a real demo and save it as docs/demo.gif. Do not commit a fabricated GIF.
+     When that file exists, replace the screenshot below with:
+     <img src="docs/demo.gif" alt="JSON Link translating a locale file with placeholders locked" />
+-->
 
 <p align="center">
-  <img src="public/update-web.png" alt="JSON Link Spreadsheet Studio" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
+  <img src="public/update-web.png" alt="JSON Link spreadsheet with locale columns" width="100%" style="border-radius: 12px; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);" />
 </p>
 
 ---
 
-## <img src=".github/assets/icons/zap.svg" width="22" height="22" align="absmiddle" /> Quickstart
+## <a id="quickstart"></a><img src=".github/assets/icons/zap.svg" width="22" height="22" align="absmiddle" /> Quickstart
 
-Choose how you want to run JSON Link:
+### Three ways to use it
 
-### 1. Scaffold a New Localized React App
-```bash
-npm create jsonlink my-app
-# or
-npx create-jsonlink my-app
-```
-*Creates a production-ready React 19 + TypeScript + Vite project preconfigured with bilingual switching (`en`, `my`) and the live translation devtool at `http://localhost:5173/__jsonlink`.*
+**1. Web app.** Open [json-link.pages.dev](https://json-link.pages.dev/) and drop in locale files. Parsing stays in the browser.
 
-### 2. Inject into an Existing React + Vite Project
+**2. Vite devtool.** In a Vite project:
+
 ```bash
 npx create-jsonlink
 ```
-*Auto-detects your `vite.config.ts`, patches `jsonLink()` devtool, and scaffolds `src/locales/` with zero configuration.*
 
-### 3. Connect AI Assistants via Model Context Protocol (MCP)
-Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.json`), or **Antigravity**:
+That patches `jsonLink()` into `vite.config.ts` and scaffolds `src/locales/`. Run the app and open `http://localhost:5173/__jsonlink`. `npx create-jsonlink my-app` scaffolds a new React + Vite project with the same devtool route.
+
+**3. MCP server.** For Cursor, Claude Desktop, or another MCP client:
+
+```bash
+npx -y @jsonlink/mcp
+```
+
 ```json
 {
   "mcpServers": {
@@ -72,12 +62,9 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 }
 ```
 
-### 4. Or Launch the Web Studio in Any Browser
-👉 **[Open json-link.pages.dev](https://json-link.pages.dev)** *(100% client-side, zero backend, works offline)*
-
 ---
 
-## <img src=".github/assets/icons/layers.svg" width="22" height="22" align="absmiddle" /> Why JSON Link?
+## <a id="why-json-link"></a><img src=".github/assets/icons/layers.svg" width="22" height="22" align="absmiddle" /> Why JSON Link?
 
 | Capability | Google Sheets / Excel | Cloud SaaS ($50–$400/mo) | JSON Link (Open Source) |
 | :--- | :--- | :--- | :--- |
@@ -292,26 +279,11 @@ export default defineConfig({
 
 ## <img src=".github/assets/icons/shield.svg" width="22" height="22" align="absmiddle" /> Testing & Verification
 
-Quality and zero-regression architecture are guaranteed via automated test suites in Vitest:
-
 ```bash
 npm test
 ```
 
-```
- ✓ src/components/__tests__/SpreadsheetTable.test.tsx (8 tests)
- ✓ src/components/__tests__/CollabPinDialog.test.tsx (8 tests)
- ✓ src/hooks/__tests__/useCollabSession.test.ts (9 tests)
- ✓ src/lib/__tests__/collaboration.test.ts (10 tests)
- ✓ src/lib/__tests__/variables.test.ts (31 tests)
- ✓ src/lib/__tests__/linter.test.ts (20 tests)
- ✓ src/lib/__tests__/myanmarFont.test.ts (16 tests)
- ✓ src/lib/__tests__/exporter.test.ts (23 tests)
- ...
-
- Test Files  60 passed (60)
-      Tests  455 passed (455)
-```
+CI runs that suite on every push and pull request to `main`. The status badge at the top of this file reads the live result.
 
 ---
 

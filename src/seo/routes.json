@@ -1,0 +1,75 @@
+{
+  "origin": "https://json-link.pages.dev",
+  "routes": [
+    {
+      "id": "home",
+      "path": "/",
+      "output": "index.html",
+      "title": "Translate your app without breaking it — JSON Link",
+      "description": "Open JSON, Flutter ARB, Android XML, iOS .strings, Excel, or CSV in one browser spreadsheet. Placeholders like {count} and %1$s stay locked as chips.",
+      "h1": "Translate your app without breaking it.",
+      "lede": "Open JSON, Flutter ARB, Android XML, iOS .strings, Excel or CSV in one spreadsheet. Placeholders like {count} and %1$s stay locked as chips, and the linter flags translations, including AI, that drop them. Runs in your browser; your files never leave it.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "about",
+      "path": "/about",
+      "output": "about.html",
+      "title": "About JSON Link — in-browser translation spreadsheet",
+      "description": "JSON Link is a free open-source spreadsheet for app locale files. It runs in your browser, checks placeholders, and does not store your files on a server.",
+      "h1": "The Private Localization Workspace for Developers & Translators",
+      "lede": "Link, edit, and export locale files in a spreadsheet that stays in your browser.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "docs",
+      "path": "/docs",
+      "output": "docs.html",
+      "title": "Docs — JSON Link translation spreadsheet",
+      "description": "Import JSON, Flutter ARB, Android XML, iOS .strings, Excel, or CSV, edit them in the spreadsheet, and export without dropping placeholders like {count} or %1$s.",
+      "h1": "Documentation & User Guide",
+      "lede": "How to open locale files, edit translations, and export them from the JSON Link spreadsheet.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "privacy",
+      "path": "/privacy",
+      "output": "privacy.html",
+      "title": "Privacy Policy — JSON Link",
+      "description": "JSON Link edits locale files in your browser. Files are not uploaded to a JSON Link server. AI translation and GitHub sync run only if you turn them on.",
+      "h1": "Privacy Policy",
+      "lede": "Locale files are parsed and edited in your browser. JSON Link does not store them on a server.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "terms",
+      "path": "/terms",
+      "output": "terms.html",
+      "title": "Terms of Service — JSON Link",
+      "description": "Terms for the JSON Link web app, the create-jsonlink starter, the Vite plugin, and the @jsonlink/mcp server.",
+      "h1": "Terms of Service",
+      "lede": "Terms for using the JSON Link web app and its open-source packages.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "cookies",
+      "path": "/cookies",
+      "output": "cookies.html",
+      "title": "Cookie and Storage Policy — JSON Link",
+      "description": "JSON Link does not use tracking cookies. Drafts and settings stay in this browser through localStorage and IndexedDB.",
+      "h1": "Cookie & Storage Policy",
+      "lede": "JSON Link does not use tracking cookies. Settings and drafts stay in this browser.",
+      "robots": "index, follow"
+    },
+    {
+      "id": "not-found",
+      "path": "/404",
+      "output": "404.html",
+      "title": "Page not found — JSON Link",
+      "description": "That URL is not a JSON Link page. Open the translation spreadsheet, the docs, or the about page.",
+      "h1": "Lost in Translation?",
+      "lede": "This page does not exist. Your locale files stay in the browser on the pages that do.",
+      "robots": "noindex, nofollow"
+    }
+  ]
+}
