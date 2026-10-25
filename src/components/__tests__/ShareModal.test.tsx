@@ -100,4 +100,10 @@ describe('ShareModal', () => {
     fireEvent.change(confirmInput, { target: { value: 'UrlPass123' } });
     expect(screen.queryByText(/Passwords do not match/i)).toBeNull();
   });
+
+  it('warns that an unencrypted share URL is readable by anyone with the link', () => {
+    render(<ShareModal {...defaultProps} />);
+    fireEvent.click(screen.getByText('Instant URL Link'));
+    expect(screen.getByText(/Anyone with this link can read every string/i)).not.toBeNull();
+  });
 });

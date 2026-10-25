@@ -18,7 +18,7 @@ describe('DocsPage', () => {
   it('renders documentation header, version badge, and sections list', () => {
     render(<DocsPage {...baseProps} />);
     expect(screen.getByText('Documentation & User Guide')).not.toBeNull();
-    expect(screen.getByText('Quick Start & Formats')).not.toBeNull();
+    expect(screen.getAllByText('Quick Start').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Spreadsheet & Formula Bar')).not.toBeNull();
     expect(screen.getByText('Cell Context Menu & Fonts')).not.toBeNull();
     expect(screen.getByText('AI Auto-Translate & Glossary')).not.toBeNull();
@@ -94,7 +94,7 @@ describe('DocsPage', () => {
     fireEvent.change(searchInput, { target: { value: 'Shortcuts' } });
 
     expect(screen.getByText('Shortcuts & Power Tips')).not.toBeNull();
-    expect(screen.queryByText('Quick Start & Formats')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Quick Start' })).toBeNull();
   });
 
   it('handles Escape key to trigger onBack', () => {
@@ -102,4 +102,31 @@ describe('DocsPage', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(baseProps.onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('switches to Visual ICU Message Builder section', () => {
+    render(<DocsPage {...baseProps} />);
+    const icuTopic = screen.getByText('Visual ICU Message Builder');
+    fireEvent.click(icuTopic);
+
+    expect(screen.getByText('Visual ICU Message Builder & Syntax Tester')).not.toBeNull();
+    expect(screen.getAllByText('Plural Equation Builder').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('switches to XLIFF & GNU gettext PO enterprise section', () => {
+    render(<DocsPage {...baseProps} />);
+    const enterpriseTopic = screen.getByText('XLIFF 1.2 & GNU gettext PO');
+    fireEvent.click(enterpriseTopic);
+
+    expect(screen.getByText('Enterprise Standards: XLIFF 1.2 & GNU gettext PO')).not.toBeNull();
+    expect(screen.getByText('XLIFF 1.2 (XML Localization Interchange File Format)')).not.toBeNull();
+  });
+
+  it('handles feedback widget submission', () => {
+    render(<DocsPage {...baseProps} />);
+    const yesBtn = screen.getByText('Yes');
+    fireEvent.click(yesBtn);
+
+    expect(screen.getByText('Thank you for your feedback!')).not.toBeNull();
+  });
 });
+

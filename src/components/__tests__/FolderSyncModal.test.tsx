@@ -51,7 +51,7 @@ describe('FolderSyncModal', () => {
       />
     );
 
-    expect(screen.getByText('📁 locales')).not.toBeNull();
+    expect(screen.getByText('locales')).not.toBeNull();
     expect(screen.getByText('3 locale files detected')).not.toBeNull();
     expect(screen.getByText('Connected')).not.toBeNull();
 

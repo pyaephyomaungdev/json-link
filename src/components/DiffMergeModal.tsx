@@ -76,7 +76,7 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
               <PlusCircle className="size-3.5 sm:size-4 shrink-0" />
               <span className="truncate">+{diff.newKeys.length} New</span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
               Keys not in current
             </p>
           </button>
@@ -94,7 +94,7 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
               <RefreshCw className="size-3.5 sm:size-4 shrink-0" />
               <span className="truncate">~{diff.modifiedKeys.length} Modified</span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
               Altered translations
             </p>
           </button>
@@ -104,7 +104,7 @@ export const DiffMergeModal: React.FC<DiffMergeModalProps> = ({
               <CheckCircle2 className="size-3.5 sm:size-4 text-primary shrink-0" />
               <span className="truncate">={diff.unchangedCount} Same</span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden xs:block">
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
               Identical in both
             </p>
           </div>

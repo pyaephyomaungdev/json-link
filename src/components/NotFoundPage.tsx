@@ -69,7 +69,7 @@ export function NotFoundPage({
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none shrink-0"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity text-left outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md shrink-0"
               title="JSON Link"
             >
               <Logo size="md" />
@@ -104,8 +104,8 @@ export function NotFoundPage({
         <div className="max-w-2xl w-full text-center space-y-6">
           {/* 404 Visual Icon & Pill */}
           <div className="flex flex-col items-center space-y-3">
-            <div className="size-16 sm:size-20 rounded-2xl bg-gradient-to-br from-rose-500/10 via-amber-500/10 to-indigo-500/10 border border-border shadow-sm flex items-center justify-center">
-              <FileQuestion className="size-8 sm:size-10 text-rose-600 dark:text-rose-400 animate-pulse" />
+            <div className="size-16 sm:size-20 rounded-2xl border border-border bg-muted flex items-center justify-center">
+              <FileQuestion className="size-8 sm:size-10 text-muted-foreground" />
             </div>
 
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-semibold">
@@ -125,61 +125,57 @@ export function NotFoundPage({
             </p>
           </div>
 
-          {/* Quick Navigation Cards */}
           <div className={`grid grid-cols-1 ${onOpenAbout ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 text-left`}>
-            {/* Workspace Card */}
             <button
               type="button"
               onClick={onBack}
-              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
             >
-              <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <FileSpreadsheet className="size-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h2 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                   Translation Studio
-                </h3>
-                <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1">
                   Open your side-by-side localization spreadsheet grid.
                 </p>
               </div>
             </button>
 
-            {/* Docs Card */}
             <button
               type="button"
               onClick={onOpenDocs ? onOpenDocs : onBack}
-              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+              className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/20 transition-colors cursor-pointer group shadow-xs space-y-2"
             >
-              <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center">
                 <BookOpen className="size-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h2 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                   User Guide & Docs
-                </h3>
-                <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1">
                   Browse quick start, format guides & keyboard shortcuts.
                 </p>
               </div>
             </button>
 
-            {/* About Card */}
             {onOpenAbout && (
               <button
                 type="button"
                 onClick={onOpenAbout}
-                className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
+                className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-muted/20 transition-colors cursor-pointer group shadow-xs space-y-2"
               >
-                <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center">
                   <Info className="size-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                  <h2 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                     About JSON Link
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-1">
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
                     Read about offline privacy, architecture & highlights.
                   </p>
                 </div>
@@ -187,20 +183,9 @@ export function NotFoundPage({
             )}
           </div>
 
-          {/* Primary Action & Shortcuts */}
-          <div className="pt-2 flex flex-col items-center gap-3">
-            <Button
-              onClick={onBack}
-              className="gap-2 text-xs font-semibold cursor-pointer shadow-xs px-5 h-9"
-            >
-              <ArrowLeft className="size-3.5" />
-              <span>Return to Translation Workspace</span>
-            </Button>
-
-            <span className="text-[11px] text-muted-foreground">
-              Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-[10px] font-mono">Esc</kbd> anytime to return
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-xs font-mono">Esc</kbd> to return to the studio
+          </p>
         </div>
       </main>
     </div>

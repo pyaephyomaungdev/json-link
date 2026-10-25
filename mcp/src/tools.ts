@@ -265,7 +265,7 @@ export function unflattenObject(flatObj: Record<string, string>): Record<string,
 export function exportFormat(
   items: TranslationItem[],
   lang: string,
-  format: 'json-flat' | 'json-nested' | 'flutter-arb' | 'android-xml' | 'ios-strings' | 'typescript-dts'
+  format: 'json-flat' | 'json-nested' | 'flutter-arb' | 'android-xml' | 'ios-strings' | 'typescript-dts' | 'xliff' | 'gettext-po'
 ): string {
   const map: Record<string, string> = {};
   for (const it of items) {
@@ -346,6 +346,37 @@ export function exportFormat(
       dts += '}\n\n';
       dts += 'export type TranslationKey = keyof TranslationKeys;\n';
       return dts;
+    }
+
+    case 'xliff': {
+      const escapeXml = (s: string) =>
+        s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const units = items
+        .filter(it => it.key && it.key.trim())
+        .map(it => {
+          const src = it['en'] || it.key;
+          const trg = it[lang] || '';
+          const note = it.description ? `\n        <note>${escapeXml(it.description)}</note>` : '';
+          return `      <trans-unit id="${escapeXml(it.key)}">${note}\n        <source>${escapeXml(src)}</source>\n        <target>${escapeXml(trg)}</target>\n      </trans-unit>`;
+        })
+        .join('\n');
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">\n  <file source-language="en" target-language="${lang}" datatype="plaintext" original="messages">\n    <body>\n${units}\n    </body>\n  </file>\n</xliff>\n`;
+    }
+
+    case 'gettext-po': {
+      const escapePo = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+      const header = `msgid ""\nmsgstr ""\n"Project-Id-Version: JSON Link Localization\\n"\n"MIME-Version: 1.0\\n"\n"Content-Type: text/plain; charset=UTF-8\\n"\n"Language: ${lang}\\n"\n\n`;
+      const body = items
+        .filter(it => it.key && it.key.trim())
+        .map(it => {
+          const comment = it.description ? `#. ${it.description}\n` : '';
+          const keyRef = `#: ${it.key}\n`;
+          const srcText = it['en'] || it.key;
+          const trgText = it[lang] || '';
+          return `${comment}${keyRef}msgid "${escapePo(srcText)}"\nmsgstr "${escapePo(trgText)}"\n`;
+        })
+        .join('\n');
+      return header + body;
     }
   }
 }

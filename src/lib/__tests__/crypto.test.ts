@@ -55,6 +55,42 @@ describe('crypto.ts', () => {
     expect(decrypted).toBe(long);
   });
 
+  it('still decrypts legacy v1 origin-derived payloads', async () => {
+    const plaintext = 'legacy-openrouter-key';
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const originSeed =
+      (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'jsonlink') +
+      '_vault_key_2026';
+    const baseKey = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(originSeed),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 10000, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      new TextEncoder().encode(plaintext)
+    );
+    const toHex = (buf: Uint8Array) => Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
+    const payload = JSON.stringify({
+      v: 1,
+      s: toHex(salt),
+      iv: toHex(iv),
+      c: toHex(new Uint8Array(encrypted)),
+    });
+    expect(await decryptSecret(payload)).toBe(plaintext);
+  });
+
   it('produces different ciphertext for same plaintext on each call (random IV)', async () => {
     const key = 'my-secret-api-key';
     const enc1 = await encryptSecret(key);

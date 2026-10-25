@@ -31,7 +31,7 @@ interface JsonRpcResponse {
   };
 }
 
-const ALLOWED_FILE_EXTENSIONS = ['.json', '.jsonlink', '.arb', '.xml', '.strings', '.yaml', '.yml', '.csv'];
+const ALLOWED_FILE_EXTENSIONS = ['.json', '.jsonlink', '.arb', '.xml', '.strings', '.yaml', '.yml', '.csv', '.xlf', '.xliff', '.po', '.pot'];
 
 function isSafeFilePath(filePath: string): boolean {
   const p = path.resolve(filePath);
@@ -140,7 +140,7 @@ const TOOLS_MANIFEST = [
         },
         format: {
           type: 'string',
-          enum: ['json-flat', 'json-nested', 'flutter-arb', 'android-xml', 'ios-strings', 'typescript-dts'],
+          enum: ['json-flat', 'json-nested', 'flutter-arb', 'android-xml', 'ios-strings', 'typescript-dts', 'xliff', 'gettext-po'],
           description: 'Target export file format',
         },
       },
@@ -289,7 +289,102 @@ function handleToolCall(name: string, args: any): any {
         };
       }
 
-      // 3. JSON, JSONLink, and Flutter ARB
+      // 3. XLIFF (.xlf, .xliff)
+      if (raw.includes('<xliff') || raw.includes('<unit id=') || raw.includes('<trans-unit')) {
+        const transUnitRegex = /<trans-unit\s+[^>]*?id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/trans-unit>/gi;
+        const items: Array<{ key: string; value: string }> = [];
+        let match;
+        while ((match = transUnitRegex.exec(raw)) !== null) {
+          const key = match[1].trim();
+          const unitBody = match[2];
+          const targetMatch = unitBody.match(/<target[^>]*>([\s\S]*?)<\/target>/i);
+          const sourceMatch = unitBody.match(/<source[^>]*>([\s\S]*?)<\/source>/i);
+          const val = targetMatch ? targetMatch[1] : sourceMatch ? sourceMatch[1] : '';
+          items.push({ key, value: val.trim() });
+        }
+        if (items.length === 0) {
+          const unit2Regex = /<unit\s+[^>]*?id=["']([^"']+)["'][^>]*>([\s\S]*?)<\/unit>/gi;
+          while ((match = unit2Regex.exec(raw)) !== null) {
+            const key = match[1].trim();
+            const unitBody = match[2];
+            const targetMatch = unitBody.match(/<target[^>]*>([\s\S]*?)<\/target>/i);
+            const sourceMatch = unitBody.match(/<source[^>]*>([\s\S]*?)<\/source>/i);
+            const val = targetMatch ? targetMatch[1] : sourceMatch ? sourceMatch[1] : '';
+            items.push({ key, value: val.trim() });
+          }
+        }
+        return {
+          type: 'xliff',
+          totalKeys: items.length,
+          items,
+        };
+      }
+
+      // 4. GNU gettext (.po, .pot)
+      if (raw.includes('msgid ') && raw.includes('msgstr ')) {
+        const lines = raw.split(/\r?\n/);
+        const items: Array<{ key: string; value: string }> = [];
+        let pendingKeyRef = '';
+        let currentKey = '';
+        let currentVal = '';
+        let mode: 'none' | 'msgid' | 'msgstr' = 'none';
+        let isKeyFromRef = false;
+
+        const flush = () => {
+          if (currentKey && currentKey.trim()) {
+            items.push({ key: currentKey, value: currentVal });
+          }
+          currentKey = '';
+          currentVal = '';
+          isKeyFromRef = false;
+          mode = 'none';
+        };
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          if (trimmed.startsWith('#')) {
+            if (trimmed.startsWith('#:')) {
+              const ref = trimmed.slice(2).trim();
+              if (ref) pendingKeyRef = ref;
+            }
+            continue;
+          }
+          if (trimmed.startsWith('msgid ')) {
+            flush();
+            mode = 'msgid';
+            const m = trimmed.match(/^msgid\s+"(.*)"$/);
+            if (m) {
+              const rawMsgid = m[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+              isKeyFromRef = Boolean(pendingKeyRef);
+              currentKey = pendingKeyRef || rawMsgid;
+              pendingKeyRef = '';
+            }
+          } else if (trimmed.startsWith('msgstr ')) {
+            mode = 'msgstr';
+            const m = trimmed.match(/^msgstr\s+"(.*)"$/);
+            if (m) {
+              currentVal = m[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+            }
+          } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+            const valStr = trimmed.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, '\n');
+            if (mode === 'msgid') {
+              if (!isKeyFromRef) currentKey += valStr;
+            } else if (mode === 'msgstr') {
+              currentVal += valStr;
+            }
+          }
+        }
+        flush();
+
+        return {
+          type: 'gettext-po',
+          totalKeys: items.length,
+          items,
+        };
+      }
+
+      // 5. JSON, JSONLink, and Flutter ARB
       try {
         const parsed = JSON.parse(raw);
         if (parsed.format === 'jsonlink') {

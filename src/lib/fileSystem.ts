@@ -15,6 +15,7 @@ import {
   generateIosStrings,
 } from '@/lib/exporter';
 import { parseProjectFile } from '@/lib/project';
+import { isAllowedLocalesPath } from '@/lib/github';
 
 const DB_NAME = 'json_link_fs_db';
 const STORE_NAME = 'handles';
@@ -147,11 +148,15 @@ export async function readTranslationsFromDirectory(
     }
   }
 
-  // 1. Check if a direct .jsonlink project backup exists
-  const jsonlinkEntry = entries.find(e => e.name.endsWith('.jsonlink') || e.name === '.jsonlink.meta.json');
-  if (jsonlinkEntry) {
+  const isMetaName = (name: string) => name === '.jsonlink.meta.json';
+  const localeEntries = entries.filter(e => !isMetaName(e.name) && isAllowedLocalesPath(e.name));
+  const jsonlinkBackup = entries.find(e => e.name.endsWith('.jsonlink') && !isMetaName(e.name));
+  const metaEntry = entries.find(e => isMetaName(e.name));
+
+  // 1. A dedicated .jsonlink project file is a full backup — prefer it.
+  if (jsonlinkBackup) {
     try {
-      const text = await jsonlinkEntry.file.text();
+      const text = await jsonlinkBackup.file.text();
       const project = parseProjectFile(text);
       return {
         items: project.items,
@@ -166,13 +171,18 @@ export async function readTranslationsFromDirectory(
     }
   }
 
-  // 2. Ingest individual locale files (.json, .arb, .yaml, .yml, .xml, .strings)
+  // 2. Ingest individual locale files (.json, .arb, .yaml, .yml, .xml, .strings).
+  // Do not short-circuit on .jsonlink.meta.json when real locale files exist —
+  // otherwise a later write would clobber ARB/XML/strings with default JSON.
   let mergedItems: TranslationItem[] = [];
   const detectedLanguages = new Set<string>();
   let primaryFormat: 'json' | 'arb' | 'yaml' | 'xml' | 'strings' = 'json';
 
   for (const { name, file } of entries) {
     const lower = name.toLowerCase();
+    if (!isAllowedLocalesPath(name)) {
+      continue;
+    }
 
     // Flutter ARB: app_en.arb, intl_my.arb, en.arb
     if (lower.endsWith('.arb')) {
@@ -228,6 +238,51 @@ export async function readTranslationsFromDirectory(
       const res = mergeTranslations(mergedItems, Array.from(detectedLanguages), parsed);
       mergedItems = res.items;
       res.languages.forEach(l => detectedLanguages.add(l));
+    }
+  }
+
+  if (localeEntries.length > 0) {
+    const languages = Array.from(detectedLanguages);
+    if (languages.length === 0) {
+      languages.push('en');
+    }
+
+    let projectName = dirHandle.name || 'translations';
+    if (metaEntry) {
+      try {
+        const project = parseProjectFile(await metaEntry.file.text());
+        if (project.name) {
+          projectName = project.name;
+        }
+      } catch {
+        // Meta is optional when locale files already loaded.
+      }
+    }
+
+    return {
+      items: mergedItems,
+      languages,
+      projectName,
+      fileCount: entries.length,
+      filenames,
+      primaryFormat,
+    };
+  }
+
+  // 3. Folder only has the JSON Link meta snapshot — recover from it.
+  if (metaEntry) {
+    try {
+      const project = parseProjectFile(await metaEntry.file.text());
+      return {
+        items: project.items,
+        languages: project.languages,
+        projectName: project.name || dirHandle.name,
+        fileCount: entries.length,
+        filenames,
+        primaryFormat: 'jsonlink',
+      };
+    } catch {
+      // Fall through to empty result
     }
   }
 

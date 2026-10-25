@@ -106,6 +106,30 @@ function setBoundedCache<K, V>(map: Map<K, V>, key: K, value: V): void {
   map.set(key, value);
 }
 
+function getIcuPluralRanges(text: string): [number, number][] {
+  const ranges: [number, number][] = [];
+  const regex = new RegExp(ICU_SELECTOR_REGEX.source, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    const matchedType = match[0].toLowerCase();
+    if (matchedType.includes('plural') || matchedType.includes('selectordinal')) {
+      const startIndex = match.index;
+      let depth = 0;
+      for (let i = startIndex; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            ranges.push([startIndex, i]);
+            break;
+          }
+        }
+      }
+    }
+  }
+  return ranges;
+}
+
 /**
  * Tokenize string into variable and plain text parts for UI rendering and inspection
  */
@@ -156,6 +180,52 @@ export function tokenizeVariables(text: string): TokenPart[] {
     });
   }
 
+  const pluralRanges = getIcuPluralRanges(text);
+  if (pluralRanges.length > 0) {
+    const refined: TokenPart[] = [];
+    let currentOffset = 0;
+
+    for (const token of tokens) {
+      if (token.isVariable || !token.text.includes('#')) {
+        refined.push(token);
+        currentOffset += token.text.length;
+        continue;
+      }
+
+      const tokenStart = currentOffset;
+      const tokenEnd = currentOffset + token.text.length;
+      const inPlural = pluralRanges.some(([rStart, rEnd]) => tokenStart < rEnd && tokenEnd > rStart);
+
+      if (!inPlural) {
+        refined.push(token);
+        currentOffset += token.text.length;
+        continue;
+      }
+
+      let subLast = 0;
+      for (let i = 0; i < token.text.length; i++) {
+        if (token.text[i] === '#') {
+          const globalCharIdx = tokenStart + i;
+          const charInPlural = pluralRanges.some(([rStart, rEnd]) => globalCharIdx >= rStart && globalCharIdx <= rEnd);
+          if (charInPlural) {
+            if (i > subLast) {
+              refined.push({ text: token.text.slice(subLast, i), isVariable: false });
+            }
+            refined.push({ text: '#', isVariable: true });
+            subLast = i + 1;
+          }
+        }
+      }
+      if (subLast < token.text.length) {
+        refined.push({ text: token.text.slice(subLast), isVariable: false });
+      }
+      currentOffset += token.text.length;
+    }
+    const finalRes = refined.length > 0 ? refined : [{ text, isVariable: false }];
+    setBoundedCache(tokenizeVarsCache, text, finalRes);
+    return finalRes;
+  }
+
   const res = tokens.length > 0 ? tokens : [{ text, isVariable: false }];
   setBoundedCache(tokenizeVarsCache, text, res);
   return res;
@@ -171,11 +241,34 @@ export function extractVariables(text: string): string[] {
 
   const results = new Set<string>();
 
-  // 1. ICU plural / select selector variables
+  // 1. ICU plural / select selector variables & nested # number tokens
   const icuSelectorRegex = new RegExp(ICU_SELECTOR_REGEX.source, 'g');
   let icuMatch: RegExpExecArray | null;
   while ((icuMatch = icuSelectorRegex.exec(text)) !== null) {
     results.add(`{${icuMatch[1]}}`);
+
+    const matchedType = icuMatch[0].toLowerCase();
+    if (matchedType.includes('plural') || matchedType.includes('selectordinal')) {
+      const startIndex = icuMatch.index;
+      let depth = 0;
+      let endIndex = -1;
+      for (let i = startIndex; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            endIndex = i;
+            break;
+          }
+        }
+      }
+      if (endIndex !== -1) {
+        const pluralBody = text.slice(startIndex, endIndex);
+        if (pluralBody.includes('#')) {
+          results.add('#');
+        }
+      }
+    }
   }
 
   // 2. General interpolation variables

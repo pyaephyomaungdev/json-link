@@ -7,6 +7,9 @@ import {
   unflattenObject,
   readLocalesFromDisk,
   writeLocalesToDisk,
+  generateI18nTs,
+  isJsonLinkGeneratedI18n,
+  JSONLINK_I18N_MARKER,
 } from '../fsUtils.js';
 import { jsonLink } from '../plugin.js';
 
@@ -121,6 +124,47 @@ describe('Vite Plugin fsUtils & Middleware', () => {
       expect(dtsContent).not.toContain('"auth.welcome"');
       expect(dtsContent).toContain('"en" | "ja"');
       expect(dtsContent).not.toContain('"my"');
+    });
+
+    it('does not overwrite a custom i18n.ts that lacks the JSON Link marker', () => {
+      const localesDir = path.join(tempDir, 'locales-custom-i18n');
+      fs.mkdirSync(localesDir, { recursive: true });
+      const custom = `export function t(key: string) { return key; }\n`;
+      fs.writeFileSync(path.join(localesDir, 'i18n.ts'), custom, 'utf-8');
+
+      writeLocalesToDisk(
+        localesDir,
+        [{ key: 'app.title', en: 'App' }],
+        ['en'],
+        false,
+        2
+      );
+
+      const after = fs.readFileSync(path.join(localesDir, 'i18n.ts'), 'utf-8');
+      expect(after).toBe(custom);
+      expect(isJsonLinkGeneratedI18n(after)).toBe(false);
+    });
+
+    it('regenerates i18n.ts when the JSON Link marker is present', () => {
+      const localesDir = path.join(tempDir, 'locales-owned-i18n');
+      fs.mkdirSync(localesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(localesDir, 'i18n.ts'),
+        generateI18nTs(['en']),
+        'utf-8'
+      );
+
+      writeLocalesToDisk(
+        localesDir,
+        [{ key: 'app.title', en: 'App', ja: 'アプリ' }],
+        ['en', 'ja'],
+        false,
+        2
+      );
+
+      const after = fs.readFileSync(path.join(localesDir, 'i18n.ts'), 'utf-8');
+      expect(after).toContain(JSONLINK_I18N_MARKER);
+      expect(after).toContain("'ja'");
     });
   });
 

@@ -340,6 +340,29 @@ function getHeaders(token: string): HeadersInit {
   };
 }
 
+/** Git Data API Create Tree needs the parent *tree* SHA, not the commit SHA. */
+async function fetchCommitTreeSha(
+  headers: HeadersInit,
+  owner: string,
+  repo: string,
+  commitSha: string
+): Promise<string> {
+  const commitRes = await fetch(
+    `${GITHUB_API_BASE}/repos/${owner}/${repo}/git/commits/${encodeURIComponent(commitSha)}`,
+    { headers }
+  );
+  if (!commitRes.ok) {
+    const err = await commitRes.json().catch(() => ({}));
+    throw new Error(err.message || `Could not read commit "${commitSha}"`);
+  }
+  const commitData = await commitRes.json();
+  const treeSha = commitData?.tree?.sha;
+  if (typeof treeSha !== 'string' || treeSha.length === 0) {
+    throw new Error('GitHub commit response did not include a tree SHA.');
+  }
+  return treeSha;
+}
+
 /**
  * Fetches repository details and default branch
  */
@@ -526,6 +549,7 @@ export async function createPullRequestWithLocales(
     }
     const refData = await refRes.json();
     const baseCommitSha = refData.object.sha;
+    const baseTreeSha = await fetchCommitTreeSha(headers, owner, repo, baseCommitSha);
 
     // 3. Create the new branch
     const branchRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/git/refs`, {
@@ -572,7 +596,7 @@ export async function createPullRequestWithLocales(
       method: 'POST',
       headers,
       body: JSON.stringify({
-        base_tree: baseCommitSha,
+        base_tree: baseTreeSha,
         tree: treeEntries,
       }),
     });
@@ -681,6 +705,7 @@ export async function commitLocalesDirectly(
     }
     const refData = await refRes.json();
     const parentSha = refData.object.sha;
+    const parentTreeSha = await fetchCommitTreeSha(headers, owner, repo, parentSha);
 
     // 2. Create blobs
     const treeEntries = [];
@@ -712,7 +737,7 @@ export async function commitLocalesDirectly(
       method: 'POST',
       headers,
       body: JSON.stringify({
-        base_tree: parentSha,
+        base_tree: parentTreeSha,
         tree: treeEntries,
       }),
     });

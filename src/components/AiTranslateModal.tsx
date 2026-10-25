@@ -638,7 +638,7 @@ export const AiTranslateModal: React.FC<AiTranslateModalProps> = ({
             <div className="bg-background/60 border border-border/70 rounded p-2 text-[10px] text-muted-foreground flex items-start gap-1.5 leading-relaxed">
               <Shield className="size-3.5 text-primary shrink-0 mt-0.5" />
               <span>
-                <strong className="text-foreground">BYOK Privacy:</strong> Keys and translation content never touch any proxy server — requests go directly from your browser to OpenRouter. For best security, configure a usage limit (e.g. $1.00) at{' '}
+                <strong className="text-foreground">BYOK:</strong> Source strings leave this browser for OpenRouter (not a JSON Link server). Set a usage limit (e.g. $1.00) at{' '}
                 <a
                   href="https://openrouter.ai/keys"
                   target="_blank"

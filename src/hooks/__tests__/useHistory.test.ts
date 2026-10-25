@@ -128,6 +128,31 @@ describe('useHistory with Delta Patches', () => {
     expect(result.current.historyLength).toBe(0);
   });
 
+  it('undoes and redoes a key rename using the previous key as identity', () => {
+    const { result } = renderHook(() => useHistory(INITIAL_ITEMS));
+
+    const renamed: TranslationItem[] = [
+      { key: 'hello.world', description: 'Greeting', en: 'Hello', my: 'မင်္ဂလာပါ' },
+      INITIAL_ITEMS[1],
+    ];
+
+    act(() => {
+      result.current.setWithHistory(renamed);
+    });
+    expect(result.current.items[0].key).toBe('hello.world');
+
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.items[0].key).toBe('hello');
+    expect(result.current.items[0].en).toBe('Hello');
+
+    act(() => {
+      result.current.redo();
+    });
+    expect(result.current.items[0].key).toBe('hello.world');
+  });
+
   it('computes fine-grained batch delta patches for multi-cell updates', () => {
     const patch = computeDeltaPatch(INITIAL_ITEMS, [
       { key: 'hello', description: 'Updated Greeting', en: 'Hi', my: 'မင်္ဂလာပါ' },

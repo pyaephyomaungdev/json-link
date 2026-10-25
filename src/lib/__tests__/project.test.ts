@@ -4,6 +4,7 @@ import {
   saveLocalDraft,
   loadLocalDraft,
   loadLocalDraftAsync,
+  pickNewerDraft,
   clearLocalDraft,
   buildProjectFileContent,
   isProjectFileEncrypted,
@@ -115,6 +116,73 @@ describe('project.ts', () => {
       const loaded = loadLocalDraft();
       expect(loaded?.items).toEqual([]);
       expect(loaded?.languages).toEqual(['en']);
+    });
+
+    it('clears the stale localStorage blob when quota is exceeded', () => {
+      mockStorage['jsonlink_current_project'] = JSON.stringify({
+        format: 'jsonlink',
+        version: '1.0.0',
+        name: 'stale',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        languages: ['en'],
+        items: [{ key: 'old', en: 'Old' }],
+      });
+
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key: string) => mockStorage[key] || null),
+        setItem: vi.fn(() => {
+          throw new Error('QuotaExceededError');
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete mockStorage[key];
+        }),
+      });
+
+      saveLocalDraft('fresh', [{ key: 'new', en: 'New' }], ['en']);
+      expect(localStorage.removeItem).toHaveBeenCalledWith('jsonlink_current_project');
+      expect(mockStorage['jsonlink_current_project']).toBeUndefined();
+    });
+  });
+
+  describe('pickNewerDraft', () => {
+    const older: JsonLinkProject = {
+      format: 'jsonlink',
+      version: '1.0.0',
+      name: 'stale',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      languages: ['en'],
+      items: [{ key: 'old', en: 'Old' }],
+    };
+    const newer: JsonLinkProject = {
+      format: 'jsonlink',
+      version: '1.0.0',
+      name: 'fresh',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+      languages: ['en'],
+      items: [{ key: 'new', en: 'New' }],
+    };
+
+    it('prefers the draft with the later updatedAt', () => {
+      expect(pickNewerDraft(older, newer)?.items[0].key).toBe('new');
+      expect(pickNewerDraft(newer, older)?.items[0].key).toBe('new');
+    });
+
+    it('returns the non-null draft when the other is missing', () => {
+      expect(pickNewerDraft(null, newer)?.name).toBe('fresh');
+      expect(pickNewerDraft(older, null)?.name).toBe('stale');
+      expect(pickNewerDraft(null, null)).toBeNull();
+    });
+
+    it('prefers the larger copy when timestamps match (IndexedDB quota fallback)', () => {
+      const small: JsonLinkProject = { ...newer, items: [{ key: 'a', en: 'A' }] };
+      const large: JsonLinkProject = {
+        ...newer,
+        items: [
+          { key: 'a', en: 'A' },
+          { key: 'b', en: 'B' },
+        ],
+      };
+      expect(pickNewerDraft(small, large)?.items).toHaveLength(2);
     });
   });
 

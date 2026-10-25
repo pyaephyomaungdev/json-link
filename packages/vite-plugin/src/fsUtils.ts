@@ -109,6 +109,19 @@ export interface TranslationDictionary {
 `;
 }
 
+export const JSONLINK_I18N_MARKER = 'jsonlink:generated';
+
+export function isJsonLinkGeneratedI18n(content: string): boolean {
+  if (!content) return false;
+  if (content.includes(JSONLINK_I18N_MARKER)) return true;
+  // Legacy loaders written before the marker: unique generated fingerprint
+  return (
+    content.includes('export function useTranslation()') &&
+    content.includes('from \'./translations\'') &&
+    content.includes('if (import.meta.hot)')
+  );
+}
+
 /**
  * Generates reactive i18n.ts client loader for the given languages.
  */
@@ -130,7 +143,8 @@ export function generateI18nTs(languages: string[]): string {
 
   const defaultLang = languages.includes('en') ? 'en' : (languages[0] || 'en');
 
-  return `import { useSyncExternalStore } from 'react';
+  return `/* ${JSONLINK_I18N_MARKER} — JSON Link regenerates this file on save */
+import { useSyncExternalStore } from 'react';
 import type { SupportedLanguage, TranslationKey } from './translations';
 ${imports}
 
@@ -286,12 +300,19 @@ export function writeLocalesToDisk(
   fs.writeFileSync(dtsPath, dtsContent, 'utf-8');
   updatedFiles.push(dtsPath);
 
-  // 5. Auto-sync i18n.ts if it exists in the directory
+  // 5. Auto-sync i18n.ts only when JSON Link owns the file (marker or legacy fingerprint)
   const i18nPath = path.join(resolvedDir, 'i18n.ts');
   if (fs.existsSync(i18nPath)) {
-    const i18nContent = generateI18nTs(languages);
-    fs.writeFileSync(i18nPath, i18nContent, 'utf-8');
-    updatedFiles.push(i18nPath);
+    try {
+      const existing = fs.readFileSync(i18nPath, 'utf-8');
+      if (isJsonLinkGeneratedI18n(existing)) {
+        const i18nContent = generateI18nTs(languages);
+        fs.writeFileSync(i18nPath, i18nContent, 'utf-8');
+        updatedFiles.push(i18nPath);
+      }
+    } catch {
+      // Leave a custom loader untouched if it cannot be read
+    }
   }
 
   return { updatedFiles };

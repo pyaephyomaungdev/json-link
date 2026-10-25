@@ -32,7 +32,7 @@ interface FolderSyncModalProps {
   onToggleAutoSync: (enabled: boolean) => void;
   onSelectFolder: () => Promise<void>;
   onSyncToDisk: () => Promise<void>;
-  onReloadFromDisk: () => Promise<void>;
+  onReloadFromDisk: () => Promise<boolean | void>;
   onDisconnectFolder: () => void;
   isSyncing: boolean;
 }
@@ -67,7 +67,8 @@ export function FolderSyncModal({
 
   const handleReload = async () => {
     try {
-      await onReloadFromDisk();
+      const reloaded = await onReloadFromDisk();
+      if (reloaded === false) return;
       setFeedback('Reloaded latest translation files from disk!');
       setTimeout(() => setFeedback(null), 3000);
     } catch {
@@ -132,7 +133,7 @@ export function FolderSyncModal({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-foreground truncate font-mono">
-                          📁 {folderName}
+                          {folderName}
                         </span>
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
                           Connected
@@ -157,7 +158,7 @@ export function FolderSyncModal({
 
                 <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>Last Synced to Disk:</span>
-                  <span className="font-mono text-foreground font-medium">
+                  <span role="status" aria-live="polite" className="font-mono text-foreground font-medium">
                     {lastSyncedAt ? lastSyncedAt.toLocaleTimeString() : 'Not synced yet'}
                   </span>
                 </div>

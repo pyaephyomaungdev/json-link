@@ -77,6 +77,8 @@ interface SpreadsheetTableProps {
   onOpenAddLanguage?: () => void;
   onDuplicateRow?: (item: TranslationItem) => void;
   onBatchUpdate?: (updatedItems: TranslationItem[]) => void;
+  /** Full catalog for column export/copy. Defaults to `items` (which may be filtered). */
+  allItems?: TranslationItem[];
   onOpenAiTranslate?: (targetLang?: string, targetKey?: string, targetKeys?: string[]) => void;
   onUpdateRowStatus?: (key: string, status: RowStatus) => void;
   onBulkUpdateStatus?: (keys: string[], status: RowStatus) => void;
@@ -146,6 +148,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
   onOpenAddLanguage,
   onDuplicateRow,
   onBatchUpdate,
+  allItems,
   onOpenAiTranslate,
   onUpdateRowStatus,
   onBulkUpdateStatus,
@@ -1024,7 +1027,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
     // Multi-cell block paste
     e.preventDefault();
-    const updatedItems = items.map(item => ({ ...item }));
+    const updatedItems: Array<TranslationItem & { __sourceKey: string }> = items.map(item => ({
+      ...item,
+      __sourceKey: item.key,
+    }));
     const startRow = selectedCell.rowIndex;
     const startCol = selectedCell.colIndex;
     let updatedCount = 0;
@@ -1095,54 +1101,12 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       : items.find(i => i.key === selectedCell.key)?.[selectedCell.field] || ''
     : '';
 
-  // If no items in table, display empty-state CTA
-  if (items.length === 0) {
-    // Project is loaded but current search/filters matched nothing
-    if ((totalItemCount ?? 0) > 0) {
-      const isMissingOnly = (activeFilter === 'missing' || Boolean(filterMissingLang)) && !searchQuery;
-      if (isMissingOnly) {
-        return (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none bg-background">
-            <div className="size-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-xs">
-              <CheckCircle2 className="size-8 stroke-[1.5]" />
-            </div>
-            <h3 className="text-xl font-bold tracking-tight text-foreground">
-              All translations complete! 🎉
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
-              No missing translations found across all {totalItemCount} keys. Everything is 100% translated.
-            </p>
-            {onClearFilters && (
-              <Button onClick={onClearFilters} size="sm" className="gap-2 shadow-xs font-semibold h-8 text-xs cursor-pointer">
-                <RotateCcw className="size-3.5" />
-                Show All Keys
-              </Button>
-            )}
-          </div>
-        );
-      }
-
-      return (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none bg-background">
-          <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4 shadow-xs">
-            <SearchX className="size-8 stroke-[1.5]" />
-          </div>
-          <h3 className="text-xl font-bold tracking-tight text-foreground">
-            No keys match this filter or search
-          </h3>
-          <p className="text-sm text-muted-foreground max-w-md mt-1.5 mb-6 leading-relaxed">
-            {totalItemCount} key{totalItemCount === 1 ? ' is' : 's are'} loaded in the spreadsheet, but none match the current search {searchQuery ? `("${searchQuery}")` : ''} or active filters.
-          </p>
-          {onClearFilters && (
-            <Button onClick={onClearFilters} size="sm" className="gap-2 shadow-xs font-semibold h-8 text-xs cursor-pointer">
-              <RotateCcw className="size-3.5" />
-              Clear Filters &amp; Search
-            </Button>
-          )}
-        </div>
-      );
-    }
-  }
+  const exportItems = allItems ?? items;
+  const isFilterEmpty = items.length === 0 && (totalItemCount ?? 0) > 0;
+  const isMissingOnlyFilter =
+    isFilterEmpty && (activeFilter === 'missing' || Boolean(filterMissingLang)) && !searchQuery;
+  const catalogCount = totalItemCount ?? items.length;
+  const isFilteredSubset = catalogCount !== items.length;
 
   return (
     <div
@@ -1154,7 +1118,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       tabIndex={0}
     >
       {/* MS Excel Style Formula Bar (Cell Address & Content Inspector) with 100% Solid Background */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#fafafa] dark:bg-[#121214] border-b border-border text-xs shrink-0 z-25">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-grid-header border-b border-border text-xs shrink-0 z-25">
         {/* Name Box (e.g. A1, B12, or Key reference) */}
         <div className="flex items-center gap-1 px-2 py-1 bg-background border border-border rounded font-mono text-xs font-semibold text-foreground min-w-[90px] text-center shadow-2xs">
           <span>
@@ -1162,7 +1126,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               ? `${getColumnLetter(selectedCell.colIndex)}${selectedCell.rowIndex + 1}`
               : 'A1'}
           </span>
-          <span className="text-[10px] font-normal text-muted-foreground ml-1">
+          <span className="text-xs font-normal text-muted-foreground ml-1">
             {selectedCell?.field ? `[${selectedCell.field}]` : ''}
           </span>
         </div>
@@ -1216,18 +1180,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           type="button"
           onClick={() => setShowDescription(!showDescription)}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border transition-colors cursor-pointer shrink-0 ${showDescription
-            ? 'bg-blue-500/10 border-blue-500/30 text-blue-500 font-medium'
+            ? 'bg-primary/10 border-primary/30 text-primary font-medium'
             : 'bg-background border-border text-muted-foreground hover:text-foreground'
             }`}
           title="Toggle Developer Context / Description Column"
         >
-          <FileText className="size-3 text-blue-500" />
+          <FileText className="size-3 text-primary" />
           <span>{showDescription ? 'Context (Visible)' : 'Context'}</span>
         </button>
 
         {/* Copy / Paste notification pill */}
         {copiedNotification && (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shadow-2xs font-medium animate-in fade-in duration-200">
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shadow-2xs font-medium"
+          >
             <Check className="size-3" />
             <span>
               {copiedNotification.startsWith('Pasted') ||
@@ -1287,7 +1256,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         {followingPeerName && (
           <div className="sticky top-11 z-55 flex justify-center pointer-events-none pb-2">
             <div
-              className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full text-white shadow-lg text-xs font-medium backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 border border-white/20 bg-amber-600/95 dark:bg-amber-700/95 bg-[var(--peer-color)]"
+              className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-full text-white shadow-lg text-xs font-medium border border-white/20 bg-amber-600/95 dark:bg-amber-700/95 bg-[var(--peer-color)]"
               style={
                 followedPeer?.color
                   ? ({ '--peer-color': followedPeer.color } as React.CSSProperties)
@@ -1320,7 +1289,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
         )}
 
         {!hasScrolledX && languages.length > 1 && (
-          <div className="sm:hidden pointer-events-none sticky bottom-3 float-right mr-3 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-muted-foreground border border-border shadow-md text-[10px] font-medium backdrop-blur-xs transition-opacity animate-pulse">
+          <div className="sm:hidden pointer-events-none sticky bottom-3 float-right mr-3 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 text-muted-foreground border border-border shadow-md text-xs font-medium transition-opacity animate-pulse">
             <span>Swipe columns</span>
             <ChevronRight className="size-3 text-primary" />
           </div>
@@ -1361,7 +1330,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 scope="col"
                 aria-label="Row selection header"
                 style={{ width: ROW_NUM_WIDTH, minWidth: ROW_NUM_WIDTH, left: 0 }}
-                className={`py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
+                className={`py-2.5 px-2 text-center bg-grid-header sticky top-0 left-0 z-50 select-none border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
               >
                 <div className="flex items-center justify-between px-0.5">
                   <div
@@ -1396,7 +1365,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   minWidth: KEY_COL_WIDTH,
                   left: isKeyFrozen ? ROW_NUM_WIDTH : undefined,
                 }}
-                className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${isKeyFrozen ? 'z-45' : 'z-40'
+                className={`py-2.5 px-3 bg-grid-header sticky top-0 ${isKeyFrozen ? 'z-45' : 'z-40'
                   } border-b border-border relative group/header ${getFreezeLineClass(isKeyLastFrozen)}`}
               >
                 <div className="flex items-center justify-between gap-1.5">
@@ -1421,7 +1390,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer border border-border/70 bg-background shrink-0">
+                      <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-mono cursor-pointer border border-border/70 bg-background shrink-0">
                         <span>KEY</span>
                         <ChevronDown className="size-3" />
                       </button>
@@ -1448,7 +1417,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         onClick={() => setShowDescription(!showDescription)}
                         className="gap-2 cursor-pointer text-xs"
                       >
-                        <FileText className="size-3.5 text-blue-500" />
+                        <FileText className="size-3.5 text-primary" />
                         <span>{showDescription ? 'Hide Context Column' : 'Show Context Column'}</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -1507,7 +1476,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                     width: DESC_COL_WIDTH,
                     minWidth: DESC_COL_WIDTH,
                   }}
-                  className="py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 z-40 border-b border-r border-border relative group/header"
+                  className="py-2.5 px-3 bg-grid-header sticky top-0 z-40 border-b border-r border-border relative group/header"
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -1564,7 +1533,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       minWidth: currentWidth,
                       left: langLeft,
                     }}
-                    className={`py-2.5 px-3 bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 ${isLangFrozen ? 'z-45' : 'z-40'
+                    className={`py-2.5 px-3 bg-grid-header sticky top-0 ${isLangFrozen ? 'z-45' : 'z-40'
                       } border-b border-border relative group/header ${getFreezeLineClass(isLangLastFrozen)}`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -1603,7 +1572,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                 ? `Filtering missing keys in ${lang.toUpperCase()}. Click to clear filter.`
                                 : `Click to filter ${missingCount} missing keys in ${lang.toUpperCase()}`
                             }
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer shrink-0 ${filterMissingLang === lang
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold transition-colors cursor-pointer shrink-0 ${filterMissingLang === lang
                               ? 'bg-amber-500 text-white font-bold shadow-2xs'
                               : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30'
                               }`}
@@ -1622,7 +1591,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               handleConvertZawgyiToUnicode(lang);
                             }}
                             title={`Zawgyi font detected (${zawgyiStats[lang].count} keys)! Click to convert to Unicode.`}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 cursor-pointer transition-colors shrink-0"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-800 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 cursor-pointer transition-colors shrink-0"
                           >
                             <AlertTriangle className="size-2.5" />
                             <span>Zawgyi ({zawgyiStats[lang].count})</span>
@@ -1646,7 +1615,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                       {/* Custom Column Header Actions Dropdown */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-[10px] font-mono cursor-pointer border border-border/70 bg-background shrink-0">
+                          <button className="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-mono cursor-pointer border border-border/70 bg-background shrink-0">
                             <span className="uppercase font-bold">{lang}</span>
                             <ChevronDown className="size-3" />
                           </button>
@@ -1706,7 +1675,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
-                              exportSingleLanguageJson(items, lang, {
+                              exportSingleLanguageJson(exportItems, lang, {
                                 format: 'json-combined',
                                 nested: false,
                                 indent: 2,
@@ -1719,7 +1688,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             Download {lang}.json
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => exportSingleLanguageArb(items, lang)}
+                            onClick={() => exportSingleLanguageArb(exportItems, lang)}
                             className="gap-2 cursor-pointer text-xs"
                           >
                             <Download className="size-3.5" />
@@ -1727,7 +1696,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              const allVals = items.map(i => i[lang] || '').join('\n');
+                              const allVals = exportItems.map(i => i[lang] || '').join('\n');
                               handleCopyText(allVals, `all ${lang.toUpperCase()} values`);
                             }}
                             className="gap-2 cursor-pointer text-xs"
@@ -1768,7 +1737,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 scope="col"
                 aria-label="Row actions"
                 style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
-                className="py-2.5 px-2 text-center bg-[#f4f4f5] dark:bg-[#18181b] sticky top-0 right-0 z-50 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
+                className="py-2.5 px-2 text-center bg-grid-header sticky top-0 right-0 z-50 select-none border-b border-l border-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)]"
               >
                 Menu
               </th>
@@ -1778,61 +1747,11 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           {/* Full Spreadsheet Body */}
           <tbody className="text-sm font-sans">
             {items.length === 0 ? (
-              <tr>
+              <tr aria-hidden="true">
                 <td
-                  aria-label="Empty translation grid"
                   colSpan={3 + (showDescription ? 1 : 0) + languages.length}
-                  className="p-6 sm:p-14 text-center select-none bg-background/50 border-b border-border"
-                >
-                  <div className="max-w-md mx-auto flex flex-col items-center justify-center gap-3">
-                    <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
-                      <KeyRound className="size-7 stroke-[1.5]" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-                        Empty Translation Grid
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                        No translation keys yet. Add your first key, add target languages, or import existing files to begin.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
-                      <Button
-                        onClick={onAddRow}
-                        size="sm"
-                        className="gap-1.5 font-semibold text-xs h-8 shadow-xs cursor-pointer"
-                      >
-                        <Plus className="size-3.5" />
-                        Add First Key
-                      </Button>
-                      {onOpenAddLanguage && (
-                        <Button
-                          onClick={onOpenAddLanguage}
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
-                        >
-                          <Globe className="size-3.5 text-primary" />
-                          Add Language
-                        </Button>
-                      )}
-                      <Button
-                        onClick={onOpenImport}
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
-                      >
-                        <FileUp className="size-3.5 text-muted-foreground" />
-                        Upload Translation Files
-                      </Button>
-                    </div>
-
-                    <p className="text-[11px] text-muted-foreground/80 mt-1">
-                      Tip: Press <kbd className="font-mono bg-muted px-1.5 py-0.5 rounded border border-border">Ctrl+V</kbd> to paste tabular cells directly, or drop files anywhere.
-                    </p>
-                  </div>
-                </td>
+                  className="p-0 border-0 h-96"
+                />
               </tr>
             ) : (
               <>
@@ -1872,7 +1791,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                         className={`py-1 px-1.5 text-center text-xs font-mono text-muted-foreground ${isRowSelected
                           ? 'bg-primary/15 dark:bg-primary/25 text-foreground font-medium'
-                          : 'bg-[#fafafa] dark:bg-[#121214] group-hover:bg-[#e2e8f0] dark:group-hover:bg-[#222736] group-hover:text-foreground'
+                          : 'bg-grid-header group-hover:bg-muted group-hover:text-foreground'
                           } sticky left-0 z-20 select-none cursor-pointer transition-colors border-b border-border ${getFreezeLineClass(safeFrozenCount === 0)}`}
                       >
                         <div className="flex items-center justify-between px-0.5">
@@ -1911,7 +1830,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-36">
-                              <DropdownMenuLabel className="text-[10px]">Row Review Status</DropdownMenuLabel>
+                              <DropdownMenuLabel className="text-xs">Row Review Status</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => onUpdateRowStatus?.(item.key, 'draft')}
@@ -1965,7 +1884,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             onContextMenu={(e) => handleCellContextMenu(e, item.key, 'key', rowIdx, 0)}
                             className={`py-1.5 px-3 font-mono text-xs ${isRowSelected
                                 ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                                : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                                : 'bg-card group-hover:bg-muted hover:!bg-muted'
                               } ${isKeyFrozen ? 'sticky z-15' : 'relative z-0'} border-b border-border transition-colors cursor-pointer ${getFreezeLineClass(isKeyLastFrozen)} ${isKeySelected
                                 ? `outline outline-2 outline-primary outline-offset-[-2px] ${isKeyFrozen ? 'z-18' : 'z-10'}`
                                 : ''
@@ -2032,7 +1951,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             onContextMenu={(e) => handleCellContextMenu(e, item.key, 'description', rowIdx, 1)}
                             className={`py-1.5 px-3 text-xs relative ${isRowSelected
                                 ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                                : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                                : 'bg-card group-hover:bg-muted hover:!bg-muted'
                               } border-b border-r border-border transition-colors cursor-pointer ${selectedCell?.key === item.key && selectedCell.field === 'description'
                                 ? 'outline outline-2 outline-primary outline-offset-[-2px] z-10'
                                 : ''
@@ -2147,8 +2066,8 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                             className={`py-2 px-3 border-b border-border transition-colors cursor-pointer ${isRowSelected
                                 ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
                                 : !val
-                                  ? 'bg-[#fffdf2] dark:bg-[#1a1813] group-hover:bg-[#fef9c3] dark:group-hover:bg-[#282216]'
-                                  : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234] hover:!bg-[#e2e8f0] dark:hover:!bg-[#242e44]'
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/40'
+                                  : 'bg-card group-hover:bg-muted hover:!bg-muted'
                               } ${isLangFrozen ? 'sticky z-15' : 'relative z-0'} ${getFreezeLineClass(isLangLastFrozen)} ${isCellSelected
                                 ? `outline outline-2 outline-primary outline-offset-[-2px] ${isLangFrozen ? 'z-18' : 'z-10'}`
                                 : ''
@@ -2201,7 +2120,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                           value: zawgyiToUnicode(editingCell.value),
                                         });
                                       }}
-                                      className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors"
+                                      className="inline-flex items-center gap-1 text-xs text-amber-800 dark:text-amber-400 bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 px-1.5 py-0.5 rounded cursor-pointer font-medium transition-colors"
                                       title="Convert to Unicode"
                                     >
                                       <AlertTriangle className="size-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -2252,7 +2171,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                                 e.stopPropagation();
                                                 handleRevertCell(item.key, lang);
                                               }}
-                                              className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-2xs select-none"
+                                              className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 px-1.5 py-0.5 rounded cursor-pointer transition-colors shadow-2xs select-none"
                                               title={`Revert back to: "${previousValues[item.key][lang]}"`}
                                             >
                                               <Undo2 className="size-2.5 shrink-0" />
@@ -2267,7 +2186,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                                 handleConvertCellZawgyiToUnicode(item.key, lang);
                                               }}
                                               title="Zawgyi font detected in this cell! Click to convert to Unicode."
-                                              className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-500/20 hover:bg-amber-500/35 text-amber-700 dark:text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all shadow-2xs select-none"
+                                              className="inline-flex items-center gap-1 text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/35 text-amber-800 dark:text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-md cursor-pointer transition-all shadow-2xs select-none"
                                             >
                                               <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
                                               <span>Zawgyi (!)</span>
@@ -2275,7 +2194,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                           )}
                                           {!varValidation.isValid && (
                                             <span
-                                              className="inline-flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 select-none"
+                                              className="inline-flex items-center gap-1 text-xs bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono shrink-0 select-none"
                                               title={`Warning: Missing variable(s) from ${sourceLang.toUpperCase()}: ${varValidation.missingVariables.join(', ')}`}
                                             >
                                               <AlertTriangle className="size-3 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -2305,7 +2224,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         style={{ width: MENU_COL_WIDTH, minWidth: MENU_COL_WIDTH, right: 0 }}
                         className={`py-1 px-1 text-center border-b border-l border-border ${isRowSelected
                             ? 'bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/15 dark:group-hover:bg-primary/25'
-                            : 'bg-card group-hover:bg-[#eef2f6] dark:group-hover:bg-[#1a2234]'
+                            : 'bg-card group-hover:bg-muted'
                           } sticky right-0 z-20 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.5)] transition-colors`}
                       >
                         <DropdownMenu>
@@ -2345,7 +2264,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                                     onClick={handleBulkAiTranslate}
                                     className="gap-2 cursor-pointer text-xs"
                                   >
-                                    <Sparkles className="size-3.5 text-purple-500" />
+                                    <Sparkles className="size-3.5 text-primary" />
                                     AI Translate Selected ({selectedRowKeys.size})
                                   </DropdownMenuItem>
                                 )}
@@ -2489,13 +2408,97 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                 </svg>
 
                 {/* Peer Name Tag Badge with Avatar Color - positioned snugly at arrow notch */}
-                <div className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap tracking-tight animate-in fade-in zoom-in-90 duration-150 bg-[var(--peer-color)]">
+                <div className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white shadow-md shadow-black/25 whitespace-nowrap tracking-tight bg-[var(--peer-color)]">
                   <span>{peer.name}</span>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {items.length === 0 && (
+          <div
+            aria-label={isFilterEmpty ? 'No matching translation keys' : 'Empty translation grid'}
+            className="absolute left-0 right-0 bottom-0 top-11 z-20 flex items-start sm:items-center justify-center overflow-y-auto px-4 py-6 pointer-events-none"
+          >
+            <div className="pointer-events-auto max-w-md w-full flex flex-col items-center justify-center gap-3 text-center">
+              {isFilterEmpty ? (
+                <>
+                  <div className={`size-14 rounded-2xl flex items-center justify-center shadow-xs ${isMissingOnlyFilter ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-500'}`}>
+                    {isMissingOnlyFilter ? (
+                      <CheckCircle2 className="size-7 stroke-[1.5]" />
+                    ) : (
+                      <SearchX className="size-7 stroke-[1.5]" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                      {isMissingOnlyFilter ? 'All translations complete' : 'No keys match this filter or search'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                      {isMissingOnlyFilter
+                        ? `No missing translations across ${totalItemCount} keys.`
+                        : `${totalItemCount} key${totalItemCount === 1 ? ' is' : 's are'} loaded, but none match ${searchQuery ? `"${searchQuery}"` : 'the active filters'}.`}
+                    </p>
+                  </div>
+                  {onClearFilters && (
+                    <Button onClick={onClearFilters} size="sm" className="gap-2 shadow-xs font-semibold h-8 text-xs cursor-pointer mt-2">
+                      <RotateCcw className="size-3.5" />
+                      {isMissingOnlyFilter ? 'Show All Keys' : 'Clear Filters & Search'}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
+                    <KeyRound className="size-7 stroke-[1.5]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
+                      Empty Translation Grid
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                      No translation keys yet. Add your first key, add target languages, or import existing files to begin.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
+                    <Button
+                      onClick={onAddRow}
+                      size="sm"
+                      className="gap-1.5 font-semibold text-xs h-8 shadow-xs cursor-pointer"
+                    >
+                      <Plus className="size-3.5" />
+                      Add First Key
+                    </Button>
+                    {onOpenAddLanguage && (
+                      <Button
+                        onClick={onOpenAddLanguage}
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
+                      >
+                        <Globe className="size-3.5 text-primary" />
+                        Add Language
+                      </Button>
+                    )}
+                    <Button
+                      onClick={onOpenImport}
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 font-medium text-xs h-8 cursor-pointer"
+                    >
+                      <FileUp className="size-3.5 text-muted-foreground" />
+                      Upload Translation Files
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/80 mt-1">
+                    Tip: Press <kbd className="font-mono bg-muted px-1.5 py-0.5 rounded border border-border">Ctrl+V</kbd> to paste tabular cells directly, or drop files anywhere.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cell Right-Click Context Menu (Custom DropdownMenu Component) */}
@@ -2552,7 +2555,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                   {/* Context Header */}
                   <DropdownMenuLabel className="font-mono text-xs flex items-center justify-between gap-2">
                     <span className="truncate">{currentItem.key}</span>
-                    <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase shrink-0">
+                    <span className="text-xs font-sans px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase shrink-0">
                       {contextMenu.field}
                     </span>
                   </DropdownMenuLabel>
@@ -2632,7 +2635,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
                         }}
                         className="gap-2 cursor-pointer text-xs"
                       >
-                        <Code2 className="size-3.5 text-blue-500" />
+                        <Code2 className="size-3.5 text-primary" />
                         <span>Build ICU Message...</span>
                       </DropdownMenuItem>
 
@@ -2732,13 +2735,23 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
 
       {/* Excel Bottom Status Bar with Reset Widths option */}
       <HorizontalScrollContainer
-        gradientFrom="from-[#f4f4f5] dark:from-[#18181b]"
-        wrapperClassName="bg-[#f4f4f5] dark:bg-[#18181b] text-[11px] sm:text-xs border-t border-border select-none shrink-0"
+        gradientFrom="from-grid-header"
+        wrapperClassName="bg-grid-header text-[11px] sm:text-xs border-t border-border select-none shrink-0"
         className="justify-between gap-2 sm:gap-3 px-2.5 sm:px-4 py-1 sm:py-1.5 h-full min-w-full"
       >
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <span className="font-medium text-foreground whitespace-nowrap">
-            <span className="font-bold">{items.length.toLocaleString()}</span> keys
+            {isFilteredSubset ? (
+              <>
+                <span className="font-bold">{catalogCount.toLocaleString()}</span> keys
+                <span className="text-muted-foreground"> · </span>
+                <span className="font-bold">{items.length.toLocaleString()}</span> shown
+              </>
+            ) : (
+              <>
+                <span className="font-bold">{items.length.toLocaleString()}</span> keys
+              </>
+            )}
           </span>
           <span className="text-muted-foreground">•</span>
           <span className="text-muted-foreground whitespace-nowrap">
@@ -2765,7 +2778,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
             {safeFrozenCount > 0 && (
               <button
                 onClick={() => setFrozenCount(0)}
-                className="text-[10px] text-muted-foreground hover:text-destructive ml-0.5 cursor-pointer"
+                className="text-xs text-muted-foreground hover:text-destructive ml-0.5 cursor-pointer"
                 title="Unfreeze all columns"
               >
                 (✕)
@@ -2906,7 +2919,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
       {selectedRowKeys.size > 0 && (
         <div
           data-testid="bulk-actions-bar"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/95 dark:bg-zinc-900/95 backdrop-blur-md px-3.5 py-2 rounded-full border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background/95 dark:bg-zinc-900/95 px-3.5 py-2 rounded-full border border-border shadow-2xl"
         >
           <div className="flex items-center gap-1.5 pr-2.5 border-r border-border text-xs font-semibold text-foreground select-none">
             <span className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-mono font-bold">
@@ -2919,7 +2932,7 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
           <Button
             size="sm"
             onClick={handleBulkApprove}
-            className="h-7 px-2.5 gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
+            className="h-7 px-2.5 gap-1.5 text-xs font-semibold bg-emerald-800 hover:bg-emerald-900 text-white shadow-xs cursor-pointer"
             title="Approve all selected keys and register to Translation Memory"
           >
             <CheckCircle2 className="size-3.5" />
@@ -2944,10 +2957,10 @@ export const SpreadsheetTable: React.FC<SpreadsheetTableProps> = ({
               size="sm"
               variant="outline"
               onClick={handleBulkAiTranslate}
-              className="h-7 px-2.5 gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/10 cursor-pointer"
+              className="h-7 px-2.5 gap-1.5 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10 cursor-pointer"
               title="Translate selected keys with AI"
             >
-              <Sparkles className="size-3.5 text-purple-500" />
+              <Sparkles className="size-3.5 text-primary" />
               <span>AI Translate</span>
             </Button>
           )}

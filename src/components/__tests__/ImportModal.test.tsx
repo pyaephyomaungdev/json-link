@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { ImportModal } from '../ImportModal';
+import { TranslationItem } from '@/types';
 
 describe('ImportModal', () => {
   afterEach(() => {
@@ -120,5 +121,38 @@ msgstr "Bonjour"
 
     expect(defaultProps.onImportComplete).toHaveBeenCalled();
     expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('imports Flutter ARB keys instead of treating the file as a language map', async () => {
+    render(<ImportModal {...defaultProps} />);
+
+    const arbContent = JSON.stringify({
+      '@@locale': 'en',
+      hello: 'Hello',
+      '@hello': { description: 'Greeting' },
+    });
+    const file = new File([arbContent], 'app_en.arb', { type: 'application/json' });
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('app_en.arb')).not.toBeNull();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Replace All Data/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Apply Import/i }));
+
+    expect(defaultProps.onImportComplete).toHaveBeenCalled();
+    const lastCall = defaultProps.onImportComplete.mock.calls.at(-1);
+    expect(lastCall).toBeTruthy();
+    const [items, languages] = lastCall as [
+      Array<TranslationItem & { description?: string; en?: string }>,
+      string[],
+    ];
+    expect(languages).toContain('en');
+    expect(languages).not.toContain('items');
+    expect(items.find(row => row.key === 'hello')?.en).toBe('Hello');
+    expect(items.find(row => row.key === 'hello')?.description).toBe('Greeting');
   });
 });

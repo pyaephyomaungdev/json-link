@@ -192,10 +192,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           />
           {localSearch && (
             <button
+              type="button"
               onClick={handleClearSearch}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+              aria-label="Clear search"
+              className="absolute right-1 top-1/2 -translate-y-1/2 size-6 inline-flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <X className="size-2.5" />
+              <X className="size-3" />
             </button>
           )}
         </div>
@@ -245,11 +247,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {hasItems && (
           <div className="flex items-center rounded-md border border-border p-1 bg-background h-7 shrink-0 shadow-sm">
             <button
+              type="button"
               onClick={() => {
                 onFilterChange('all');
                 onClearFilterMissingLang?.();
               }}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${activeFilter === 'all' && !filterMissingLang
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeFilter === 'all' && !filterMissingLang
                 ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
@@ -257,8 +260,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               All
             </button>
             <button
+              type="button"
               onClick={() => onFilterChange('missing')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${activeFilter === 'missing'
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeFilter === 'missing'
                 ? 'bg-amber-500 text-white dark:bg-amber-600 dark:text-amber-50 font-semibold shadow-xs'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
@@ -277,10 +281,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <button
                 type="button"
                 onClick={onClearFilterMissingLang}
-                className="ml-0.5 p-0.5 hover:bg-amber-500/25 rounded cursor-pointer text-amber-800 dark:text-amber-200"
+                aria-label="Clear column missing filter"
+                className="ml-0.5 size-6 inline-flex items-center justify-center hover:bg-amber-500/25 rounded cursor-pointer text-amber-800 dark:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 title="Clear column filter and show all keys"
               >
-                <X className="size-2.5" />
+                <X className="size-3" />
               </button>
             )}
           </div>
@@ -409,7 +414,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <Sparkles className="size-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">AI Auto-Translate</span>
-                  <span className="text-[10px] text-muted-foreground">Translate missing keys (OpenRouter)</span>
+                  <span className="text-xs text-muted-foreground">Translate missing keys (OpenRouter)</span>
                 </div>
               </DropdownMenuItem>
             )}
@@ -418,10 +423,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 onClick={onOpenTranslationMemory}
                 className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Brain className="size-3.5 text-purple-500 mt-0.5 shrink-0" />
+                <Brain className="size-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Translation Memory</span>
-                  <span className="text-[10px] text-muted-foreground">Reuse cached phrases &amp; save tokens</span>
+                  <span className="text-xs text-muted-foreground">Reuse cached phrases &amp; save tokens</span>
                 </div>
               </DropdownMenuItem>
             )}
@@ -430,10 +435,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 onClick={onOpenGlossary}
                 className="items-start gap-2 cursor-pointer text-xs"
               >
-                <BookOpen className="size-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <BookOpen className="size-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Glossary &amp; Termbase</span>
-                  <span className="text-[10px] text-muted-foreground">Enforce brand terminology rules</span>
+                  <span className="text-xs text-muted-foreground">Enforce brand terminology rules</span>
                 </div>
               </DropdownMenuItem>
             )}
@@ -451,8 +456,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 : ''
                 }`}
             >
-              <Upload className="size-3 text-muted-foreground" />
-              <span>{linkedFolderName ? `📁 Sync` : 'File'}</span>
+              {linkedFolderName ? (
+                <FolderSync className="size-3" />
+              ) : (
+                <Upload className="size-3 text-muted-foreground" />
+              )}
+              <span>{linkedFolderName ? 'Sync' : 'File'}</span>
               <ChevronDown className="size-2.5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
@@ -463,7 +472,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <Upload className="size-3.5 text-primary mt-0.5 shrink-0" />
               <div className="flex flex-col">
                 <span className="font-semibold">Import Files</span>
-                <span className="text-[10px] text-muted-foreground">JSON, Excel, CSV, YAML, ARB, XML...</span>
+                <span className="text-xs text-muted-foreground">JSON, Excel, CSV, YAML, ARB, XML...</span>
               </div>
             </DropdownMenuItem>
             {onOpenFolderSync && (
@@ -471,7 +480,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <FolderSync className="size-3.5 text-emerald-500 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Local Folder Sync</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {linkedFolderName ? `Connected: ${linkedFolderName}` : 'Direct read/write with hard drive'}
                   </span>
                 </div>
@@ -496,7 +505,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <span>GitHub Sync &amp; PR</span>
                     <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded font-medium">Safe</span>
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Pull &amp; open Pull Request for locales</span>
+                  <span className="text-xs text-muted-foreground">Pull &amp; open Pull Request for locales</span>
                 </div>
               </DropdownMenuItem>
             )}
@@ -509,7 +518,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <Save className="size-3.5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Save Project (.jsonlink)</span>
-                  <span className="text-[10px] text-muted-foreground">Standalone complete project backup</span>
+                  <span className="text-xs text-muted-foreground">Standalone complete project backup</span>
                 </div>
               </DropdownMenuItem>
             )}
@@ -519,11 +528,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 disabled={!hasItems}
                 className="items-start gap-2 cursor-pointer text-xs"
               >
-                <Share2 className="size-3.5 text-blue-500 mt-0.5 shrink-0" />
+                <Share2 className="size-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="font-semibold">Share &amp; Handoff</span>
-                  <span className="text-[10px] text-muted-foreground">Instant URL link or .jsonlink package</span>
+                  <span className="text-xs text-muted-foreground">Instant URL link or .jsonlink package</span>
                 </div>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs">Workspace</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
+              <RotateCcw className="size-3.5 text-muted-foreground" />
+              <span>Reset to Sample (32 keys)</span>
+            </DropdownMenuItem>
+            {hasItems && (
+              <DropdownMenuItem
+                onClick={onClearAll}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+              >
+                <Trash className="size-3.5" />
+                <span>Clear All Keys</span>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -541,8 +565,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <MoreVertical className="size-3 text-muted-foreground" />
               <span className="hidden md:inline">Tools</span>
               {Boolean(lintIssueCount && lintIssueCount > 0) && (
-                <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight">
-                  {lintIssueCount}
+                <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight whitespace-nowrap">
+                  {lintIssueCount} {lintIssueCount === 1 ? 'issue' : 'issues'}
                 </span>
               )}
             </Button>
@@ -551,7 +575,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <DropdownMenuLabel className="text-[11px]">Quality Suite</DropdownMenuLabel>
             {onOpenScorecard && (
               <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs">
-                <Activity className="size-3.5 text-blue-500" />
+                <Activity className="size-3.5 text-primary" />
                 <span>Quality Scorecard</span>
               </DropdownMenuItem>
             )}
@@ -562,18 +586,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   <span>QA &amp; Consistency Linter</span>
                 </div>
                 {Boolean(lintIssueCount && lintIssueCount > 0) && (
-                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto">
-                    {lintIssueCount}
+                  <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto whitespace-nowrap">
+                    {lintIssueCount} {lintIssueCount === 1 ? 'issue' : 'issues'}
                   </span>
                 )}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[11px]">Tools &amp; Utilities</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[11px]">Find &amp; Utilities</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {onOpenFindReplace && hasItems && (
               <DropdownMenuItem onClick={onOpenFindReplace} className="gap-2 cursor-pointer text-xs">
-                <Replace className="size-3.5 text-blue-500" />
+                <Replace className="size-3.5 text-primary" />
                 <span>Find &amp; Replace</span>
                 <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘H</kbd>
               </DropdownMenuItem>
@@ -594,22 +618,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <DropdownMenuItem onClick={onOpenCommandPalette} className="gap-2 cursor-pointer text-xs">
                 <Command className="size-3.5 text-muted-foreground" />
                 <span>Command Palette</span>
-                <kbd className="ml-auto font-mono text-[9px] bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[11px]">Workspace</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-              <RotateCcw className="size-3.5 text-muted-foreground" />
-              <span>Reset to Sample (32 keys)</span>
-            </DropdownMenuItem>
-            {hasItems && (
-              <DropdownMenuItem
-                onClick={onClearAll}
-                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
-              >
-                <Trash className="size-3.5" />
-                <span>Clear All Keys</span>
+                <kbd className="ml-auto font-mono text-xs bg-muted px-1 py-0.5 rounded border border-border">⌘K</kbd>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
@@ -649,7 +658,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 onClick={onOpenTranslationMemory}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <Brain className="size-3.5 text-purple-500" />
+                <Brain className="size-3.5 text-primary" />
                 <span>Translation Memory</span>
               </DropdownMenuItem>
             )}
@@ -659,7 +668,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 disabled={!hasItems}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <BookOpen className="size-3.5 text-blue-500" />
+                <BookOpen className="size-3.5 text-primary" />
                 <span>Glossary &amp; Termbase</span>
               </DropdownMenuItem>
             )}
@@ -709,8 +718,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 disabled={!hasItems}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <Share2 className="size-3.5 text-blue-500" />
+                <Share2 className="size-3.5 text-primary" />
                 <span>Share &amp; Handoff</span>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
+              <RotateCcw className="size-3.5 text-muted-foreground" />
+              <span>Reset to Sample</span>
+            </DropdownMenuItem>
+            {hasItems && (
+              <DropdownMenuItem
+                onClick={onClearAll}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+              >
+                <Trash className="size-3.5" />
+                <span>Clear All Keys</span>
               </DropdownMenuItem>
             )}
             {onOpenCollab && (
@@ -722,7 +744,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <span className="flex items-center justify-between w-full">
                   <span>P2P Live Collaboration</span>
                   {isCollabConnected && (
-                    <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold px-1.5 py-0.2 rounded">
+                    <span className="text-xs bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold px-1.5 py-0.2 rounded">
                       {collabPeerCount || 1} online
                     </span>
                   )}
@@ -738,7 +760,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <DropdownMenuLabel className="text-[11px]">Quality Suite &amp; Tools</DropdownMenuLabel>
             {onOpenScorecard && (
               <DropdownMenuItem onClick={onOpenScorecard} className="gap-2 cursor-pointer text-xs">
-                <Activity className="size-3.5 text-blue-500" />
+                <Activity className="size-3.5 text-primary" />
                 <span>Quality Scorecard</span>
               </DropdownMenuItem>
             )}
@@ -749,8 +771,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                   <span>QA &amp; Consistency Linter</span>
                 </div>
                 {Boolean(lintIssueCount && lintIssueCount > 0) && (
-                  <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto">
-                    {lintIssueCount}
+                  <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.2 rounded-full font-semibold leading-tight ml-auto whitespace-nowrap">
+                    {lintIssueCount} {lintIssueCount === 1 ? 'issue' : 'issues'}
                   </span>
                 )}
               </DropdownMenuItem>
@@ -761,7 +783,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 disabled={!hasItems}
                 className="gap-2 cursor-pointer text-xs"
               >
-                <Replace className="size-3.5 text-blue-500" />
+                <Replace className="size-3.5 text-primary" />
                 <span>Find &amp; Replace</span>
               </DropdownMenuItem>
             )}
@@ -787,41 +809,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <span>Command Palette</span>
               </DropdownMenuItem>
             )}
-
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[11px]">Workspace</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onResetToSample} className="gap-2 cursor-pointer text-xs">
-              <RotateCcw className="size-3.5 text-muted-foreground" />
-              <span>Reset to Sample</span>
-            </DropdownMenuItem>
-            {hasItems && (
-              <DropdownMenuItem
-                onClick={onClearAll}
-                className="gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
-              >
-                <Trash className="size-3.5" />
-                <span>Clear All Keys</span>
-              </DropdownMenuItem>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-
-
-        {/* Share Button (Desktop & Tablet) */}
-        {onOpenShare && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenShare}
-            disabled={!hasItems}
-            className="hidden sm:inline-flex gap-1.5 text-xs h-7 px-2.5 font-medium shadow-2xs shrink-0 cursor-pointer"
-            title="Share & Handoff Workspace"
-          >
-            <Share2 className="size-3 text-muted-foreground" />
-            <span>Share</span>
-          </Button>
-        )}
 
         {/* Dev Mode Direct Disk Sync Save Button */}
         {isDevMode && onSaveToDevDisk && (
@@ -830,8 +819,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             onClick={onSaveToDevDisk}
             disabled={isSavingToDevDisk}
             className={`gap-1.5 text-xs h-7 px-3 font-semibold shadow-xs shrink-0 cursor-pointer transition-all ${isDevDiskDirty
-              ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              ? 'bg-amber-800 hover:bg-amber-900 text-white animate-pulse'
+              : 'bg-primary hover:bg-primary/90 text-primary-foreground'
               }`}
             title={isDevDiskDirty ? 'Unsaved changes to src/locales! Click or press ⌘S to save.' : 'All changes saved to disk with instant Vite HMR'}
           >

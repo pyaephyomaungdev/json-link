@@ -71,6 +71,47 @@ describe('SpreadsheetTable', () => {
     expect(defaultProps.onAddRow).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the formula bar when search or filters match no keys', () => {
+    const onClearFilters = vi.fn();
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        items={[]}
+        totalItemCount={12}
+        searchQuery="zzz"
+        onClearFilters={onClearFilters}
+      />
+    );
+    expect(screen.getByText('fx')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'No keys match this filter or search' })).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Clear Filters/i }));
+    expect(onClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the formula bar when the missing filter finds no gaps', () => {
+    render(
+      <SpreadsheetTable
+        {...defaultProps}
+        items={[]}
+        totalItemCount={12}
+        activeFilter="missing"
+        onClearFilters={vi.fn()}
+      />
+    );
+    expect(screen.getByText('fx')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'All translations complete' })).not.toBeNull();
+    expect(
+      screen.getByText((_, node) =>
+        Boolean(
+          node &&
+            node.tagName === 'SPAN' &&
+            node.className.includes('font-medium') &&
+            (node.textContent || '').replace(/\s+/g, ' ').trim() === '12 keys · 0 shown'
+        )
+      )
+    ).not.toBeNull();
+  });
+
   it('triggers onOpenAddLanguage from empty grid when provided', () => {
     const onOpenAddLanguage = vi.fn();
     render(<SpreadsheetTable {...defaultProps} items={[]} onOpenAddLanguage={onOpenAddLanguage} />);
@@ -361,5 +402,23 @@ describe('SpreadsheetTable', () => {
     );
 
     expect(onStopFollowing).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps original keys on multi-cell paste so batch merge can apply', () => {
+    const onBatchUpdate = vi.fn();
+    render(<SpreadsheetTable {...defaultProps} onBatchUpdate={onBatchUpdate} />);
+
+    fireEvent.paste(screen.getByRole('grid'), {
+      clipboardData: {
+        getData: () => 'auth.signin\nauth.signout',
+      },
+    });
+
+    expect(onBatchUpdate).toHaveBeenCalled();
+    const payload = onBatchUpdate.mock.calls[0][0] as Array<TranslationItem & { __sourceKey?: string }>;
+    expect(payload[0].key).toBe('auth.signin');
+    expect(payload[0].__sourceKey).toBe('auth.login');
+    expect(payload[1].key).toBe('auth.signout');
+    expect(payload[1].__sourceKey).toBe('auth.logout');
   });
 });

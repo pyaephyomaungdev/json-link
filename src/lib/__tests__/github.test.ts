@@ -111,6 +111,8 @@ describe('GitHub Locales Security Guardrails', () => {
       expect(guessLanguageCodeFromPath('translations/zh_CN.json')).toBe('zh-cn');
       expect(guessLanguageCodeFromPath('lib/l10n/app_en.arb')).toBe('en');
       expect(guessLanguageCodeFromPath('res/values-my/strings.xml')).toBe('my');
+      expect(guessLanguageCodeFromPath('ios/Runner/en.lproj/Localizable.strings')).toBe('en');
+      expect(guessLanguageCodeFromPath('res/values/strings.xml')).toBe('en');
     });
   });
 
@@ -213,6 +215,95 @@ describe('GitHub Locales Security Guardrails', () => {
 
       expect(res.success).toBe(false);
       expect(res.error).toMatch(/Security Policy/);
+    });
+
+    it('commitLocalesDirectly uses the commit tree SHA as base_tree', async () => {
+      const treeBodies: Array<{ base_tree?: string }> = [];
+      global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        const u = String(url);
+        const method = init?.method || 'GET';
+        if (u.includes('/git/ref/heads/')) {
+          return { ok: true, json: async () => ({ object: { sha: 'commit-sha' } }) };
+        }
+        if (u.includes('/git/commits/commit-sha') && method === 'GET') {
+          return { ok: true, json: async () => ({ tree: { sha: 'tree-sha' } }) };
+        }
+        if (u.includes('/git/blobs') && method === 'POST') {
+          return { ok: true, json: async () => ({ sha: 'blob-sha' }) };
+        }
+        if (u.includes('/git/trees') && method === 'POST') {
+          treeBodies.push(JSON.parse(String(init?.body)));
+          return { ok: true, json: async () => ({ sha: 'new-tree' }) };
+        }
+        if (u.endsWith('/git/commits') && method === 'POST') {
+          return { ok: true, json: async () => ({ sha: 'new-commit' }) };
+        }
+        if (u.includes('/git/refs/heads/') && method === 'PATCH') {
+          return { ok: true, json: async () => ({}) };
+        }
+        return { ok: false, status: 404, json: async () => ({ message: `unmocked ${method} ${u}` }) };
+      });
+
+      const res = await commitLocalesDirectly({
+        token: 'ghp_test',
+        owner: 'owner',
+        repo: 'repo',
+        branch: 'main',
+        commitMessage: 'i18n: sync',
+        files: [{ path: 'locales/en.json', content: '{}' }],
+      });
+
+      expect(res.success).toBe(true);
+      expect(treeBodies[0]?.base_tree).toBe('tree-sha');
+    });
+
+    it('createPullRequestWithLocales uses the commit tree SHA as base_tree', async () => {
+      const treeBodies: Array<{ base_tree?: string }> = [];
+      global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+        const u = String(url);
+        const method = init?.method || 'GET';
+        if (u.includes('/git/ref/heads/')) {
+          return { ok: true, json: async () => ({ object: { sha: 'commit-sha' } }) };
+        }
+        if (u.includes('/git/commits/commit-sha') && method === 'GET') {
+          return { ok: true, json: async () => ({ tree: { sha: 'tree-sha' } }) };
+        }
+        if (u.includes('/git/refs') && method === 'POST') {
+          return { ok: true, json: async () => ({}) };
+        }
+        if (u.includes('/git/blobs') && method === 'POST') {
+          return { ok: true, json: async () => ({ sha: 'blob-sha' }) };
+        }
+        if (u.includes('/git/trees') && method === 'POST') {
+          treeBodies.push(JSON.parse(String(init?.body)));
+          return { ok: true, json: async () => ({ sha: 'new-tree' }) };
+        }
+        if (u.endsWith('/git/commits') && method === 'POST') {
+          return { ok: true, json: async () => ({ sha: 'new-commit' }) };
+        }
+        if (u.includes('/git/refs/heads/') && method === 'PATCH') {
+          return { ok: true, json: async () => ({}) };
+        }
+        if (u.includes('/pulls') && method === 'POST') {
+          return { ok: true, json: async () => ({ html_url: 'https://github.com/o/r/pull/1', number: 1 }) };
+        }
+        return { ok: false, status: 404, json: async () => ({ message: `unmocked ${method} ${u}` }) };
+      });
+
+      const res = await createPullRequestWithLocales({
+        token: 'ghp_test',
+        owner: 'owner',
+        repo: 'repo',
+        baseBranch: 'main',
+        newBranchName: 'i18n-update',
+        prTitle: 'i18n',
+        prBody: 'desc',
+        commitMessage: 'i18n: sync',
+        files: [{ path: 'locales/en.json', content: '{}' }],
+      });
+
+      expect(res.success).toBe(true);
+      expect(treeBodies[0]?.base_tree).toBe('tree-sha');
     });
   });
 

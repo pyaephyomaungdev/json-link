@@ -485,7 +485,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                           </span>
                         </button>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] text-muted-foreground font-mono">
+                          <span className="text-xs text-muted-foreground font-mono">
                             Row #{occ.rowIndex + 1}
                           </span>
                           {onJumpToKey && (
@@ -493,7 +493,7 @@ export const FindReplaceModal: React.FC<FindReplaceModalProps> = ({
                               type="button"
                               onClick={() => handleJumpToOccurrence(occ.key)}
                               title="Jump to row in table"
-                              className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary hover:underline cursor-pointer"
+                              className="inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline cursor-pointer"
                             >
                               <span>Jump</span>
                               <ArrowUpRight className="size-3" />

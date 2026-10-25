@@ -86,7 +86,7 @@ Add this 1-line configuration to **Claude Desktop**, **Cursor** (`.cursor/mcp.js
 | **Developer Overhead** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Heavy glue scripts | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Vendor lock-in & SDK bloat | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **~120-line reactive client, 0 external runtime deps** |
 | **AI Translation (BYOK)** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> High per-token markup | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Direct OpenRouter (Gemini, Claude, DeepSeek)** |
 | **P2P Live Collaboration** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> No real-time co-authoring | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Requires paid cloud seats ($15–$50/seat) | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **WebRTC DataChannels + Yjs CRDT (signaling relay to connect; optional AES-GCM E2EE)** |
-| **Data Privacy & Storage** | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Plaintext on external cloud | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Third-party server hosting | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **100% Client-Side AES-GCM 256 + Zero Backend** |
+| **Data Privacy & Storage** | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Plaintext on external cloud | <img src=".github/assets/icons/alert.svg" width="16" height="16" align="absmiddle" /> Third-party server hosting | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Runs in the browser with no JSON Link backend; AES-GCM is opt-in for share links and `.jsonlink` files** |
 | **AI Coding Assistant Tools** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> None | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Native Model Context Protocol (MCP) server** |
 | **Myanmar Font Support** | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Garbled Zawgyi rendering | <img src=".github/assets/icons/x.svg" width="16" height="16" align="absmiddle" /> Unsupported | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Heuristic Rabbit Zawgyi ⇄ Unicode converter** |
 | **Pricing** | Free with manual friction | Expensive recurring seat fees | <img src=".github/assets/icons/check.svg" width="16" height="16" align="absmiddle" /> **Free forever (MIT License)** |
@@ -344,10 +344,33 @@ npm run create:build
 
 ## <a id="changelog"></a><img src=".github/assets/icons/file-text.svg" width="22" height="22" align="absmiddle" /> Changelog
 
-All notable changes to **JSON Link** are documented here. The project adheres to [Semantic Versioning](https://semver.org/).
+All notable changes to **JSON Link** are documented here and tracked in [CHANGELOG.md](CHANGELOG.md). The project adheres to [Semantic Versioning](https://semver.org/).
 
 <details open>
-<summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.1.0] - 2026-09-19 — WebRTC Live Collaboration, DOM Virtualization & E2EE</strong> (Latest Release)</summary>
+<summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.2.0] - 2026-10-25 — XLIFF & GNU gettext, CRDT Array Diffing, ICU Plural Engine & Privacy Vault</strong> (Latest Release)</summary>
+
+#### Added
+* **XLIFF 1.2 & 2.0 Bidirectional Support**: Complete parser and generator for `.xlf` and `.xliff` translation formats, preserving translation unit IDs, sources, targets, and developer comments for professional CAT tools.
+* **GNU gettext PO / POT Support with Developer Key Round-Tripping**: Comprehensive parser (`parsePoFile`) and generator (`generatePo`) supporting multi-line strings, escaped sequences, and preserving developer keys via `#: ${item.key}` reference comments.
+* **Non-Destructive CRDT Positional Array Diffing (`syncYArray`)**: Replaced full array recreation (`delete(0, len)`) with targeted O(N) common prefix/suffix positional diffing across Yjs `yKeys` and `yLanguages` arrays, eliminating race conditions and duplicate keys during concurrent live collaboration.
+* **ICU MessageFormat Plural `#` Token Support**: Balanced brace detection and tokenization for nested `#` number substitution placeholders inside ICU `plural` and `selectordinal` expressions. Added QA linter verification flagging when target translations drop `#`.
+* **Visual ICU Message Builder Modal**: Interactive builder dialog accessible from cell context menus, enabling visual creation of plural and select branches with live preview and parameter inputs.
+* **Keyboard Shortcuts Modal (`⌘/` / `Ctrl+/`)**: Quick reference dialog cataloging all navigation, editing, formatting, and file synchronization shortcuts.
+* **IndexedDB Non-Extractable CryptoKey Vault (v2)**: High-security storage for OpenRouter API keys and GitHub PATs using device-local Web Crypto `AES-GCM` keys persisted in IndexedDB, completely removing dependence on origin seeds.
+* **Monotonic Draft Timestamp Reconciliation (`pickNewerDraft`)**: Smart reconciliation between IndexedDB and localStorage based on `updatedAt` timestamps, preventing stale draft restoration upon storage quota limits.
+* **Self-Hosted Zero-Telemetry WebFonts**: Integrated self-hosted `IBM Plex Sans` and `Noto Sans Myanmar` WOFF2 fonts with `font-display: swap`, removing Google Fonts CDN network calls.
+* **MCP Server Format Parity (@jsonlink/mcp)**: Added `.xlf`, `.xliff`, `.po`, and `.pot` file extensions to `ALLOWED_FILE_EXTENSIONS`, with native parsing in `read_translations` and export formats `'xliff'` and `'gettext-po'` in `export_bundle`.
+
+#### Changed
+* **Initial Bundle Code-Splitting**: Converted `LandingPage` to a lazy-loaded dynamic import in `src/App.tsx`, reducing primary JavaScript bundle size from 609 kB to 577 kB.
+* **Figma-Grade Follow Camera Tracking**: Smooth follow banner, Esc exit, manual scroll break, and peer disconnect handling in live collaboration follow mode.
+* **Consolidated Toolbar Quality Tools**: Streamlined navigation header by integrating Quality Scorecard and Linter badges into the unified Tools dropdown.
+* Test suite expanded to 66 test files and 540 passing tests (100% Vitest pass rate, 0 oxlint warnings).
+
+</details>
+
+<details>
+<summary><strong><img src=".github/assets/icons/zap.svg" width="18" height="18" align="absmiddle" /> [1.1.0] - 2026-09-19 — WebRTC Live Collaboration, DOM Virtualization & E2EE</strong> (Click to expand)</summary>
 
 #### Added
 * **Serverless WebRTC Live Collaboration**: Instant multi-user co-authoring powered by Yjs Conflict-Free Replicated Data Types (CRDT) and direct WebRTC DataChannels (`useCollabSession`), using lightweight signaling relays for initial connection negotiation.

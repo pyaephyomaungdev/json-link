@@ -2,24 +2,17 @@ import React, { useRef, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   UploadCloud,
   Plus,
-  Sparkles,
   ShieldCheck,
-  Lock,
-  Languages,
-  Terminal,
   Heart,
-  Layers,
   Star,
   ChevronDown,
-  GitPullRequest,
-  Zap,
   Copy,
   Check,
   Leaf,
+  Table2,
 } from 'lucide-react';
 
 // Official ecosystem format logos
@@ -106,13 +99,12 @@ const YamlLogo = ({ className = 'size-12' }: { className?: string }) => (
 );
 
 const JsonLinkLogo = ({ className = 'size-12' }: { className?: string }) => (
-  <div className={`${className} relative rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-indigo-600 p-[2px] shadow-lg shrink-0 flex items-center justify-center`}>
+  <div className={`${className} relative rounded-xl bg-primary p-[2px] shadow-sm shrink-0 flex items-center justify-center`}>
     <div className="w-full h-full bg-[#090d16] rounded-[10px] flex items-center justify-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/25 to-teal-500/10 pointer-events-none" />
       <svg viewBox="0 0 32 32" fill="none" className="w-3/4 h-3/4 relative z-10">
         <path d="M11 7C9.34315 7 8 8.34315 8 10V13C8 14.6569 6.65685 16 5 16C6.65685 16 8 17.3431 8 19V22C8 23.6569 9.34315 25 11 25" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M21 7C22.6569 7 24 8.34315 24 10V13C24 14.6569 25.3431 16 27 16C25.3431 16 24 17.3431 24 19V22C24 23.6569 22.6569 25 21 25" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M12 16H20" stroke="#818cf8" strokeDasharray="1 2.5" strokeLinecap="round" strokeWidth="2.2" />
+        <path d="M12 16H20" stroke="#5eead4" strokeDasharray="1 2.5" strokeLinecap="round" strokeWidth="2.2" />
       </svg>
     </div>
   </div>
@@ -206,6 +198,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copiedCmd, setCopiedCmd] = useState(false);
+  const [sheetChooserOpen, setSheetChooserOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopyCmd = () => {
@@ -241,11 +234,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   return (
     <main className="flex-1 w-full max-w-full h-full overflow-y-auto overflow-x-hidden bg-background text-foreground selection:bg-primary/20 scroll-smooth relative">
-      {/* Screen-wide Ambient Background Aura (Screen အပြည့် ဖြန့်ကျက်ထားသော သဘာဝကျသည့် Gradient Glow) */}
-      <div className="absolute top-0 left-0 right-0 w-full h-[640px] pointer-events-none overflow-hidden select-none z-0">
-        <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-screen min-w-[1000px] max-w-[1920px] h-[600px] bg-gradient-to-b from-primary/12 via-teal-500/5 to-transparent blur-3xl rounded-full" />
-      </div>
-
       {/* Hidden File Input */}
       <input
         type="file"
@@ -262,34 +250,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 2. Hero Section */}
       <section className="relative z-10 w-full max-w-7xl mx-auto pt-8 pb-12 sm:pt-14 sm:pb-16 px-4 sm:px-6 flex flex-col items-center">
-        {/* Hero Flanking Layout */}
-        <div className="w-full max-w-full min-w-0 flex items-center justify-between gap-4 xl:gap-8">
-          {/* Left Flank - Pure Floating Official Brand Logos (No Background Box, Larger Size, Glow Aura) */}
-          <div className="hidden lg:flex flex-col items-center justify-center gap-6 xl:gap-8 w-28 xl:w-36 shrink-0 relative py-4 select-none">
-            {leftFormats.map((f, i) => {
-              const offsets = ['translate-x-4', '-translate-x-3', 'translate-x-5', '-translate-x-2'];
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  title={f.name}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`relative p-2 bg-transparent border-0 outline-none flex items-center justify-center transition-all duration-300 cursor-pointer group hover:scale-125 hover:-translate-y-2 focus-visible:scale-125 ${offsets[i % offsets.length]}`}
-                >
-                  {/* Ambient blur glow behind icon */}
-                  <div
-                    className={`absolute inset-0 rounded-full blur-xl opacity-30 group-hover:opacity-90 group-hover:scale-150 transition-all duration-500 pointer-events-none ${f.glow}`}
-                  />
-                  {/* Pure floating logo with drop shadow */}
-                  <div className="relative filter drop-shadow-md group-hover:drop-shadow-2xl transition-all duration-300 flex items-center justify-center">
-                    {f.renderLogo('size-12 xl:size-14 shrink-0')}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Center Column: Badge, Headline, Subtitle, Actions, Sample */}
+        <div className="w-full max-w-full min-w-0 flex items-center justify-center">
           <div className="flex-1 flex flex-col items-center text-center max-w-2xl xl:max-w-3xl mx-auto w-full min-w-0 px-2 sm:px-0">
             {/* Product Hunt Featured Badge */}
             <div className="mb-5 flex items-center justify-center">
@@ -309,7 +270,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Hero Title with Gradient */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight max-w-3xl text-balance bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent pb-1">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold tracking-tight max-w-3xl text-balance text-foreground pb-1">
               The Local-First Translation Spreadsheet for Developer Teams
             </h1>
 
@@ -319,103 +280,88 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               100% client-side privacy, zero databases, and zero vendor lock-in.
             </p>
 
-            {/* Hero Actions */}
-            <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
-              <Button
-                size="lg"
-                onClick={() => fileInputRef.current?.click()}
-                className="h-10 sm:h-11 px-6 font-semibold text-sm gap-2 w-full sm:w-auto cursor-pointer shadow-md"
-              >
-                <UploadCloud className="size-4" />
-                Browse Files
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onStartEmptySheet}
-                className="h-10 sm:h-11 px-5 text-sm gap-2 w-full sm:w-auto cursor-pointer bg-background hover:bg-muted"
-              >
-                <Plus className="size-4" />
-                Start Empty Sheet
-              </Button>
-            </div>
-
-            {/* Sample Data Trigger */}
-            <div className="mt-3">
-              <button
-                onClick={onResetToSample}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
-              >
-                <Sparkles className="size-3.5 text-primary" />
-                Or test with sample data (32 example keys)
-              </button>
-            </div>
-
-            {/* Terminal Command Quickstart */}
-            <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground shadow-2xs hover:border-primary/40 transition-colors">
-              <span className="text-primary font-bold select-none">$</span>
-              <span className="text-foreground font-semibold select-all">npx create-jsonlink</span>
-              <button
-                type="button"
-                onClick={handleCopyCmd}
-                title={copiedCmd ? 'Copied to clipboard' : 'Copy command'}
-                className="p-1 -mr-1 rounded text-muted-foreground hover:text-foreground hover:bg-background/80 transition-all cursor-pointer inline-flex items-center justify-center"
-              >
-                {copiedCmd ? (
-                  <Check className="size-3.5 text-emerald-500" />
-                ) : (
-                  <Copy className="size-3.5 hover:text-primary transition-colors" />
-                )}
-              </button>
-              <span className="text-[10px] text-muted-foreground hidden sm:inline select-none">•</span>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline select-none">
-                Embedded dev dashboard on <code className="text-primary font-semibold">localhost:5173/__jsonlink</code>
-              </span>
-            </div>
-          </div>
-
-          {/* Right Flank - Pure Floating Official Brand Logos (No Background Box, Larger Size, Glow Aura) */}
-          <div className="hidden lg:flex flex-col items-center justify-center gap-6 xl:gap-8 w-28 xl:w-36 shrink-0 relative py-4 select-none">
-            {rightFormats.map((f, i) => {
-              const offsets = ['-translate-x-4', 'translate-x-3', '-translate-x-5', 'translate-x-2'];
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  title={f.name}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`relative p-2 bg-transparent border-0 outline-none flex items-center justify-center transition-all duration-300 cursor-pointer group hover:scale-125 hover:-translate-y-2 focus-visible:scale-125 ${offsets[i % offsets.length]}`}
+            {!sheetChooserOpen ? (
+              <div className="mt-7 w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  onClick={() => setSheetChooserOpen(true)}
+                  className="h-10 sm:h-11 px-6 font-semibold text-sm gap-2 w-full sm:w-auto cursor-pointer shadow-md"
                 >
-                  {/* Ambient blur glow behind icon */}
-                  <div
-                    className={`absolute inset-0 rounded-full blur-xl opacity-30 group-hover:opacity-90 group-hover:scale-150 transition-all duration-500 pointer-events-none ${f.glow}`}
-                  />
-                  {/* Pure floating logo with drop shadow */}
-                  <div className="relative filter drop-shadow-md group-hover:drop-shadow-2xl transition-all duration-300 flex items-center justify-center">
-                    {f.renderLogo('size-12 xl:size-14 shrink-0')}
-                  </div>
-                </button>
-              );
-            })}
+                  <Table2 className="size-4" />
+                  Open spreadsheet
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="mt-7 w-full flex flex-col items-center"
+                role="region"
+                aria-label="How to start"
+              >
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-10 sm:h-11 px-6 font-semibold text-sm gap-2 w-full sm:w-auto cursor-pointer shadow-md"
+                  >
+                    <UploadCloud className="size-4" />
+                    Browse Files
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={onStartEmptySheet}
+                    className="h-10 sm:h-11 px-5 text-sm gap-2 w-full sm:w-auto cursor-pointer bg-background hover:bg-muted"
+                  >
+                    <Plus className="size-4" />
+                    Start Empty Sheet
+                  </Button>
+                </div>
+
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={onResetToSample}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer underline underline-offset-4"
+                  >
+                    Try sample data (32 example keys)
+                  </button>
+                </div>
+
+                <div className="mt-5 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground shadow-2xs hover:border-primary/40 transition-colors">
+                  <span className="text-primary font-bold select-none">$</span>
+                  <span className="text-foreground font-semibold select-all">npx create-jsonlink</span>
+                  <button
+                    type="button"
+                    onClick={handleCopyCmd}
+                    title={copiedCmd ? 'Copied to clipboard' : 'Copy command'}
+                    className="p-1 -mr-1 rounded text-muted-foreground hover:text-foreground hover:bg-background/80 transition-all cursor-pointer inline-flex items-center justify-center"
+                  >
+                    {copiedCmd ? (
+                      <Check className="size-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="size-3.5 hover:text-primary transition-colors" />
+                    )}
+                  </button>
+                  <span className="text-xs text-muted-foreground hidden sm:inline select-none">•</span>
+                  <span className="text-xs text-muted-foreground hidden sm:inline select-none">
+                    Embedded dev dashboard on <code className="text-primary font-semibold">localhost:5173/__jsonlink</code>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Floating Icons Strip for < lg Viewports - Pure Floating Icons with Blur Glow (No Background Box) */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 lg:hidden my-6 flex-wrap max-w-lg select-none px-4">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-4 sm:gap-5 mt-8 max-w-3xl mx-auto w-full select-none px-4">
           {[...leftFormats, ...rightFormats].map((f, i) => (
             <button
               key={i}
               type="button"
               title={f.name}
               onClick={() => fileInputRef.current?.click()}
-              className="relative p-1.5 bg-transparent border-0 outline-none flex items-center justify-center transition-all duration-300 cursor-pointer group hover:scale-125 hover:-translate-y-1"
+              className="relative p-1.5 rounded-md bg-transparent border-0 flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <div
-                className={`absolute inset-0 rounded-full blur-lg opacity-25 group-hover:opacity-85 group-hover:scale-140 transition-all duration-300 pointer-events-none ${f.glow}`}
-              />
-              <div className="relative filter drop-shadow-sm group-hover:drop-shadow-lg flex items-center justify-center">
-                {f.renderLogo('size-9 sm:size-10 shrink-0')}
-              </div>
+              {f.renderLogo('size-8 sm:size-9 shrink-0')}
             </button>
           ))}
         </div>
@@ -426,9 +372,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`group relative rounded-2xl border bg-card/70 backdrop-blur-xs transition-all cursor-pointer overflow-hidden shadow-xl w-full max-w-full ${isDragOver
-                ? 'border-primary ring-4 ring-primary/20 scale-[1.005]'
-                : 'border-border/80 hover:border-primary/50'
+            className={`group relative rounded-2xl border bg-card transition-colors cursor-pointer overflow-hidden shadow-sm w-full max-w-full ${isDragOver
+                ? 'border-primary ring-2 ring-primary/20'
+                : 'border-border hover:border-primary/50'
               }`}
           >
             {/* Click overlay for accessibility */}
@@ -444,14 +390,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="size-2 sm:size-2.5 rounded-full bg-rose-500/80 shrink-0" />
                 <span className="size-2 sm:size-2.5 rounded-full bg-amber-500/80 shrink-0" />
                 <span className="size-2 sm:size-2.5 rounded-full bg-emerald-500/80 shrink-0" />
-                <span className="ml-1.5 sm:ml-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground truncate hidden xs:inline sm:inline">
+                <span className="ml-1.5 sm:ml-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground truncate hidden sm:inline">
                   locales/en.json ↔ my.json ↔ ja.json
                 </span>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-muted-foreground shrink-0">
-                <Badge variant="outline" className="text-[9px] sm:text-[10px] py-0 h-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] py-0 h-4">
                   <ShieldCheck className="size-2.5 sm:size-3 mr-1" />
-                  AES-256 GCM
+                  Local-first
                 </Badge>
                 <span className="hidden sm:inline">Offline Ready</span>
               </div>
@@ -558,9 +504,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* Hover & Drag Drop Overlay */}
             <div
-              className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-2.5 transition-all duration-300 pointer-events-none ${isDragOver
-                  ? 'opacity-100 backdrop-blur-md bg-background/85'
-                  : 'opacity-0 group-hover:opacity-100 backdrop-blur-xs sm:backdrop-blur-sm bg-background/80'
+              className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-2.5 transition-opacity duration-200 pointer-events-none ${isDragOver
+                  ? 'opacity-100 bg-background/90'
+                  : 'opacity-0 bg-background/88'
                 }`}
             >
               <div className="size-12 sm:size-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shadow-lg scale-95 group-hover:scale-100 transition-transform duration-300">
@@ -579,190 +525,72 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 4. Proof Metric Strip */}
-      <section className="w-full border-y border-border/60 bg-muted/20 py-8 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">100%</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">In-Browser Privacy</p>
-          </div>
-          <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">10+ Formats</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">JSON, ARB, Excel & More</p>
-          </div>
-          <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">AES-256</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Zero-Knowledge Sharing</p>
-          </div>
-          <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-foreground">Stdio MCP</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Claude & Cursor Integration</p>
-          </div>
-        </div>
+      <section className="w-full border-y border-border py-6 px-4 sm:px-6">
+        <p className="max-w-4xl mx-auto text-center text-sm text-muted-foreground leading-relaxed">
+          Runs in the browser with no JSON Link backend. JSON, ARB, Excel, CSV, YAML, XML, and Strings.
+          Optional AES-GCM on share links. MCP for Claude Desktop and Cursor.
+        </p>
       </section>
 
-      {/* 5. Features & Architectural Highlights */}
-      <section id="features" className="w-full py-16 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <Badge variant="outline" className="mb-2 text-xs font-mono text-primary border-primary/30">
-            Core Architecture
-          </Badge>
+      <section id="features" className="w-full py-16 px-4 sm:px-6 max-w-3xl mx-auto">
+        <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Engineered for Modern Internationalization
+            What the spreadsheet actually does
           </h2>
           <p className="text-sm text-muted-foreground mt-2">
-            Every feature is built around real-world developer pains, from corrupted ICU variables to legacy font encodings.
+            Built around ICU variables that translators break, Myanmar fonts that garble, and locale files that live on disk.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-2">
-                    <ShieldCheck className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">100% In-Browser Privacy</CardTitle>
-                  <CardDescription className="text-xs">Zero remote databases or background tracking</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Files are parsed, validated, and translated right in your browser via Web Workers and Web Crypto. Your company's proprietary copy never touches our servers.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2">
-                    <Lock className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">Zero-Knowledge Team Handoff</CardTitle>
-                  <CardDescription className="text-xs">End-to-end client-side encryption</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Share encrypted `.jsonlink` project bundles or instant URL fragments. Data is locked with PBKDF2 key derivation and AES-256-GCM before leaving your tab.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-2">
-                    <Sparkles className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">ICU Variable-Safe AI Translation</CardTitle>
-                  <CardDescription className="text-xs">Bring your own OpenRouter key</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Batch translate missing keys with strict AST placeholder protection. Never suffer hallucinated variable names or broken ICU plurals again.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 mb-2">
-                    <Layers className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">Flutter ARB Native</CardTitle>
-                  <CardDescription className="text-xs">First-class mobile localization support</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Round-trip Flutter ARB files while preserving <code className="font-mono text-cyan-600 dark:text-cyan-400">@key</code> descriptions, placeholders, and type annotations alongside Android XML and iOS Strings.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
-                    <Languages className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">Zawgyi ⇄ Unicode Auto-Detect</CardTitle>
-                  <CardDescription className="text-xs">Legacy Myanmar font resilience</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Automatically detect legacy Myanmar Zawgyi encodings in incoming spreadsheets or JSON strings, with 1-click lossless Rabbit conversion.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-2">
-                    <Terminal className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">Stdio MCP Server for AI IDEs</CardTitle>
-                  <CardDescription className="text-xs">Connect to Claude Desktop &amp; Cursor</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Use standard Model Context Protocol (stdio JSON-RPC 2.0) to lint missing keys, validate translations, and update locales directly from your IDE prompt.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-600 dark:text-teal-400 mb-2">
-                    <GitPullRequest className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">GitHub Localization Sync &amp; PR</CardTitle>
-                  <CardDescription className="text-xs">Direct repo sync with locales-only safety lock</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Pull translations directly from any repository branch, edit in the spreadsheet, and open automated Pull Requests. Protected by client-side guardrails that permanently block non-locale files.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-
-          <article className="h-full">
-            <Card className="h-full border-border/80 bg-card/60 shadow-xs hover:border-primary/40 transition-colors flex flex-col justify-between">
-              <div>
-                <CardHeader className="pb-3">
-                  <div className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-2">
-                    <Zap className="size-5" />
-                  </div>
-                  <CardTitle className="text-base">Vite Plugin, CLI &amp; Drop-in i18n</CardTitle>
-                  <CardDescription className="text-xs">Zero daemon, instant HMR &amp; two-way disk saving</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                  Run <code className="font-mono text-primary">npx create-jsonlink</code> to auto-configure <code className="font-mono text-primary">@jsonlink/vite-plugin</code> and serve a full spreadsheet dashboard at <code className="font-mono text-primary">localhost:5173/__jsonlink</code>, or drop <code className="font-mono text-amber-600 dark:text-amber-400">src/locales/</code> directly into any existing React project.
-                </CardContent>
-              </div>
-            </Card>
-          </article>
-        </div>
+        <dl className="divide-y divide-border border-y border-border">
+          {[
+            {
+              title: 'Runs in the browser',
+              body: 'Files are parsed and edited in this tab. JSON Link has no translation database. OpenRouter and GitHub run only if you turn them on.',
+            },
+            {
+              title: 'Password-optional handoff',
+              body: 'Share a .jsonlink file or a URL hash. AES-GCM is applied when you set a password; without one, anyone with the link can read the strings.',
+            },
+            {
+              title: 'ICU-safe AI translation',
+              body: 'Bring your own OpenRouter key. Placeholders stay tokenized so models cannot rewrite {user} or ICU plurals. Source strings go to OpenRouter, not to JSON Link.',
+            },
+            {
+              title: 'Flutter ARB, Android XML, iOS Strings',
+              body: 'Round-trip ARB metadata, strings.xml, and Localizable.strings beside JSON, YAML, CSV, and Excel.',
+            },
+            {
+              title: 'Zawgyi ⇄ Unicode',
+              body: 'Detect legacy Myanmar Zawgyi in incoming files and convert with Rabbit in one pass.',
+            },
+            {
+              title: 'MCP for Claude Desktop and Cursor',
+              body: 'stdio JSON-RPC tools to lint missing keys and update locale files from the IDE.',
+            },
+            {
+              title: 'GitHub locales sync',
+              body: 'Pull a branch, edit, and open a PR. Client-side path guards keep the write set on localization files.',
+            },
+            {
+              title: 'Vite plugin and create-jsonlink',
+              body: 'npx create-jsonlink wires @jsonlink/vite-plugin and serves the spreadsheet at localhost:5173/__jsonlink with disk save and HMR.',
+            },
+          ].map(item => (
+            <div key={item.title} className="py-5 sm:grid sm:grid-cols-[13rem_1fr] sm:gap-8">
+              <dt className="text-sm font-semibold text-foreground">{item.title}</dt>
+              <dd className="mt-1 sm:mt-0 text-sm text-muted-foreground leading-relaxed">{item.body}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* 6. Formats Showcase */}
       <section id="formats" className="w-full py-16 px-4 sm:px-6 bg-muted/15 border-y border-border/60">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <Badge variant="outline" className="mb-2 text-xs font-mono text-primary border-primary/30">
-              Ecosystem
-            </Badge>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Universal File Format Compatibility
+              Formats on the grid
             </h2>
             <p className="text-sm text-muted-foreground mt-2">
               Import from any stack, edit in one unified spreadsheet grid, and export clean files matching your framework structure.
@@ -773,11 +601,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {[...leftFormats, ...rightFormats].map((f, i) => (
               <div
                 key={i}
-                className="p-3.5 rounded-xl border border-border/80 bg-card hover:border-primary/40 hover:bg-card/80 transition-all flex flex-col gap-1.5 shadow-2xs hover:scale-[1.02]"
+                className="p-3.5 rounded-xl border border-border bg-card flex flex-col gap-1.5"
               >
                 <div className="flex items-center gap-2.5">
                   {f.renderLogo('size-5 shrink-0')}
-                  <h4 className="text-xs font-bold text-foreground">{f.name}</h4>
+                  <h3 className="text-xs font-bold text-foreground">{f.name}</h3>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">{f.description}</p>
               </div>
@@ -788,60 +616,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 7. How It Works (3 Steps) */}
       <section id="architecture" className="w-full py-16 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <Badge variant="outline" className="mb-2 text-xs font-mono text-primary border-primary/30">
-            Workflow
-          </Badge>
+        <div className="max-w-2xl mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            How JSON Link Works
+            How JSON Link works
           </h2>
           <p className="text-sm text-muted-foreground mt-2">
             Go from scattered translation files to a synchronized localized release in three simple steps.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
-            <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
-              1
-            </span>
-            <h3 className="text-base font-bold text-foreground mb-1.5">Drop or Import</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Drag your existing locale files into the browser or start fresh with an empty sheet. No account or onboarding needed.
-            </p>
-          </article>
-
-          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
-            <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
-              2
-            </span>
-            <h3 className="text-base font-bold text-foreground mb-1.5">Edit & AI Translate</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Review strings in a full-featured spreadsheet. Detect missing keys, run variable-safe OpenRouter AI translation, and convert Zawgyi with 1 click.
-            </p>
-          </article>
-
-          <article className="flex flex-col items-center text-center p-6 rounded-xl border border-border/70 bg-card/40">
-            <span className="size-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center mb-4">
-              3
-            </span>
-            <h3 className="text-base font-bold text-foreground mb-1.5">Export & Handoff</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Download nested JSON, Flutter ARB, ready-to-run React/Vite i18n starter kits, or generate an encrypted `.jsonlink` file for zero-knowledge team handoff.
-            </p>
-          </article>
-        </div>
+        <ol className="space-y-6 max-w-2xl">
+          <li className="grid grid-cols-[2rem_1fr] gap-4">
+            <span className="text-sm font-mono text-primary pt-0.5">1</span>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Drop or import</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                Drag locale files into the browser or start with an empty sheet. No account.
+              </p>
+            </div>
+          </li>
+          <li className="grid grid-cols-[2rem_1fr] gap-4">
+            <span className="text-sm font-mono text-primary pt-0.5">2</span>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Edit and translate</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                Review strings in the spreadsheet. Lint missing keys, run OpenRouter with variable shielding, convert Zawgyi.
+              </p>
+            </div>
+          </li>
+          <li className="grid grid-cols-[2rem_1fr] gap-4">
+            <span className="text-sm font-mono text-primary pt-0.5">3</span>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Export or hand off</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                Download JSON, ARB, or a Vite starter. Optionally password-encrypt a .jsonlink file for teammates.
+              </p>
+            </div>
+          </li>
+        </ol>
       </section>
 
       {/* 8. Frequently Asked Questions (FAQ) */}
       <section id="faq" className="w-full py-16 px-4 sm:px-6 bg-muted/15 border-t border-border/60">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <Badge variant="outline" className="mb-2 text-xs font-mono text-primary border-primary/30">
-              Answers
-            </Badge>
+          <div className="mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Frequently Asked Questions
+              Frequently asked questions
             </h2>
           </div>
 
@@ -852,8 +672,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 a: 'Never. JSON Link has zero backend servers, zero databases, and zero tracking. All parsing, validation, AES-256 encryption, and export generation take place 100% inside your browser tab via Web Workers and Web Crypto. (The only external network requests occur if you explicitly opt-in: direct BYOK calls to OpenRouter for AI translation, or direct calls to GitHub’s official REST API for repository sync).',
               },
               {
-                q: 'How does zero-knowledge encrypted sharing work without a database?',
-                a: 'Team handoffs package your translation keys and metadata into a single `.jsonlink` file or URL hash fragment encrypted with AES-256-GCM. The encryption key is derived locally using PBKDF2 with 100,000 iterations. Only those with the password can decrypt it.',
+                q: 'How does sharing work without a database?',
+                a: 'Team handoffs pack keys into a .jsonlink file or a URL hash fragment. Hash fragments are not sent to our servers. AES-256-GCM with PBKDF2 (100,000 iterations) runs only when you set a password. Without a password, anyone with the link can decompress the strings.',
               },
               {
                 q: 'How does AI translation preserve variables and ICU plural formats?',
@@ -888,7 +708,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <button
                     onClick={() => toggleFaq(idx)}
-                    className="w-full px-5 py-4 text-left font-semibold text-sm text-foreground flex items-center justify-between gap-4 cursor-pointer"
+                    aria-expanded={isOpen}
+                    className="w-full px-5 py-4 text-left font-semibold text-sm text-foreground flex items-center justify-between gap-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown

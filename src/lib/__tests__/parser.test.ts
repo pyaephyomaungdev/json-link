@@ -13,6 +13,10 @@ import {
   parseArbFile,
   parseXliffFile,
   parsePoFile,
+  applyLanguageHint,
+  mergeItemSubset,
+  localePathFromFile,
+  translationItemsToLangMap,
 } from '../parser';
 import { TranslationItem } from '@/types';
 
@@ -121,6 +125,68 @@ describe('parser.ts', () => {
 
     it('falls back to basename for unrecognized patterns', () => {
       expect(inferLanguageFromFilename('custom_dictionary.json')).toBe('custom_dictionary');
+    });
+
+    it('reads language from Android and iOS folder paths', () => {
+      expect(inferLanguageFromFilename('res/values-fr/strings.xml')).toBe('fr');
+      expect(inferLanguageFromFilename('res/values/strings.xml')).toBe('en');
+      expect(inferLanguageFromFilename('ios/en.lproj/Localizable.strings')).toBe('en');
+      expect(inferLanguageFromFilename('ios/my.lproj/Localizable.strings')).toBe('my');
+      expect(inferLanguageFromFilename('strings.xml')).toBe('en');
+      expect(inferLanguageFromFilename('Localizable.strings')).toBe('en');
+    });
+  });
+
+  describe('applyLanguageHint', () => {
+    it('remaps a generic single-language map onto the hinted code', () => {
+      expect(applyLanguageHint({ strings: { hello: 'Bonjour' } }, 'fr')).toEqual({
+        fr: { hello: 'Bonjour' },
+      });
+    });
+
+    it('leaves a real language code alone', () => {
+      expect(applyLanguageHint({ en: { hello: 'Hello' } }, 'fr')).toEqual({
+        en: { hello: 'Hello' },
+      });
+    });
+  });
+
+  describe('mergeItemSubset', () => {
+    it('applies key renames using the original source key', () => {
+      const existing: TranslationItem[] = [
+        { key: 'auth.login', en: 'Sign In', my: 'ဝင်ရန်' },
+        { key: 'auth.logout', en: 'Sign Out', my: 'ထွက်ရန်' },
+        { key: 'hidden.row', en: 'Hidden', my: 'ဖျောက်' },
+      ];
+      const subset: TranslationItem[] = [
+        { key: 'auth.signin', en: 'Sign In', my: 'ဝင်ရန်', __sourceKey: 'auth.login' } as TranslationItem,
+        { key: 'auth.logout', en: 'Sign Out', my: 'ထွက်ရန်', __sourceKey: 'auth.logout' } as TranslationItem,
+      ];
+      const merged = mergeItemSubset(existing, subset);
+      expect(merged.map(i => i.key)).toEqual(['auth.signin', 'auth.logout', 'hidden.row']);
+      expect(merged.find(i => i.key === 'auth.signin')?.en).toBe('Sign In');
+      expect(merged.find(i => i.key === 'hidden.row')?.en).toBe('Hidden');
+    });
+  });
+
+  describe('localePathFromFile', () => {
+    it('prefers webkitRelativePath when present', () => {
+      const file = new File(['<resources></resources>'], 'strings.xml');
+      Object.defineProperty(file, 'webkitRelativePath', { value: 'res/values-fr/strings.xml' });
+      expect(localePathFromFile(file)).toBe('res/values-fr/strings.xml');
+    });
+  });
+
+  describe('translationItemsToLangMap', () => {
+    it('pivots spreadsheet rows into a language map', () => {
+      const map = translationItemsToLangMap(
+        [{ key: 'hello', en: 'Hello', my: 'မင်္ဂလာပါ' }],
+        ['en', 'my']
+      );
+      expect(map).toEqual({
+        en: { hello: 'Hello' },
+        my: { hello: 'မင်္ဂလာပါ' },
+      });
     });
   });
 
@@ -251,6 +317,13 @@ describe('parser.ts', () => {
       expect(res.en['static_label']).toBe('Copyright');
       expect(res.en['version_info']).toBe('Version 1.0');
     });
+
+    it('uses Android values-xx folder as the language code', () => {
+      const xml = `<resources><string name="hello">Bonjour</string></resources>`;
+      const res = parseAndroidXml(xml, 'android/app/src/main/res/values-fr/strings.xml');
+      expect(res.fr?.hello).toBe('Bonjour');
+      expect(res.strings).toBeUndefined();
+    });
   });
 
   describe('parseIosStrings', () => {
@@ -276,6 +349,12 @@ describe('parser.ts', () => {
       expect(res.en).toBeDefined();
       expect(res.en['help.website']).toBe('https://example.com/docs');
       expect(res.en['api.endpoint']).toBe('http://api.service.io/v1');
+    });
+
+    it('uses the enclosing lproj folder as the language code', () => {
+      const res = parseIosStrings('"ok" = "OK";', 'ios/Runner/fr.lproj/Localizable.strings');
+      expect(res.fr?.ok).toBe('OK');
+      expect(res.localizable).toBeUndefined();
     });
   });
 
@@ -476,7 +555,7 @@ en:
   });
 
   describe('parsePoFile', () => {
-    it('parses GNU gettext .po files with comments and multi-line strings', () => {
+    it('parses GNU gettext .po files and preserves developer keys from #: reference comments', () => {
       const poContent = `msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
@@ -496,8 +575,22 @@ msgstr "1行目\\n"
 
       const result = parsePoFile(poContent, 'ja.po');
       expect(result).toHaveProperty('ja');
-      expect(result.ja['Welcome to our application']).toBe('ようこそ');
-      expect(result.ja['Line 1\nLine 2']).toBe('1行目\n2行目');
+      expect(result.ja['app.welcome']).toBe('ようこそ');
+      expect(result.ja['app.multiline']).toBe('1行目\n2行目');
+    });
+
+    it('falls back to msgid as key when no #: reference comment exists', () => {
+      const poContent = `msgid ""
+msgstr ""
+"Language: my\\n"
+
+msgid "Save Project"
+msgstr "ပရောဂျက်သိမ်းရန်"
+`;
+
+      const result = parsePoFile(poContent, 'my.po');
+      expect(result).toHaveProperty('my');
+      expect(result.my['Save Project']).toBe('ပရောဂျက်သိမ်းရန်');
     });
   });
 });

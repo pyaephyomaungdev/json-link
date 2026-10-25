@@ -57,11 +57,36 @@ export function unflattenObject(flatObj: Record<string, string>): Record<string,
 }
 
 /**
- * Infer language code from filename (e.g., "my.json" -> "my", "en_US.json" -> "en", "strings-burmese.json" -> "my")
+ * Infer language code from a filename or relative path.
+ * Understands Android `values[-xx]` folders and iOS `xx.lproj` directories.
  */
 export function inferLanguageFromFilename(filename: string): string {
-  const baseName = filename.replace(/\.[^/.]+$/, '').toLowerCase();
-  
+  const normalized = filename.replace(/\\/g, '/');
+  const parts = normalized.split('/');
+  const filePart = parts[parts.length - 1] || filename;
+  const baseName = filePart.replace(/\.[^/.]+$/, '').toLowerCase();
+
+  for (const part of parts) {
+    const lprojMatch = part.match(/^([a-z]{2,3}(?:[-_][a-zA-Z0-9]{2,4})?)\.lproj$/i);
+    if (lprojMatch) {
+      return lprojMatch[1].toLowerCase().replace('_', '-');
+    }
+  }
+
+  for (const part of parts) {
+    const androidMatch = part.match(/^values-([a-z]{2,3}(?:[-_][a-zA-Z0-9]{2,4})?)$/i);
+    if (androidMatch) {
+      return androidMatch[1].toLowerCase().replace('_', '-');
+    }
+  }
+
+  if (
+    parts.some(part => part.toLowerCase() === 'values') &&
+    /^(strings|localizable)$/i.test(baseName)
+  ) {
+    return 'en';
+  }
+
   // Specific known language aliases
   if (baseName.includes('burmese') || baseName === 'my' || baseName.endsWith('_my') || baseName.endsWith('-my')) return 'my';
   if (baseName.includes('english') || baseName === 'en' || baseName.endsWith('_en') || baseName.endsWith('-en')) return 'en';
@@ -75,7 +100,51 @@ export function inferLanguageFromFilename(filename: string): string {
     return match[1].toLowerCase().replace('_', '-');
   }
 
+  if (/^(strings|localizable)$/i.test(baseName)) {
+    return 'en';
+  }
+
   return baseName;
+}
+
+export function localePathFromFile(file: Pick<File, 'name'> & { webkitRelativePath?: string }): string {
+  const relative = file.webkitRelativePath;
+  if (typeof relative === 'string' && relative.trim()) {
+    return relative;
+  }
+  return file.name;
+}
+
+export function translationItemsToLangMap(
+  items: TranslationItem[],
+  languages: string[]
+): { [langCode: string]: Record<string, string> } {
+  const result: { [langCode: string]: Record<string, string> } = {};
+  for (const lang of languages) {
+    result[lang] = {};
+    for (const item of items) {
+      result[lang][item.key] = item[lang] || '';
+    }
+  }
+  return result;
+}
+
+const LOOKS_LIKE_LANG = /^[a-z]{2,3}(?:-[a-z0-9]{2,4})?$/i;
+
+/**
+ * If a single-language parse used a generic filename (`strings.xml`), remap it to a path hint.
+ */
+export function applyLanguageHint(
+  langData: { [langCode: string]: Record<string, string> },
+  hint?: string | null
+): { [langCode: string]: Record<string, string> } {
+  if (!hint) return langData;
+  const langs = Object.keys(langData);
+  if (langs.length !== 1) return langData;
+  const current = langs[0];
+  if (current.toLowerCase() === hint.toLowerCase()) return langData;
+  if (LOOKS_LIKE_LANG.test(current)) return langData;
+  return { [hint]: langData[current] };
 }
 
 /**
@@ -193,6 +262,41 @@ export function mergeTranslations(
     items: mergedItems,
     languages: allLangs,
   };
+}
+
+type BatchRow = TranslationItem & { __sourceKey?: string };
+
+/**
+ * Apply a subset of edited rows onto the full catalog, matching by original key
+ * so multi-cell paste can rename keys without dropping the row.
+ */
+export function mergeItemSubset(
+  existingItems: TranslationItem[],
+  updatedSubset: TranslationItem[]
+): TranslationItem[] {
+  const updatedMap = new Map<string, TranslationItem>();
+  for (const row of updatedSubset) {
+    const sourceKey = (row as BatchRow).__sourceKey ?? row.key;
+    const { __sourceKey: _drop, ...clean } = row as BatchRow;
+    updatedMap.set(sourceKey, clean);
+  }
+
+  const next = existingItems.map(item => updatedMap.get(item.key) ?? item);
+  const seen = new Set<string>();
+  return next.map(item => {
+    if (!seen.has(item.key)) {
+      seen.add(item.key);
+      return item;
+    }
+    let n = 1;
+    let candidate = `${item.key}_${n}`;
+    while (seen.has(candidate)) {
+      n += 1;
+      candidate = `${item.key}_${n}`;
+    }
+    seen.add(candidate);
+    return { ...item, key: candidate };
+  });
 }
 
 /**
@@ -572,59 +676,77 @@ export function parsePoFile(
   const result: Record<string, string> = {};
 
   // Infer target language from header or filename
-  let targetLang = '';
-  const langHeaderMatch = content.match(/"Language:\s*([a-zA-Z0-9_-]+)/i);
+  let targetLang = "";
+  const langHeaderMatch = content.match(/"Language:\\s*([a-zA-Z0-9_-]+)/i);
   if (langHeaderMatch) {
-    targetLang = langHeaderMatch[1].toLowerCase().replace('_', '-');
+    targetLang = langHeaderMatch[1].toLowerCase().replace("_", "-");
   } else {
     targetLang = inferLanguageFromFilename(filename);
   }
 
   const lines = content.split(/\r?\n/);
-  let currentKey = '';
-  let currentVal = '';
-  let mode: 'none' | 'msgid' | 'msgstr' = 'none';
+  let currentKey = "";
+  let currentVal = "";
+  let mode: "none" | "msgid" | "msgstr" = "none";
+  let pendingKeyRef = "";
+  let isKeyFromRef = false;
 
   const unescapePo = (s: string) =>
     s
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, '\n')
-      .replace(/\\t/g, '\t')
-      .replace(/\\\\/g, '\\');
+      .replace(/\\"/g, "\"")
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "\t")
+      .replace(/\\\\/g, "\\");
 
   const flush = () => {
     if (currentKey && currentKey.trim()) {
       result[currentKey] = currentVal;
     }
-    currentKey = '';
-    currentVal = '';
-    mode = 'none';
+    currentKey = "";
+    currentVal = "";
+    isKeyFromRef = false;
+    mode = "none";
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
+    if (!trimmed) {
       continue;
     }
 
-    if (trimmed.startsWith('msgid ')) {
+    if (trimmed.startsWith("#")) {
+      if (trimmed.startsWith("#:")) {
+        const ref = trimmed.slice(2).trim();
+        if (ref) {
+          pendingKeyRef = ref;
+        }
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith("msgid ")) {
       flush();
-      mode = 'msgid';
+      mode = "msgid";
       const m = trimmed.match(/^msgid\s+"(.*)"$/);
       if (m) {
-        currentKey = unescapePo(m[1]);
+        const rawMsgid = unescapePo(m[1]);
+        isKeyFromRef = Boolean(pendingKeyRef);
+        currentKey = pendingKeyRef || rawMsgid;
+        pendingKeyRef = "";
       }
-    } else if (trimmed.startsWith('msgstr ')) {
-      mode = 'msgstr';
+    } else if (trimmed.startsWith("msgstr ")) {
+      mode = "msgstr";
       const m = trimmed.match(/^msgstr\s+"(.*)"$/);
       if (m) {
         currentVal = unescapePo(m[1]);
       }
-    } else if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    } else if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
       const valStr = unescapePo(trimmed.slice(1, -1));
-      if (mode === 'msgid') {
-        currentKey += valStr;
-      } else if (mode === 'msgstr') {
+      if (mode === "msgid") {
+        if (!isKeyFromRef) {
+          currentKey += valStr;
+        }
+      } else if (mode === "msgstr") {
         currentVal += valStr;
       }
     }
@@ -633,5 +755,3 @@ export function parsePoFile(
 
   return { [targetLang]: result };
 }
-
-

@@ -21,6 +21,7 @@ import {
   exportToPoZip,
 } from '../exporter';
 import { TranslationItem } from '@/types';
+import { parsePoFile } from '../parser';
 
 describe('exporter.ts', () => {
   const sampleItems: TranslationItem[] = [
@@ -355,6 +356,17 @@ describe('exporter.ts', () => {
       expect(po).toContain('#: auth.title');
       expect(po).toContain('msgid "Sign in to account"');
       expect(po).toContain('msgstr "ログイン"');
+    });
+
+    it('round-trips through generatePo and parsePoFile preserving developer keys', () => {
+      const items: TranslationItem[] = [
+        { key: 'auth.title', en: 'Sign in to account', ja: 'ログイン' },
+        { key: 'auth.btn', en: 'Submit form', ja: '送信' },
+      ];
+      const po = generatePo(items, 'ja', 'en');
+      const parsed = parsePoFile(po, 'ja.po');
+      expect(parsed.ja['auth.title']).toBe('ログイン');
+      expect(parsed.ja['auth.btn']).toBe('送信');
     });
   });
 

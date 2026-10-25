@@ -33,11 +33,10 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
       {/* Brand Icon Badge */}
       <div
-        className={`${iconSizes[size]} relative ${badgeRadii[size].outer} bg-gradient-to-br from-emerald-500 via-teal-600 to-indigo-600 p-[1.5px] shadow-sm shrink-0 flex items-center justify-center`}
+        className={`${iconSizes[size]} relative ${badgeRadii[size].outer} bg-primary p-[1.5px] shadow-sm shrink-0 flex items-center justify-center`}
       >
         <div className={`w-full h-full bg-[#090d16] ${badgeRadii[size].inner} flex items-center justify-center relative overflow-hidden`}>
-          {/* Subtle background glow */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20" />
+          <div className="absolute inset-0 bg-emerald-500/15" />
 
           {/* SVG Symbol: Interlocking JSON Brackets & Link */}
           <svg
@@ -67,7 +66,7 @@ export const Logo: React.FC<LogoProps> = ({
             {/* Central Linking Nodes & Grid Crossbar */}
             <path
               d="M12 16H20"
-              stroke="#818cf8"
+              stroke="#5eead4"
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeDasharray="1 2.5"
@@ -88,7 +87,7 @@ export const Logo: React.FC<LogoProps> = ({
               JSON
             </span>
             <span
-              className={`${textSizes[size]} font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-sans`}
+              className={`${textSizes[size]} font-bold tracking-tight text-primary font-sans`}
             >
               Link
             </span>

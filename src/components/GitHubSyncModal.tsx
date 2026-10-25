@@ -53,6 +53,8 @@ import {
   parseYamlFile,
   parseArbFile,
   mergeTranslations,
+  applyLanguageHint,
+  translationItemsToLangMap,
 } from '@/lib/parser';
 import {
   generateLanguageJsonData,
@@ -146,6 +148,7 @@ export function GitHubSyncModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [prResult, setPrResult] = useState<GitHubPrResult | null>(null);
   const [copiedPrUrl, setCopiedPrUrl] = useState<boolean>(false);
+  const [pulledPathByLang, setPulledPathByLang] = useState<Record<string, string>>({});
 
   // Status & error messages
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -320,6 +323,7 @@ export function GitHubSyncModal({
     try {
       let accumulatedItems: TranslationItem[] = [];
       let accumulatedLanguages: string[] = [];
+      const pathByLang: Record<string, string> = {};
 
       for (const file of filesToFetch) {
         // Enforce strict security policy check
@@ -339,26 +343,24 @@ export function GitHubSyncModal({
         const ext = file.extension.toLowerCase();
 
         if (ext === '.json') {
-          langData = parseJsonFile(rawContent, file.name);
+          langData = parseJsonFile(rawContent, file.path);
         } else if (ext === '.arb') {
-          const arb = parseArbFile(rawContent, file.name);
-          for (const l of arb.languages) {
-            langData[l] = {};
-            for (const item of arb.items) {
-              langData[l][item.key] = item[l] || '';
-            }
-          }
+          const arb = parseArbFile(rawContent, file.path);
+          langData = translationItemsToLangMap(arb.items, arb.languages);
         } else if (ext === '.yaml' || ext === '.yml') {
-          langData = parseYamlFile(rawContent, file.name);
+          langData = parseYamlFile(rawContent, file.path);
         } else if (ext === '.xml') {
-          langData = parseAndroidXml(rawContent, file.name);
+          langData = applyLanguageHint(parseAndroidXml(rawContent, file.path), file.suggestedLanguage);
         } else if (ext === '.strings') {
-          langData = parseIosStrings(rawContent, file.name);
+          langData = applyLanguageHint(parseIosStrings(rawContent, file.path), file.suggestedLanguage);
         } else {
-          langData = parseJsonFile(rawContent, file.name);
+          langData = parseJsonFile(rawContent, file.path);
         }
 
         if (Object.keys(langData).length > 0) {
+          for (const lang of Object.keys(langData)) {
+            pathByLang[lang] = file.path;
+          }
           const merged = mergeTranslations(accumulatedItems, accumulatedLanguages, langData);
           accumulatedItems = merged.items;
           accumulatedLanguages = merged.languages;
@@ -367,6 +369,21 @@ export function GitHubSyncModal({
 
       if (accumulatedItems.length === 0) {
         throw new Error('No valid translation keys found in the selected files.');
+      }
+
+      setPulledPathByLang(pathByLang);
+      const firstPulled = filesToFetch[0];
+      if (firstPulled) {
+        const slash = firstPulled.path.lastIndexOf('/');
+        if (slash >= 0) {
+          setTargetFolder(firstPulled.path.slice(0, slash + 1));
+        }
+        const pulledExt = firstPulled.extension.toLowerCase();
+        if (pulledExt === '.arb') setTargetFormat('arb');
+        else if (pulledExt === '.yaml' || pulledExt === '.yml') setTargetFormat('yaml');
+        else if (pulledExt === '.xml') setTargetFormat('xml');
+        else if (pulledExt === '.strings') setTargetFormat('strings');
+        else setTargetFormat('json-nested');
       }
 
       onImportTranslations(accumulatedItems, accumulatedLanguages);
@@ -387,35 +404,46 @@ export function GitHubSyncModal({
     const cleanFolder = folder.endsWith('/') ? folder : `${folder}/`;
     const files: Array<{ path: string; content: string }> = [];
 
+    const formatFromPath = (path: string): typeof targetFormat => {
+      const lower = path.toLowerCase();
+      if (lower.endsWith('.arb')) return 'arb';
+      if (lower.endsWith('.yaml') || lower.endsWith('.yml')) return 'yaml';
+      if (lower.endsWith('.xml')) return 'xml';
+      if (lower.endsWith('.strings')) return 'strings';
+      return targetFormat === 'json-flat' ? 'json-flat' : 'json-nested';
+    };
+
     for (const lang of languages) {
+      const existingPath = pulledPathByLang[lang];
+      const format = existingPath ? formatFromPath(existingPath) : targetFormat;
       let fileName = `${lang}.json`;
       let content = '';
 
-      if (targetFormat === 'json-nested') {
+      if (format === 'json-nested') {
         fileName = `${lang}.json`;
         const data = generateLanguageJsonData(items, lang, true);
         content = JSON.stringify(data, null, 2);
-      } else if (targetFormat === 'json-flat') {
+      } else if (format === 'json-flat') {
         fileName = `${lang}.json`;
         const data = generateLanguageJsonData(items, lang, false);
         content = JSON.stringify(data, null, 2);
-      } else if (targetFormat === 'arb') {
+      } else if (format === 'arb') {
         fileName = `app_${lang}.arb`;
         const data = generateArbData(items, lang);
         content = JSON.stringify(data, null, 2);
-      } else if (targetFormat === 'yaml') {
+      } else if (format === 'yaml') {
         fileName = `${lang}.yaml`;
         const data = generateLanguageJsonData(items, lang, true);
         content = objectToYaml(data);
-      } else if (targetFormat === 'xml') {
+      } else if (format === 'xml') {
         fileName = `strings_${lang}.xml`;
         content = generateAndroidXml(items, lang);
-      } else if (targetFormat === 'strings') {
+      } else if (format === 'strings') {
         fileName = `${lang}.strings`;
         content = generateIosStrings(items, lang);
       }
 
-      const filePath = `${cleanFolder}${fileName}`;
+      const filePath = existingPath || `${cleanFolder}${fileName}`;
 
       // Strict Security Verification
       if (!isAllowedLocalesPath(filePath)) {
@@ -632,7 +660,7 @@ export function GitHubSyncModal({
                   <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[10px] leading-relaxed flex items-start gap-1.5">
                     <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong>Encrypted Vault:</strong> Your token is encrypted at rest using <code className="font-mono text-[10px]">AES-GCM (256-bit)</code> before storing in browser storage, and communicated directly with GitHub's REST API (zero intermediary servers). Click &quot;Disconnect Token&quot; anytime to wipe it immediately.
+                      <strong>Device vault:</strong> Your token is AES-GCM encrypted with a key that stays on this browser (IndexedDB), then stored locally. Calls go to GitHub&apos;s REST API only. Click &quot;Disconnect Token&quot; anytime to wipe it.
                     </div>
                   </div>
                 </div>

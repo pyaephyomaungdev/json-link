@@ -316,15 +316,51 @@ export function saveLocalDraft(
 
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(project));
+  } catch (e) {
+    console.warn('Failed to save draft to localStorage (quota exceeded?), saving to IndexedDB only', e);
+    try {
+      // Drop the stale blob so reload cannot prefer an older localStorage copy
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem('jsonlink_user_discarded');
     }
-  } catch (e) {
-    console.warn('Failed to save draft to localStorage (quota exceeded?), saving to IndexedDB only', e);
+  } catch {
+    // ignore
   }
 
   // Non-blocking IndexedDB persist to seamlessly handle large projects
   saveDraftToIndexedDb(project).catch(() => {});
+}
+
+function draftTimestamp(draft: JsonLinkProject | null): number {
+  if (!draft?.updatedAt) return 0;
+  const parsed = Date.parse(draft.updatedAt);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Picks the more recently updated draft. Equal timestamps prefer the copy with more rows
+ * (IndexedDB is where oversized saves land after a localStorage quota miss).
+ */
+export function pickNewerDraft(
+  a: JsonLinkProject | null,
+  b: JsonLinkProject | null
+): JsonLinkProject | null {
+  if (!a) return b;
+  if (!b) return a;
+  const timeA = draftTimestamp(a);
+  const timeB = draftTimestamp(b);
+  if (timeB > timeA) return b;
+  if (timeA > timeB) return a;
+  const countA = a.items?.length ?? 0;
+  const countB = b.items?.length ?? 0;
+  return countB > countA ? b : a;
 }
 
 /**
@@ -346,23 +382,21 @@ export function loadLocalDraft(): JsonLinkProject | null {
 }
 
 /**
- * Loads auto-saved project with IndexedDB priority, falling back to localStorage
+ * Loads auto-saved project, reconciling localStorage and IndexedDB by `updatedAt`.
  */
 export async function loadLocalDraftAsync(): Promise<JsonLinkProject | null> {
   if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('jsonlink_user_discarded') === 'true') {
     return null;
   }
 
+  let idbDraft: JsonLinkProject | null = null;
   try {
-    const idbDraft = await loadDraftFromIndexedDb();
-    if (idbDraft && Array.isArray(idbDraft.items) && idbDraft.items.length > 0) {
-      return idbDraft;
-    }
+    idbDraft = await loadDraftFromIndexedDb();
   } catch (e) {
     console.warn('Failed to load draft from IndexedDB, falling back to localStorage', e);
   }
 
-  return loadLocalDraft();
+  return pickNewerDraft(loadLocalDraft(), idbDraft);
 }
 
 /**

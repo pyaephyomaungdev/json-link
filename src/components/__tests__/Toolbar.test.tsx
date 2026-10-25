@@ -65,16 +65,15 @@ describe('Toolbar search debounce', () => {
   });
 
   it('clear button fires onSearchChange immediately without waiting for the debounce', () => {
-    const { container } = render(<Toolbar {...baseProps} />);
+    render(<Toolbar {...baseProps} />);
     const input = screen.getByPlaceholderText('Search keys...') as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: 'abc' } });
     vi.advanceTimersByTime(150);
     expect(baseProps.onSearchChange).toHaveBeenCalledTimes(1);
 
-    const clearButton = container.querySelector('button.absolute.right-1\\.5');
-    expect(clearButton).not.toBeNull();
-    fireEvent.click(clearButton!);
+    const clearButton = screen.getByRole('button', { name: 'Clear search' });
+    fireEvent.click(clearButton);
 
     expect(input.value).toBe('');
     expect(baseProps.onSearchChange).toHaveBeenCalledWith('');
@@ -115,6 +114,17 @@ describe('Toolbar search debounce', () => {
     render(<Toolbar {...baseProps} />);
     const moreBtn = screen.getByRole('button', { name: 'More' });
     expect(moreBtn).not.toBeNull();
+  });
+
+  it('does not render a sibling Share button next to File', () => {
+    render(<Toolbar {...baseProps} onOpenShare={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'File' })).not.toBeNull();
+  });
+
+  it('labels the Tools lint badge with an issues noun', () => {
+    render(<Toolbar {...baseProps} onOpenLinter={vi.fn()} lintIssueCount={2} />);
+    expect(screen.getAllByText('2 issues').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders column missing filter chip and triggers onClearFilterMissingLang on close and on All click', () => {

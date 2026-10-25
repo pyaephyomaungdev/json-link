@@ -450,6 +450,9 @@ export function extractItemsFromYDoc(ydoc: Y.Doc): {
     if (itemData.status) {
       item.status = itemData.status;
     }
+    if (itemData.namespace) {
+      item.namespace = itemData.namespace;
+    }
     for (const lang of languages) {
       item[lang] = itemData[lang] || '';
     }
@@ -457,6 +460,45 @@ export function extractItemsFromYDoc(ydoc: Y.Doc): {
   }
 
   return { items, languages };
+}
+
+/**
+ * Minimally updates a Y.Array to match the desired array without deleting and recreating identical elements.
+ * Uses common prefix/suffix diffing to keep CRDT item identities intact and prevent race conditions.
+ */
+export function syncYArray(yArray: Y.Array<string>, next: string[]): void {
+  const current = yArray.toArray();
+  if (current.length === next.length && current.every((v, i) => v === next[i])) {
+    return;
+  }
+
+  let prefixLen = 0;
+  while (
+    prefixLen < current.length &&
+    prefixLen < next.length &&
+    current[prefixLen] === next[prefixLen]
+  ) {
+    prefixLen++;
+  }
+
+  let suffixLen = 0;
+  while (
+    suffixLen < current.length - prefixLen &&
+    suffixLen < next.length - prefixLen &&
+    current[current.length - 1 - suffixLen] === next[next.length - 1 - suffixLen]
+  ) {
+    suffixLen++;
+  }
+
+  const toDelete = current.length - prefixLen - suffixLen;
+  const toInsert = next.slice(prefixLen, next.length - suffixLen);
+
+  if (toDelete > 0) {
+    yArray.delete(prefixLen, toDelete);
+  }
+  if (toInsert.length > 0) {
+    yArray.insert(prefixLen, toInsert);
+  }
 }
 
 /**
@@ -473,26 +515,13 @@ export function applyLocalChangeToYDoc(
   const yLanguages = ydoc.getArray<string>('languages');
 
   ydoc.transact(() => {
-    // 1. Sync languages list
-    const currentLangs = yLanguages.toArray();
-    if (
-      currentLangs.length !== languages.length ||
-      !languages.every((l, idx) => l === currentLangs[idx])
-    ) {
-      yLanguages.delete(0, yLanguages.length);
-      yLanguages.push(languages);
-    }
+    // 1. Sync languages list non-destructively
+    syncYArray(yLanguages, languages);
 
-    // 2. Sync keys order
+    // 2. Sync keys order non-destructively
     const currentKeys = yKeys.toArray();
     const newKeys = items.map(i => i.key);
-    if (
-      currentKeys.length !== newKeys.length ||
-      !newKeys.every((k, idx) => k === currentKeys[idx])
-    ) {
-      yKeys.delete(0, yKeys.length);
-      yKeys.push(newKeys);
-    }
+    syncYArray(yKeys, newKeys);
 
     // 3. Remove deleted keys from map
     const newKeySet = new Set(newKeys);

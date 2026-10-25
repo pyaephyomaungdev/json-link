@@ -99,7 +99,7 @@ export function computeDeltaPatch(
       if (p.key !== n.key) {
         patches.push({
           type: 'cell_change',
-          id: n.key,
+          id: p.key,
           field: 'key',
           prevValue: p.key,
           nextValue: n.key,
@@ -153,6 +153,18 @@ export function computeDeltaPatch(
   };
 }
 
+function matchesCellPatch(
+  item: TranslationItem,
+  patch: Extract<HistoryPatch, { type: 'cell_change' }>,
+  direction: 'forward' | 'invert'
+): boolean {
+  if (patch.field === 'key') {
+    const lookup = direction === 'forward' ? patch.prevValue : patch.nextValue;
+    return item.key === lookup || item.key === patch.id;
+  }
+  return item.key === patch.id;
+}
+
 /**
  * Reverses a patch to restore previous state
  */
@@ -160,7 +172,7 @@ export function applyInvertedPatch(items: TranslationItem[], patch: HistoryPatch
   switch (patch.type) {
     case 'cell_change': {
       return items.map(item => {
-        if (item.key !== patch.id) return item;
+        if (!matchesCellPatch(item, patch, 'invert')) return item;
         return {
           ...item,
           [patch.field]: patch.prevValue,
@@ -205,7 +217,7 @@ export function applyForwardPatch(items: TranslationItem[], patch: HistoryPatch)
   switch (patch.type) {
     case 'cell_change': {
       return items.map(item => {
-        if (item.key !== patch.id) return item;
+        if (!matchesCellPatch(item, patch, 'forward')) return item;
         return {
           ...item,
           [patch.field]: patch.nextValue,

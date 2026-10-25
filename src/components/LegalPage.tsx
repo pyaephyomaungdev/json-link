@@ -51,7 +51,7 @@ export function LegalPage({
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -149,7 +149,7 @@ export function LegalPage({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
                 <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
-                  <HardDrive className="size-4 text-blue-500" />
+                  <HardDrive className="size-4 text-primary" />
                   <span>Zero Server Storage</span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -169,7 +169,7 @@ export function LegalPage({
 
               <div className="p-4 rounded-xl border border-border/60 bg-muted/20 space-y-2">
                 <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
-                  <EyeOff className="size-4 text-purple-500" />
+                  <EyeOff className="size-4 text-foreground" />
                   <span>No Tracking / Telemetry</span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -357,7 +357,7 @@ export function LegalPage({
             <section className="space-y-4 pt-2 border-t border-border/60">
               <h2 className="text-xl font-bold text-foreground">3. How to Clear Stored Data</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Since all stored data resides solely in your browser on your computer, you can remove all data at any time by clearing your browser's site data/cookies for <code className="text-xs font-mono bg-muted px-1 py-0.5 rounded">json-link.pages.dev</code>, or by using the "Clear Draft" button in the application settings.
+                Since all stored data resides solely in your browser, you can remove it by clearing site data for <code className="text-xs font-mono bg-muted px-1 py-0.5 rounded">json-link.pages.dev</code>, by choosing File → Clear All Keys in the spreadsheet, or by returning Home and discarding the local draft when prompted.
               </p>
             </section>
           </article>

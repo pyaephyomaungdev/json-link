@@ -20,6 +20,8 @@ import {
   parseXliffFile,
   parsePoFile,
   mergeTranslations,
+  localePathFromFile,
+  translationItemsToLangMap,
 } from '@/lib/parser';
 import { isProjectFileEncrypted } from '@/lib/project';
 import { TranslationItem } from '@/types';
@@ -101,7 +103,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           });
         } else if (ext === 'xml') {
           const text = await file.text();
-          const parsed = parseAndroidXml(text, file.name);
+          const parsed = parseAndroidXml(text, localePathFromFile(file));
           newLoadedFiles.push({
             name: file.name,
             size: file.size,
@@ -110,7 +112,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           });
         } else if (ext === 'strings') {
           const text = await file.text();
-          const parsed = parseIosStrings(text, file.name);
+          const parsed = parseIosStrings(text, localePathFromFile(file));
           newLoadedFiles.push({
             name: file.name,
             size: file.size,
@@ -196,7 +198,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         file.type === 'yaml' ||
         file.type === 'xml' ||
         file.type === 'strings' ||
-        file.type === 'arb' ||
         file.type === 'xliff' ||
         file.type === 'po'
       ) {
@@ -209,17 +210,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         const res = mergeTranslations(
           baseItems,
           baseLanguages,
-          spreadsheetData.languages.reduce((acc, lang) => {
-            acc[lang] = {};
-            for (const item of spreadsheetData.items) {
-              acc[lang][item.key] = item[lang] || '';
-            }
-            return acc;
-          }, {} as Record<string, Record<string, string>>)
+          translationItemsToLangMap(spreadsheetData.items, spreadsheetData.languages)
         );
         baseItems = res.items;
         baseLanguages = res.languages;
-        // Preserve developer context / descriptions from spreadsheet items
+        // Preserve developer context / descriptions from spreadsheet and ARB items
         const baseMap = new Map(baseItems.map(b => [b.key, b]));
         for (const item of spreadsheetData.items) {
           if (item.description && baseMap.has(item.key)) {

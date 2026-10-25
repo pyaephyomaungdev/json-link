@@ -3,7 +3,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GithubIcon } from '@/components/GithubIcon';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   ArrowLeft,
   Moon,
@@ -38,7 +38,7 @@ interface AboutPageProps {
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'cookies') => void;
 }
 
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.2.0';
 const GITHUB_URL = 'https://github.com/pyaephyomaungdev/json-link';
 const LIVE_URL = 'https://json-link.pages.dev';
 
@@ -51,21 +51,21 @@ const highlights = [
       'Freeze panes, live formula bar, Excel-style keyboard navigation, drag column resizing, multi-cell paste, and full undo / redo history.',
   },
   {
-    icon: <MousePointerClick className="size-4 text-purple-500" />,
+    icon: <MousePointerClick className="size-4 text-primary" />,
     badgeText: 'Productivity',
     title: 'Cell Context Menu & 1-Click Revert',
     description:
       'Right-click any translation cell to copy, paste, clear, revert changes to initial values, or convert Myanmar Zawgyi encoding on the fly.',
   },
   {
-    icon: <FileSpreadsheet className="size-4 text-blue-500" />,
+    icon: <FileSpreadsheet className="size-4 text-primary" />,
     badgeText: 'Formats',
     title: '11+ Formats & Vite Starter',
     description:
       'Two-way roundtrip for nested & flat JSON, Flutter ARB (with @key metadata and single-file download), Excel, CSV, YAML, Android strings.xml, iOS .strings, TypeScript d.ts, and portable .jsonlink projects. Plus one-click export for React + Vite i18n starters.',
   },
   {
-    icon: <Sparkles className="size-4 text-violet-500" />,
+    icon: <Sparkles className="size-4 text-primary" />,
     badgeText: 'AI Engine',
     title: 'AI Auto-Translate',
     description:
@@ -176,7 +176,7 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
   return (
     <div className="h-screen w-full max-w-full flex flex-col overflow-hidden bg-background text-foreground selection:bg-primary/20">
       {/* Top Header — matches app header */}
-      <header className="border-b border-border/70 bg-card/80 backdrop-blur-md px-3 sm:px-6 h-12 flex items-center justify-between shrink-0 select-none z-10 w-full max-w-full">
+      <header className="border-b border-border bg-card px-3 sm:px-6 h-12 flex items-center justify-between shrink-0 select-none z-10 w-full max-w-full">
         <Button
           variant="ghost"
           size="sm"
@@ -226,8 +226,6 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
 
       {/* Scrollable Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth w-full max-w-full">
-        {/* Subtle Ambient Aura */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-[650px] h-[300px] bg-gradient-to-tr from-emerald-500/10 via-teal-500/5 to-indigo-500/10 blur-3xl pointer-events-none rounded-full" />
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-12 relative z-0">
           {/* Hero Section */}
@@ -236,20 +234,13 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
               <Logo size="lg" />
             </div>
 
-            <Badge
-              variant="outline"
-              className="text-[11px] font-mono py-0.5 px-3 border-primary/30 text-primary bg-primary/5 mb-3"
-            >
-              Private In-Browser Translation Workspace
-            </Badge>
-
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight max-w-2xl text-balance bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-transparent">
-              The Private Localization Workspace for Developers &amp; Translators
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight max-w-2xl text-balance text-foreground">
+              The private localization workspace for developers and translators
             </h1>
 
             <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-2xl text-pretty leading-relaxed">
-              Seamlessly link, edit, validate, and translate your localization files side-by-side in an authentic spreadsheet interface.
-              Zero cloud lock-in, zero remote databases, and 100% offline privacy.
+              Link, edit, validate, and translate locale files side-by-side in a spreadsheet.
+              No JSON Link cloud, no remote translation database.
             </p>
 
             {/* Badges Strip */}
@@ -283,21 +274,21 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
               {onOpenDocs && (
                 <Button
-                  variant="secondary"
                   onClick={onOpenDocs}
                   className="gap-2 font-semibold text-xs cursor-pointer shadow-xs"
                   size="sm"
                 >
-                  <BookOpen className="size-3.5 text-primary" />
+                  <BookOpen className="size-3.5" />
                   User Guide &amp; Docs
                 </Button>
               )}
               <Button
+                variant="outline"
                 onClick={() => window.open(GITHUB_URL, '_blank', 'noopener')}
-                className="gap-2 font-semibold text-xs cursor-pointer shadow-xs"
+                className="gap-2 text-xs cursor-pointer bg-background hover:bg-muted"
                 size="sm"
               >
-                <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                <Star className="size-3.5 text-muted-foreground" />
                 Star on GitHub
               </Button>
               <Button
@@ -320,11 +311,11 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
                   <ShieldCheck className="size-5" />
                 </span>
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-sm sm:text-base font-bold text-foreground">
+                  <h2 className="text-sm sm:text-base font-bold text-foreground">
                     Privacy by architecture, not by promise
-                  </h3>
+                  </h2>
                   <p className="text-xs sm:text-[13px] text-muted-foreground leading-relaxed">
-                    JSON Link is a static single-page application with zero backend. The name <strong className="text-foreground">&quot;Link&quot;</strong> refers to seamlessly linking and synchronizing your local localization files across frameworks (Web JSON, Flutter ARB, iOS Strings, Android XML) directly from your browser without cloud storage.
+                    JSON Link is a static single-page application with zero backend. The name <strong className="text-foreground">&quot;Link&quot;</strong> refers to linking and synchronizing local localization files across frameworks (Web JSON, Flutter ARB, iOS Strings, Android XML) in the browser, without a JSON Link cloud.
                   </p>
                   <p className="text-xs sm:text-[13px] text-muted-foreground leading-relaxed">
                     Files are parsed, validated, edited, and exported entirely on your machine; drafts auto-save to browser storage. AI translation uses your own OpenRouter key (BYOK) — session-only by default, or AES-GCM 256-bit encrypted if you opt into remembering it on this device. Nothing is ever uploaded to a remote server.
@@ -345,33 +336,14 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <dl className="divide-y divide-border border-y border-border">
               {highlights.map(h => (
-                <Card
-                  key={h.title}
-                  className="border-border/80 bg-card/60 shadow-2xs hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between"
-                >
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                        {h.icon}
-                      </span>
-                      <Badge variant="outline" className="text-[10px] font-mono py-0 h-4">
-                        {h.badgeText}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-xs sm:text-sm font-bold leading-snug">
-                      {h.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                      {h.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div key={h.title} className="py-4 sm:grid sm:grid-cols-[14rem_1fr] sm:gap-6">
+                  <dt className="text-sm font-semibold text-foreground">{h.title}</dt>
+                  <dd className="mt-1 sm:mt-0 text-sm text-muted-foreground leading-relaxed">{h.description}</dd>
+                </div>
               ))}
-            </div>
+            </dl>
           </section>
 
           {/* Developer Workflows */}
@@ -385,28 +357,14 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <dl className="divide-y divide-border border-y border-border">
               {developerFeatures.map(f => (
-                <Card
-                  key={f.title}
-                  className="border-border/80 bg-card/60 shadow-2xs hover:border-primary/40 hover:bg-card transition-all"
-                >
-                  <CardContent className="p-4 flex items-start gap-3.5">
-                    <span className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary mt-0.5">
-                      {f.icon}
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <h3 className="text-xs sm:text-sm font-bold text-foreground">
-                        {f.title}
-                      </h3>
-                      <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                        {f.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={f.title} className="py-4 sm:grid sm:grid-cols-[14rem_1fr] sm:gap-6">
+                  <dt className="text-sm font-semibold text-foreground">{f.title}</dt>
+                  <dd className="mt-1 sm:mt-0 text-sm text-muted-foreground leading-relaxed">{f.description}</dd>
+                </div>
               ))}
-            </div>
+            </dl>
           </section>
 
           {/* Green Hosting & Infrastructure Certification Card */}

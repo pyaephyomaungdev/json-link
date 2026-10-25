@@ -15,11 +15,11 @@ JSON Link is engineered with strict client-side data sovereignty:
 
 1. **Zero-Knowledge Architecture**: Your localization keys and values are processed entirely in-memory within your browser. There is no remote database storing translation data.
 2. **Client-Side Cryptography**: 
-   - Project sharing URLs encrypt compressed translation payloads in the URL fragment (`#share=...`) using Web Crypto API **AES-GCM (256-bit)** derived via **PBKDF2** (100,000 iterations, SHA-256).
-   - Because hash fragments are never sent to HTTP servers in request lines, unencrypted or encrypted payloads never touch web hosting logs.
+   - Project sharing URLs put a compressed payload in the URL fragment (`#share=...`). **AES-GCM (256-bit)** via **PBKDF2** (100,000 iterations, SHA-256) is applied only when the sender sets a password. Without a password, anyone with the link can decompress the strings.
+   - Hash fragments are not sent to HTTP servers in request lines, so the payload does not appear in web hosting logs.
 3. **Secrets Isolation**:
-   - OpenRouter API keys are held in `sessionStorage` by default (auto-cleared when the browser tab closes) and only persisted if explicitly remembered, where they are stored AES-GCM encrypted.
-   - GitHub Personal Access Tokens (PAT) are stored encrypted at rest via AES-GCM and used exclusively for client-to-GitHub direct REST API calls.
+   - OpenRouter API keys are held in `sessionStorage` by default (auto-cleared when the browser tab closes) and only persisted if explicitly remembered. Remembered keys are AES-GCM encrypted with a device-local, non-extractable CryptoKey in IndexedDB — this is not a user-chosen password.
+   - GitHub Personal Access Tokens (PAT) use the same device-local vault and are used exclusively for client-to-GitHub direct REST API calls.
 4. **Locales Guardrails**: All GitHub branch/PR synchronization operations enforce strict deny-lists preventing modification to any non-localization files (code, configs, workflows, and dotfiles are blocked).
 
 ## Reporting a Vulnerability

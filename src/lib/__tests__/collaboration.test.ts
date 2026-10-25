@@ -7,6 +7,7 @@ import {
   generateRandomPeerProfile,
   extractItemsFromYDoc,
   applyLocalChangeToYDoc,
+  syncYArray,
   applyProjectNameToYDoc,
   extractProjectNameFromYDoc,
   getPeerInitials,
@@ -55,6 +56,18 @@ describe('collaboration module', () => {
     expect(extracted.items[0].en).toBe('Hello World');
     expect(extracted.items[0].my).toBe('မင်္ဂလာပါ');
     expect(extracted.items[1].key).toBe('app.submit');
+  });
+
+  it('round-trips namespace through Yjs extractItemsFromYDoc', () => {
+    const ydoc = new Y.Doc();
+    const items: TranslationItem[] = [
+      { key: 'auth.login', namespace: 'auth', en: 'Log in', my: 'ဝင်မည်' },
+    ];
+    applyLocalChangeToYDoc(ydoc, items, ['en', 'my']);
+
+    const extracted = extractItemsFromYDoc(ydoc);
+    expect(extracted.items[0].namespace).toBe('auth');
+    expect(extracted.items[0].en).toBe('Log in');
   });
 
   it('synchronizes updates across two YDocs (simulating peer synchronization)', () => {
@@ -197,6 +210,53 @@ describe('collaboration module', () => {
     // Clean up
     saveStoredTurnServers([]);
     expect(getStoredTurnServers()).toHaveLength(0);
+  });
+
+  describe('syncYArray', () => {
+    it('performs targeted positional updates without clearing identical elements', () => {
+      const doc = new Y.Doc();
+      const arr = doc.getArray<string>('test-keys');
+      arr.push(['key1', 'key2', 'key3']);
+
+      // Observe operations
+      let deletedCount = 0;
+      let insertedCount = 0;
+      arr.observe((event) => {
+        for (const d of event.changes.delta) {
+          if (d.delete) deletedCount += d.delete;
+          if (d.insert) insertedCount += (d.insert as any[]).length;
+        }
+      });
+
+      // Append one key
+      syncYArray(arr, ['key1', 'key2', 'key3', 'key4']);
+      expect(arr.toArray()).toEqual(['key1', 'key2', 'key3', 'key4']);
+      expect(deletedCount).toBe(0); // Did not delete existing keys!
+      expect(insertedCount).toBe(1);
+
+      // Insert middle key
+      deletedCount = 0;
+      insertedCount = 0;
+      syncYArray(arr, ['key1', 'key2', 'key2.5', 'key3', 'key4']);
+      expect(arr.toArray()).toEqual(['key1', 'key2', 'key2.5', 'key3', 'key4']);
+      expect(deletedCount).toBe(0);
+      expect(insertedCount).toBe(1);
+
+      // Delete one key
+      deletedCount = 0;
+      insertedCount = 0;
+      syncYArray(arr, ['key1', 'key2', 'key3', 'key4']);
+      expect(arr.toArray()).toEqual(['key1', 'key2', 'key3', 'key4']);
+      expect(deletedCount).toBe(1);
+      expect(insertedCount).toBe(0);
+
+      // Identical array is no-op
+      deletedCount = 0;
+      insertedCount = 0;
+      syncYArray(arr, ['key1', 'key2', 'key3', 'key4']);
+      expect(deletedCount).toBe(0);
+      expect(insertedCount).toBe(0);
+    });
   });
 });
 

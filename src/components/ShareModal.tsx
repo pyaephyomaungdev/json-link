@@ -384,6 +384,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <p className="text-xs text-muted-foreground leading-relaxed mb-2">
                   Anyone who opens this link will load your spreadsheet instantly in their browser.
                 </p>
+                {!enablePassword && (
+                  <div className="mb-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
+                    <strong className="font-semibold">Anyone with this link can read every string.</strong> The hash is compressed, not encrypted, unless you turn on a password below.
+                  </div>
+                )}
 
                 <div className="flex gap-2 w-full min-w-0">
                   <Input
@@ -566,7 +571,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div className="pt-2 border-t border-border flex items-start gap-2 text-[11px] text-muted-foreground">
             <ShieldCheck className="size-3.5 shrink-0 text-primary mt-0.5" />
             <p className="leading-relaxed">
-              <strong>100% In-Browser Privacy:</strong> URLs use hash fragments (<code className="font-mono text-[10px]">#share=...</code>) which are never transmitted to any web server. No databases, accounts, or telemetry.
+              <strong>In-browser handoff:</strong> Hash fragments (<code className="font-mono text-[10px]">#share=...</code>) stay in the browser and are not sent to our servers. AES-GCM encryption is optional — turn on a password if the strings should stay unreadable without it.
             </p>
           </div>
         </DialogBody>

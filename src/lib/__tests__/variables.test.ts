@@ -61,6 +61,11 @@ describe('variables.ts', () => {
       const selectStr = '{gender, select, male{He} female{She} other{They}} said hello';
       expect(extractVariables(selectStr)).toEqual(['{gender}']);
     });
+
+    it('extracts # number token when present in ICU plural expressions', () => {
+      const pluralWithHash = '{count, plural, =0{no items} one{# item} other{# items}}';
+      expect(extractVariables(pluralWithHash)).toEqual(['{count}', '#']);
+    });
   });
 
   describe('tokenizeVariables', () => {
@@ -149,6 +154,28 @@ describe('variables.ts', () => {
   });
 
   describe('tokenizeVariables — additional edge cases', () => {
+    it('tokenizes # as a variable token only inside ICU plural branches', () => {
+      const pluralStr = '{count, plural, one{# item} other{# items}}';
+      const tokens = tokenizeVariables(pluralStr);
+      const varTokens = tokens.filter(t => t.isVariable);
+      expect(varTokens.map(t => t.text)).toEqual(['#', '#']);
+
+      // Outside plural, # is normal plain text
+      const plainStr = 'Fix issue #42 in repository';
+      const plainTokens = tokenizeVariables(plainStr);
+      expect(plainTokens.some(t => t.isVariable && t.text === '#')).toBe(false);
+    });
+
+    it('validates that # number token is preserved in plural translations', () => {
+      const source = '{count, plural, one{# item} other{# items}}';
+      const targetOk = '{count, plural, other{# ဖိုင်}}';
+      const targetMissingHash = '{count, plural, other{ဖိုင်များ}}';
+
+      expect(validateVariables(source, targetOk).isValid).toBe(true);
+      expect(validateVariables(source, targetMissingHash).isValid).toBe(false);
+      expect(validateVariables(source, targetMissingHash).missingVariables).toContain('#');
+    });
+
     it('handles consecutive variables with no text between them', () => {
       const tokens = tokenizeVariables('{first}{last}');
       const varTokens = tokens.filter(t => t.isVariable);
