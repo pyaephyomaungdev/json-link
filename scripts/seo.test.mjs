@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { isProductionHost, shouldNoindexBuild, ROBOTS_DISALLOW } from '../functions/indexing.js';
-import { renderRouteHtml, routeForUrl } from './prerender-html.mjs';
+import { referencesBlockedFontHost, renderRouteHtml, routeForUrl } from './prerender-html.mjs';
 import routeData from '../src/seo/routes.json' with { type: 'json' };
 
 const home = routeData.routes.find((route) => route.id === 'home');
@@ -76,10 +76,27 @@ describe('prerendered route html', () => {
     expect(seenTitles.size).toBe(routeData.routes.length);
   });
 
+  it('serves the theme script from this origin, relative on the home document', () => {
+    const withTheme = shell().replace('</head>', '<script src="/theme-init.js"></script></head>');
+    expect(renderRouteHtml(withTheme, home)).toContain('<script src="./theme-init.js"></script>');
+    const about = routeData.routes.find((route) => route.id === 'about');
+    const aboutHtml = renderRouteHtml(withTheme, about, { absolutize: true });
+    expect(aboutHtml).toContain('<script src="/theme-init.js"></script>');
+  });
+
   it('resolves unknown urls to the 404 route', () => {
     expect(routeForUrl('/does-not-exist').id).toBe('not-found');
     expect(routeForUrl('/assets/does-not-exist.js').id).toBe('not-found');
     expect(routeForUrl('/docs').id).toBe('docs');
+  });
+});
+
+describe('font host check', () => {
+  it('flags a font URL by hostname and ignores the same text in a path', () => {
+    expect(referencesBlockedFontHost('https://fonts.googleapis.com/css2?family=Inter')).toBe(true);
+    expect(referencesBlockedFontHost('https://fonts.gstatic.com/s/inter/v.woff2')).toBe(true);
+    expect(referencesBlockedFontHost('https://example.com/fonts.googleapis.com/file.css')).toBe(false);
+    expect(referencesBlockedFontHost("url('/fonts/inter-latin-700.woff2')")).toBe(false);
   });
 });
 
@@ -89,8 +106,13 @@ describe('source html', () => {
     expect(html).toContain(`<h1>${home.h1}</h1>`);
     expect(html).toContain(home.lede);
     expect(html).toContain(`<title>${home.title}</title>`);
-    expect(html).not.toContain('fonts.googleapis.com');
-    expect(html).not.toContain('fonts.gstatic.com');
+    expect(html).toContain('<script src="/theme-init.js"></script>');
+    expect(html).not.toContain('localStorage.getItem');
+    expect(referencesBlockedFontHost(html)).toBe(false);
+    const headers = fs.readFileSync(path.resolve('public/_headers'), 'utf8');
+    expect(headers).toContain("script-src 'self';");
+    expect(headers).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(headers).toContain("style-src 'self' 'unsafe-inline'");
     const redirects = fs.readFileSync(path.resolve('public/_redirects'), 'utf8');
     expect(redirects).not.toMatch(/^\s*\*\s+\/index\.html\s+200/m);
     expect(redirects).toContain('/about     /about.html    200');

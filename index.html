@@ -107,20 +107,8 @@
     }
     html.dark .seo-hero p { color: #94a3b8; }
   </style>
-  <!-- Immediate theme pre-loader to prevent flickering on reload -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('json_link_theme');
-        var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      } catch (e) { }
-    })();
-  </script>
+  <!-- Theme pre-loader. External so script-src can stay 'self' (no unsafe-inline). -->
+  <script src="/theme-init.js"></script>
 </head>
 
 <body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20">

@@ -142,7 +142,23 @@ export function renderRouteHtml(html, route, options = {}) {
     '#root',
   );
   if (options.absolutize) next = absolutizeAssetUrls(next);
+  else next = next.replaceAll('src="/theme-init.js"', 'src="./theme-init.js"');
   return next;
+}
+
+const BLOCKED_FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
+
+/** True when a stylesheet or font URL is actually hosted on a blocked font host. */
+export function referencesBlockedFontHost(source) {
+  const matches = String(source).match(/https?:\/\/[^\s"'<>)]+/g) || [];
+  for (const candidate of matches) {
+    try {
+      if (BLOCKED_FONT_HOSTS.has(new URL(candidate).hostname)) return true;
+    } catch {
+      // Ignore fragments that are not absolute URLs.
+    }
+  }
+  return false;
 }
 
 function patchHeaders(headers, noindex) {
@@ -186,8 +202,8 @@ export function prerenderDist(distDir, env = process.env) {
   const cssFiles = fs.readdirSync(path.join(distDir, 'assets')).filter((name) => name.endsWith('.css'));
   const bundledCss = cssFiles.map((name) => fs.readFileSync(path.join(distDir, 'assets', name), 'utf8')).join('\n');
   const homeHtml = fs.readFileSync(indexPath, 'utf8');
-  if (homeHtml.includes('fonts.googleapis.com') || bundledCss.includes('fonts.googleapis.com')) {
-    throw new Error('Production build still references fonts.googleapis.com');
+  if (referencesBlockedFontHost(homeHtml) || referencesBlockedFontHost(bundledCss)) {
+    throw new Error('Production build still loads a third-party font host');
   }
   if (!bundledCss.includes('inter-latin-700.woff2')) {
     throw new Error('Production CSS is missing the self-hosted Inter font');
