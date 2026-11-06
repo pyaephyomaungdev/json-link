@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { onSameTabLinkClick } from '@/lib/sameTabLink';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,8 @@ interface NotFoundPageProps {
   onToggleTheme: () => void;
   onOpenDocs?: () => void;
   onOpenAbout?: () => void;
+  docsHref?: string;
+  aboutHref?: string;
 }
 
 export function NotFoundPage({
@@ -26,6 +29,8 @@ export function NotFoundPage({
   onToggleTheme,
   onOpenDocs,
   onOpenAbout,
+  docsHref = '/docs',
+  aboutHref = '/about',
 }: NotFoundPageProps) {
   const [currentPath, setCurrentPath] = useState('');
 
@@ -147,9 +152,9 @@ export function NotFoundPage({
             </button>
 
             {/* Docs Card */}
-            <button
-              type="button"
-              onClick={onOpenDocs ? onOpenDocs : onBack}
+            <a
+              href={docsHref}
+              onClick={(e) => onSameTabLinkClick(e, onOpenDocs ? onOpenDocs : onBack)}
               className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
             >
               <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -163,13 +168,13 @@ export function NotFoundPage({
                   Browse quick start, format guides & keyboard shortcuts.
                 </p>
               </div>
-            </button>
+            </a>
 
             {/* About Card */}
             {onOpenAbout && (
-              <button
-                type="button"
-                onClick={onOpenAbout}
+              <a
+                href={aboutHref}
+                onClick={(e) => onSameTabLinkClick(e, onOpenAbout)}
                 className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-muted/20 transition-all cursor-pointer group shadow-xs space-y-2"
               >
                 <div className="size-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -183,7 +188,7 @@ export function NotFoundPage({
                     Read about offline privacy, architecture & highlights.
                   </p>
                 </div>
-              </button>
+              </a>
             )}
           </div>
 

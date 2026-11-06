@@ -1,8 +1,9 @@
-const CACHE_NAME = 'json-link-v1.1.0';
+const CACHE_NAME = 'json-link-v1.1.0-csp';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
+  './theme-init.js',
   './manifest.json',
   './og-image.svg',
   './icon-192.png',

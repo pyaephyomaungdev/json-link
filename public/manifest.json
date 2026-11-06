@@ -1,7 +1,7 @@
 {
   "name": "JSON Link — i18n Localization Spreadsheet",
   "short_name": "JSON Link",
-  "description": "Free open-source i18n translation workspace & spreadsheet.",
+  "description": "In-browser spreadsheet for JSON, Flutter ARB, Android XML, iOS .strings, Excel, and CSV locale files.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

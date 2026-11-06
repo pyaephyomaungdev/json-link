@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { onSameTabLinkClick } from '@/lib/sameTabLink';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -256,26 +257,19 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
               <Badge variant="success">Free & Open Source</Badge>
               <Badge variant="outline">MIT License</Badge>
-              <Badge variant="warning">370+ Automated Tests</Badge>
               <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
                 <Lock className="size-3 text-emerald-500" /> 100% Client-Side &amp; Offline
               </Badge>
             </div>
 
-            {/* Product Hunt Featured Badge */}
             <div className="mt-5 flex items-center justify-center">
               <a
-                href="https://www.producthunt.com/products/json-link-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-json-link-2"
+                href="https://www.producthunt.com/products/json-link-2"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:opacity-95 transition-transform hover:scale-[1.02] inline-block shadow-2xs rounded-lg"
+                className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-4"
               >
-                <img
-                  alt="JSON Link - Local-first open-source i18n spreadsheet & MCP server | Product Hunt"
-                  width={240}
-                  height={52}
-                  src={`https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1248495&theme=${isDark ? 'dark' : 'light'}&t=1789232030595`}
-                />
+                JSON Link on Product Hunt
               </a>
             </div>
 
@@ -283,13 +277,15 @@ export function AboutPage({ onBack, isDark, onToggleTheme, onOpenDocs, onOpenLeg
             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
               {onOpenDocs && (
                 <Button
+                  asChild
                   variant="secondary"
-                  onClick={onOpenDocs}
                   className="gap-2 font-semibold text-xs cursor-pointer shadow-xs"
                   size="sm"
                 >
-                  <BookOpen className="size-3.5 text-primary" />
-                  User Guide &amp; Docs
+                  <a href="/docs" onClick={(e) => onSameTabLinkClick(e, onOpenDocs)}>
+                    <BookOpen className="size-3.5 text-primary" />
+                    User Guide &amp; Docs
+                  </a>
                 </Button>
               )}
               <Button
